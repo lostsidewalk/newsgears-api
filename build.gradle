@@ -1,0 +1,56 @@
+
+plugins {
+    id "org.springframework.boot" version "2.0.1.RELEASE"
+}
+
+apply plugin: 'java'
+
+targetCompatibility = '11'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    // buffy
+    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.1-dev1'
+    implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.1-dev1'
+
+    // NewsAPI importer
+    implementation 'com.lostsidewalk.newsgears:newsgears-newsapi-importer:0.1-dev1'
+
+    // git publisher
+    implementation 'com.lostsidewalk.newsgears:newsgears-git-publisher:0.1-dev1'
+
+    // SLF4J
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    implementation 'org.slf4j:slf4j-simple:2.0.0-alpha7'
+
+    // spring-boot-starter-actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:2.7.3'
+    // sprig-boot-starter-web
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.3'
+    // commons-lang
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    // jaxb-api
+    implementation 'javax.xml.bind:jaxb-api:2.4.0-b180830.0359'
+
+    // postgresql driver
+    runtimeOnly 'org.postgresql:postgresql:42.4.2'
+
+    // test
+//    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    testCompileOnly 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+}
+
+springBoot {
+    mainClassName = 'com.lostsidewalk.buffy.BuffyApi'
+}
