@@ -1,4 +1,6 @@
-
+// 
+// docker build --build-arg JAR_FILE=build/libs/*.jar -t testorg/testapp .
+// 
 plugins {
     id "org.springframework.boot" version "2.0.1.RELEASE"
 }
