@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy;
+package com.lostsidewalk.buffy.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -14,14 +14,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableConfigurationProperties
 @PropertySource("classpath:secret.properties")
-@ComponentScan({"com.lostsidewalk.buffy", "com.lostsidewalk.buffy.newsapi"})
+@ComponentScan({"com.lostsidewalk.buffy", "com.listsidewalk.buffy.app", "com.lostsidewalk.buffy.newsapi", "com.lostsidewalk.buffy.rss"})
 @Configuration
-public class BuffyApi {
+public class Application {
 
     public static void main(String[] args) {
         //
         // startup/context config
         //
-        SpringApplication.run(BuffyApi.class, args);
+        SpringApplication.run(Application.class, args);
     }
 }

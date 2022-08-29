@@ -15,14 +15,11 @@ repositories {
 }
 
 dependencies {
-    // buffy
+    // NewsGears
     implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.1-dev1'
     implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.1-dev1'
-
-    // NewsAPI importer
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss:0.1-dev1'
     implementation 'com.lostsidewalk.newsgears:newsgears-newsapi-importer:0.1-dev1'
-
-    // git publisher
     implementation 'com.lostsidewalk.newsgears:newsgears-git-publisher:0.1-dev1'
 
     // SLF4J
@@ -52,5 +49,5 @@ dependencies {
 }
 
 springBoot {
-    mainClassName = 'com.lostsidewalk.buffy.BuffyApi'
+    mainClassName = 'com.lostsidewalk.buffy.app.Application'
 }

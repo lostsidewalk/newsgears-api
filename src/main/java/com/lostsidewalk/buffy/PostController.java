@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.ResponseMessageUtils.buildResponseMessage;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 @RestController
@@ -78,5 +79,15 @@ public class PostController {
     @AllArgsConstructor
     static class ResponseMessage {
         String message;
+    }
+
+    @Autowired
+    PostPublisher postPublisher;
+
+    @GetMapping("/staging/deploy")
+    public ResponseEntity<?> deployPubPending(@RequestParam(required = false) String feed) {
+        postPublisher.doPublish(feed);
+        String messageBody = isBlank(feed) ? "Deployed all feeds." : "Deployed all posts to '" + feed + "'.";
+        return ResponseEntity.ok().body(buildResponseMessage(messageBody));
     }
 }
