@@ -14,7 +14,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 @RestController
-@CrossOrigin(origins = "http://localhost:8081")
+@CrossOrigin(origins = "http://localhost:3000")
 public class PostController {
 
     @Autowired
