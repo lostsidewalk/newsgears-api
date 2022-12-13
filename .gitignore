@@ -1,5 +1,7 @@
 /build/
+/out/
 .gradle
 .idea
+logs
 
 src/main/resources/secret.properties
