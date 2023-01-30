@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 class WebHealthIndicator implements HealthIndicator {
@@ -20,7 +21,7 @@ class WebHealthIndicator implements HealthIndicator {
     CustomerEventQueueProcessor customerEventQueueProcessor;
 
     @Autowired
-    Map<String, Integer> errorStatusMap;
+    ConcurrentHashMap<String, Integer> errorStatusMap;
 
     @Override
     public Health getHealth(boolean includeDetails) {

@@ -2,23 +2,25 @@ package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.RenderedFeedDao;
+import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
+import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
 import com.lostsidewalk.buffy.app.mail.MailService;
 import com.lostsidewalk.buffy.app.mail.MailService.MailException;
 import com.lostsidewalk.buffy.app.model.AppToken;
+import com.lostsidewalk.buffy.app.model.request.RegistrationRequest;
+import com.lostsidewalk.buffy.app.model.response.RegistartionResponse;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
 import com.lostsidewalk.buffy.app.user.RegistrationException;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
-import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
-import com.lostsidewalk.buffy.app.model.request.RegistrationRequest;
-import com.lostsidewalk.buffy.app.model.response.RegistartionResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +34,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 
@@ -63,10 +63,10 @@ public class RegistrationController {
     TokenService tokenService;
 
     @Autowired
-    RenderedFeedDao renderedFeedDao;
+    FeedDefinitionService feedDefinitionService;
 
     @Autowired
-    FeedDefinitionService feedDefinitionService;
+    PostPublisher postPublisher;
 
     @Value("${verification.error.redirect.url}")
     String verificationErrorRedirectUrl;
@@ -156,10 +156,10 @@ public class RegistrationController {
         log.info("De-registering username={}", username);
         //
         StopWatch stopWatch = StopWatch.createStarted();
-        List<FeedDefinition> feedDefinitions = feedDefinitionService.findByUser(username);
-        if (isNotEmpty(feedDefinitions)) {
-            for (FeedDefinition f : feedDefinitions) {
-                renderedFeedDao.deleteFeedAtTransportIdent(f.getTransportIdent());
+        List<Long> feedIds = feedDefinitionService.findByUser(username).stream().map(FeedDefinition::getId).toList();
+        if (isNotEmpty(feedIds)) {
+            for (Long feedId : feedIds) {
+                postPublisher.unpublishFeed(username, feedId);
             }
         }
         //

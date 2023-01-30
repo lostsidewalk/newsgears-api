@@ -57,7 +57,12 @@ class WebSecurityConfig {
 		return (request, response, authException) -> response.setStatus(SC_UNAUTHORIZED);
 	}
 
-	private static final String CONTENT_SECURITY_POLCIY_DIRECTIVES = "default-src 'self';frame-src js.stripe.com;script-src 'self' 'unsafe-eval' js.stripe.com;connect-src 'self' http://localhost:8080 ws://192.168.86.180:3000/ws;img-src 'self' data: https://*;style-src 'unsafe-inline' https://fonts.googleapis.com;base-uri 'self';form-action 'self';font-src https://fonts.gstatic.com http://localhost:3000";
+//	private static final String CONTENT_SECURITY_POLCIY_DIRECTIVES =
+//			"default-src 'self';" +
+//			"connect-src 'self' http://localhost:8080 ws://192.168.86.180:3000/ws;img-src 'self' data: https://* http://*;" +
+//			"style-src 'unsafe-inline' https://fonts.googleapis.com;base-uri 'self';" +
+//			"form-action 'self';" +
+//			"font-src https://fonts.gstatic.com http://localhost:3000";
 
 	@Bean
 	protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -67,7 +72,7 @@ class WebSecurityConfig {
 				.csrf().disable()
 				.formLogin().disable()
 				.httpBasic().disable()
-				.headers(httpSecurityHeadersConfigurer -> httpSecurityHeadersConfigurer.contentSecurityPolicy(CONTENT_SECURITY_POLCIY_DIRECTIVES))
+//				.headers(httpSecurityHeadersConfigurer -> httpSecurityHeadersConfigurer.contentSecurityPolicy(CONTENT_SECURITY_POLCIY_DIRECTIVES))
 				.cors().configurationSource(request -> {
 					CorsConfiguration configuration = new CorsConfiguration();
 					configuration.setAllowedOrigins(List.of("http://localhost:3000"));
@@ -92,6 +97,8 @@ class WebSecurityConfig {
 					.requestMatchers("/actuator/**").permitAll()
 					// permit options calls
 					.requestMatchers(OPTIONS, "/**").permitAll() // OPTIONS calls are validated downstream by checking for the presence of required headers
+					// permit image proxy calls
+					.requestMatchers("/proxy/unsecured/**").permitAll()
 					// (all others require authentication)
 					.anyRequest().authenticated()
 				.and().sessionManagement().sessionCreationPolicy(STATELESS)

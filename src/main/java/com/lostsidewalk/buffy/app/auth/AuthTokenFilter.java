@@ -102,7 +102,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 			"/pw_reset",
 			"/register",
 			"/verify",
-			"/stripe"
+			"/stripe",
+			"/proxy/unsecured"
 	);
 
 	private boolean isOpenServletPath(String servletPath) {

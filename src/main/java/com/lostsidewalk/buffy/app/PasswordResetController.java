@@ -5,6 +5,7 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
+import com.lostsidewalk.buffy.app.auth.AuthService.AuthProviderException;
 import com.lostsidewalk.buffy.app.mail.MailService;
 import com.lostsidewalk.buffy.app.mail.MailService.MailException;
 import com.lostsidewalk.buffy.app.model.AppToken;
@@ -33,6 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
 
+import static com.lostsidewalk.buffy.AuthProvider.LOCAL;
 import static com.lostsidewalk.buffy.app.model.TokenType.PW_RESET;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
@@ -70,16 +72,22 @@ public class PasswordResetController {
     //
     @RequestMapping(value = "/pw_reset", method = POST)
     @Transactional
-    public ResponseEntity<String> initPasswordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest) throws AuthClaimException, DataAccessException, DataUpdateException {
+    public ResponseEntity<String> initPasswordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest) throws AuthClaimException, DataAccessException, DataUpdateException, MailException {
         StopWatch stopWatch = StopWatch.createStarted();
-        AppToken pwResetToken = authService.initPasswordReset(passwordResetRequest);
+        String username = passwordResetRequest.getUsername();
         try {
-            mailService.sendPasswordResetEmail(passwordResetRequest.getUsername(), pwResetToken);
-        } catch (MailException | UsernameNotFoundException ignored) {
-            // ignored
+            authService.requireAuthProvider(username, LOCAL);
+            AppToken pwResetToken = authService.initPasswordReset(passwordResetRequest);
+            try {
+                mailService.sendPasswordResetEmail(passwordResetRequest.getUsername(), pwResetToken);
+            } catch (UsernameNotFoundException ignored) {
+                // ignored (user requesting PW reset for unknown user)
+            }
+            stopWatch.stop();
+            appLogService.logPasswordResetInit(passwordResetRequest.getUsername(), stopWatch);
+        } catch (UsernameNotFoundException | AuthProviderException e) {
+            // ignored (user requesting PW reset for non-existent/non-local user)
         }
-        stopWatch.stop();
-        appLogService.logPasswordResetInit(passwordResetRequest.getUsername(), stopWatch);
 
         return ok(INIT_PASSWORD_RESET_DEFAULT_RESPONSE_TEXT);
     }

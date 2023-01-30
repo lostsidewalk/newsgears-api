@@ -38,6 +38,13 @@ public class FeedFetchResponse {
                                          List<NewsApiCategories> allNewsApiV2Categories,
                                          List<NewsApiLanguages> allNewsApiV2Languages)
     {
-        return new FeedFetchResponse(feedDefinitions, queryDefinitions, allNewsApiV2Sources, allNewsApiV2Countries, allNewsApiV2Categories, allNewsApiV2Languages);
+        return new FeedFetchResponse(
+                feedDefinitions,
+                queryDefinitions,
+                allNewsApiV2Sources,
+                allNewsApiV2Countries,
+                allNewsApiV2Categories,
+                allNewsApiV2Languages
+        );
     }
 }

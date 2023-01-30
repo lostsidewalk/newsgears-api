@@ -16,8 +16,8 @@ public class ThumbnailedPostResponse {
         this.post = staginPost;
     }
 
-    public static ThumbnailedPostResponse from(StagingPost staginPost, byte[] postImg) {
-        ThumbnailedPostResponse r = new ThumbnailedPostResponse(staginPost);
+    public static ThumbnailedPostResponse from(StagingPost stagingPost, byte[] postImg) {
+        ThumbnailedPostResponse r = new ThumbnailedPostResponse(stagingPost);
         r.postImgSrc = encodeBase64String(postImg);
 
         return r;

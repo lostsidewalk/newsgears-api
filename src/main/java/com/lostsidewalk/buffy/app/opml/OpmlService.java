@@ -75,7 +75,7 @@ public class OpmlService {
         Opml opml = new Opml();
         opml.setTitle("OPML Export for " + username);
         for (FeedDefinition f : feedDefinitions) {
-            List<QueryDefinition> q = queryDefinitionDao.findByFeedIdent(username, f.getIdent());
+            List<QueryDefinition> q = queryDefinitionDao.findByFeedId(username, f.getId());
             opml.getOutlines().add(convertFeedDefinitionToOutline(f, q));
         }
         OPML20Generator opml20Generator = new OPML20Generator();

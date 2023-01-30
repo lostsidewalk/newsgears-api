@@ -16,6 +16,7 @@ import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
 import com.lostsidewalk.buffy.app.user.UserRoles;
+import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfoDao;
 import com.lostsidewalk.buffy.feed.FeedDefinitionDao;
 import com.lostsidewalk.buffy.json.JSONPublisher;
 import com.lostsidewalk.buffy.newsapi.NewsApiImporter;
@@ -25,6 +26,7 @@ import com.lostsidewalk.buffy.post.StagingPostDao;
 import com.lostsidewalk.buffy.query.QueryDefinitionDao;
 import com.lostsidewalk.buffy.rss.RSSPublisher;
 import com.lostsidewalk.buffy.rss.RssImporter;
+import com.lostsidewalk.buffy.thumbnail.ThumbnailDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.GrantedAuthority;
@@ -130,6 +132,9 @@ class BaseWebControllerTest {
     FeedDefinitionDao feedDefinitionDao;
 
     @MockBean
+    FeedDiscoveryInfoDao feedDiscoveryInfoDao;
+
+    @MockBean
     FrameworkConfigDao frameworkConfigDao;
 
     @MockBean
@@ -137,6 +142,9 @@ class BaseWebControllerTest {
 
     @MockBean
     QueryDefinitionDao queryDefinitionDao;
+
+    @MockBean
+    ThumbnailDao thumbnailDao;
 
     @MockBean
     RoleDao roleDao;

@@ -1,5 +1,7 @@
 package com.lostsidewalk.buffy.app;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.FrameworkConfig;
 import com.lostsidewalk.buffy.app.model.response.SettingsResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +38,8 @@ public class SettingsControllerTest extends BaseWebControllerTest {
             new FrameworkConfig()
     );
 
+    private static final Gson GSON = new Gson();
+
     @Test
     void test_getSettings() throws Exception {
         when(this.settingsService.getFrameworkConfig("me")).thenReturn(TEST_SETTINGS_RESPONSE);
@@ -45,7 +49,7 @@ public class SettingsControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("{\"username\":\"me\",\"emailAddress\":\"testEmailAddress\",\"authProvider\":\"LOCAL\",\"authProviderProfileImgUrl\":\"testAuthProviderProfileImgUrl\",\"authProviderUsername\":\"testAuthProviderUsername\",\"frameworkConfig\":{\"userId\":null,\"notifications\":{}}}", responseContent);
+                    assertEquals(GSON.fromJson("{\"username\":\"me\",\"emailAddress\":\"testEmailAddress\",\"authProvider\":\"LOCAL\",\"authProviderProfileImgUrl\":\"testAuthProviderProfileImgUrl\",\"authProviderUsername\":\"testAuthProviderUsername\",\"frameworkConfig\":{\"userId\":null,\"notifications\":{}}}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());
     }

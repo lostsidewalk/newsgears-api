@@ -38,9 +38,13 @@ public class MailService {
         String n = user.getUsername();
         String emailAddress = user.getEmailAddress();
         if (isBlank(emailAddress)) {
-            throw new MailException("User has no known email address");
+            throw new MailException("Unable to send password reset email because user has no known email address");
         }
-        generatePasswordResetEmail(n, emailAddress, passwordResetToken);
+        try {
+            generatePasswordResetEmail(n, emailAddress, passwordResetToken);
+        } catch (Exception e) {
+            throw new MailException("Unable to send password reset email due to: " + e.getMessage());
+        }
     }
 
     private void generatePasswordResetEmail(String username, String emailAddress, AppToken passwordResetToken) {
@@ -63,7 +67,7 @@ public class MailService {
         String n = user.getUsername();
         String emailAddress = user.getEmailAddress();
         if (isBlank(emailAddress)) {
-            throw new MailException("User has no known email address");
+            throw new MailException("Unable to send verification email because user has no known email address");
         }
         generateVerificationEmail(n, emailAddress, verificationToken);
     }

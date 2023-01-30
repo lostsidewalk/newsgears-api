@@ -2,17 +2,20 @@ package com.lostsidewalk.buffy.app.audit;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.app.auth.AuthService;
-import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryException;
+import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
+import com.lostsidewalk.buffy.app.auth.AuthService.AuthProviderException;
+import com.lostsidewalk.buffy.app.mail.MailService.MailException;
 import com.lostsidewalk.buffy.app.model.exception.StripeEventException;
 import com.lostsidewalk.buffy.app.opml.OpmlException;
 import com.lostsidewalk.buffy.app.order.StripeOrderService.StripeOrderException;
 import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import com.lostsidewalk.buffy.app.user.RegistrationException;
+import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -23,7 +26,7 @@ import java.util.Date;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
-@Slf4j(topic = "errorLog")
+@Slf4j(topic = "appErrorLog")
 @Service
 public class ErrorLogService {
 
@@ -36,7 +39,9 @@ public class ErrorLogService {
     }
 
     public void logFeedDiscoveryException(String username, Date timestamp, FeedDiscoveryException e) {
-        auditError("feed-discovery-exception", "message={}", username, timestamp, e.getMessage());
+        auditError("feed-discovery-exception",
+                "message={}, exceptionType={}, feedUrl={}, httpStatusCode={}, httpStatusMessage={}, redirectUrl={}, redirectHttpStatusCode={}, redirectHttpStatusMessage={}",
+                username, timestamp, e.getMessage(), e.exceptionType, e.feedUrl, e.httpStatusCode, e.httpStatusMessage, e.redirectUrl, e.redirectHttpStatusCode, e.redirectHttpStatusMessage);
     }
 
     public void logOpmlException(String username, Date timestamp, OpmlException e) {
@@ -88,11 +93,11 @@ public class ErrorLogService {
         auditError("signature-verification-exception", "header={}, message={}", username, timestamp, e.getSigHeader(), e.getMessage());
     }
 
-    public void logAuthClaimException(String username, Date timestamp, AuthService.AuthClaimException e) {
+    public void logAuthClaimException(String username, Date timestamp, AuthClaimException e) {
         auditError("auth-claim-exception", "message={}", username, timestamp, e.getMessage());
     }
 
-    public void logAuthProviderException(String username, Date timestamp, AuthService.AuthProviderException e) {
+    public void logAuthProviderException(String username, Date timestamp, AuthProviderException e) {
         auditError("auth-provider-exception", "message={}", username, timestamp, e.getMessage());
     }
 
@@ -100,8 +105,14 @@ public class ErrorLogService {
         auditError("registration-exception", "message={}", username, timestamp, e.getMessage());
     }
 
-    //
+    public void logMailException(String username, Date timestamp, MailException e) {
+        auditError("mail-exception", "message={}", username, timestamp, e.getMessage());
+    }
 
+    public void logClientAbortException(String username, Date timestamp, ClientAbortException e) {
+        auditError("client-abort-exception", "message={}", username, timestamp, e.getMessage());
+    }
+    //
     private static void auditError(String logTag, String formatStr, String username, Date timestamp, Object... args) {
         String fullFormatStr = "eventType={}, username={}, timestamp={}";
         if (isNotEmpty(formatStr)) {
@@ -112,6 +123,6 @@ public class ErrorLogService {
         allArgs[1] = username;
         allArgs[2] = timestamp;
         arraycopy(args, 0, allArgs, 3, args.length);
-        log.info(fullFormatStr, allArgs);
+        log.error(fullFormatStr, allArgs);
     }
 }

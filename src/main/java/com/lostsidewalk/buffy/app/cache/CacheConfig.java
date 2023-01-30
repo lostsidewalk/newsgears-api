@@ -9,9 +9,37 @@ import org.springframework.scheduling.annotation.Scheduled;
 @Configuration
 public class CacheConfig {
 
+    // short-lived caches
+
     @CacheEvict(allEntries = true, value = {"feedDiscoveryCache"})
-    @Scheduled(fixedDelay=10000, initialDelay=10000)
-    public void clearCache() {
-        log.trace("Caches cleared");
+    @Scheduled(fixedDelay=10_000, initialDelay=480_000)
+    public void clearFeedDiscoveryCache() {
+        log.trace("Feed discovery cache cleared");
+    }
+
+    @CacheEvict(allEntries = true, value = {"proxyCache"})
+    @Scheduled(fixedDelay=10_000, initialDelay=480_000)
+    public void clearProxyCache() {
+        log.trace("Proxy cache cleared");
+    }
+
+    // long-lived caches
+
+    @CacheEvict(allEntries = true, value = {"thumbnailCache"})
+    @Scheduled(fixedDelay=10_800_000, initialDelay=480_000)
+    public void clearThumbnailCache() {
+        log.trace("Thumbnail cache cleared");
+    }
+
+    @CacheEvict(allEntries = true, value = {"thumbnailedDiscoveryCache"})
+    @Scheduled(fixedDelay=10_800_000, initialDelay=480_000)
+    public void clearThumbnailedDiscoveryCache() {
+        log.trace("Thumbnailed discovery cache cleared");
+    }
+
+    @CacheEvict(allEntries = true, value = {"thumbnailedCatalogCache"})
+    @Scheduled(fixedDelay=10_800_000, initialDelay=480_000)
+    public void clearThumbnailedCatalogCache() {
+        log.trace("Thumbnailed catalog cache cleared");
     }
 }

@@ -1,6 +1,8 @@
 package com.lostsidewalk.buffy.app;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.query.QueryDefinition;
@@ -16,6 +18,7 @@ import java.util.List;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
 import static com.lostsidewalk.buffy.newsapi.NewsApiImporter.NEWSAPIV2_HEADLINES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -34,7 +37,6 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
             "Test Feed Generator",
             "Test Feed Transport Identifier",
             "me",
-            true,
             null,
             "Test Feed Copyright",
             "en-US",
@@ -44,7 +46,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
     }
 
     private static final List<QueryDefinition> TEST_QUERY_DEFINITIONS = List.of(
-            QueryDefinition.from("testFeed", "me", "test", NEWSAPIV2_HEADLINES, null)
+            QueryDefinition.from(1L, "me", "testQueryTitle", "testQueryText", NEWSAPIV2_HEADLINES, null)
     );
     static {
         TEST_QUERY_DEFINITIONS.get(0).setId(1L);
@@ -78,7 +80,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("[\"feed1\",\"feed2\"]", responseContent);
+                    assertEquals(GSON.fromJson("[\"feed1\",\"feed2\"]", JsonArray.class), GSON.fromJson(responseContent, JsonArray.class));
                 })
                 .andExpect(status().isOk());
     }
@@ -95,9 +97,9 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
 
     @Test
     void test_updateFeed() throws Exception {
-        when(feedDefinitionService.findByFeedIdent(matches("me"), matches("testIdent")))
+        when(feedDefinitionService.findByFeedId(matches("me"), eq(1L)))
                 .thenReturn(TEST_FEED_DEFINITION);
-        when(queryDefinitionService.findByFeedIdent(matches("me"), matches("testIdent")))
+        when(queryDefinitionService.findByFeedId(matches("me"), eq(1L)))
                 .thenReturn(TEST_QUERY_DEFINITIONS);
         mockMvc.perform(MockMvcRequestBuilders
                 .put("/feeds/1")
@@ -108,8 +110,8 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            "{\"feedImageSrc\":null,\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"exportConfig\":null,\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"feedImgSrc\":null,\"feedImgTransportIdent\":null,\"lastDeployed\":null,\"active\":true},\"queryDefinitions\":[{\"id\":1,\"feedIdent\":\"testFeed\",\"username\":\"me\",\"queryText\":\"test\",\"queryType\":\"NEWSAPIV2_HEADLINES\",\"queryConfig\":null}],\"feedImgSrc\":null}",
-                            responseContent);
+                            GSON.fromJson("{\"feedImageSrc\":null,\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"exportConfig\":null,\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"feedImgSrc\":null,\"feedImgTransportIdent\":null,\"lastDeployed\":null},\"queryDefinitions\":[{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"NEWSAPIV2_HEADLINES\",\"queryConfig\":null}],\"feedImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());
     }

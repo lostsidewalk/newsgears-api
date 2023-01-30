@@ -1,5 +1,7 @@
 package com.lostsidewalk.buffy.app;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,9 @@ public class OrderControllerTest extends BaseWebControllerTest {
     }
 
     private static final StripeResponse TEST_STRIPE_RESPONSE = StripeResponse.from("testSessionId", "testSessionUrl");
+
+    private static final Gson GSON = new Gson();
+
     @Test
     void test_initCheckout() throws Exception {
         when(this.stripeOrderService.createCheckoutSession("me")).thenReturn(TEST_STRIPE_RESPONSE);
@@ -35,7 +40,7 @@ public class OrderControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("{\"sessionId\":\"testSessionId\",\"sessionUrl\":\"testSessionUrl\"}", responseContent);
+                    assertEquals(GSON.fromJson("{\"sessionId\":\"testSessionId\",\"sessionUrl\":\"testSessionUrl\"}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());
     }

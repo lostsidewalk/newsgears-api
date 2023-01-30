@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_AUTHORITY;
+
 class UserPrincipal implements OAuth2User, UserDetails {
     private final Long id;
     private final String username;
@@ -31,7 +33,7 @@ class UserPrincipal implements OAuth2User, UserDetails {
                 user.getUsername(),
                 user.getEmailAddress(),
                 user.getPassword(),
-                Collections.singletonList(UserRoles.VERIFIED_AUTHORITY)
+                Collections.singletonList(VERIFIED_AUTHORITY)
         );
     }
 

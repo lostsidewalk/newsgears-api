@@ -92,7 +92,7 @@ public class AuthService {
                 .filter(a -> a == authProvider)
                 .stream()
                 .findAny()
-                .orElseThrow(() -> new AuthProviderException("User has incorrect auth provider"));
+                .orElseThrow(() -> new AuthProviderException(username, authProvider, user.getAuthProvider()));
     }
 
     public String requireAuthClaim(String username) throws AuthClaimException, DataAccessException {
@@ -250,8 +250,11 @@ public class AuthService {
 
     public static class AuthProviderException extends Exception {
 
-        public AuthProviderException(String msg) {
-            super(msg);
+        public final String username;
+
+        public AuthProviderException(String username, AuthProvider expected, AuthProvider actual) {
+            super("User has incorrect auth provider, username=" + username + ", expected=" + expected + ", actual=" + actual);
+            this.username = username;
         }
     }
 

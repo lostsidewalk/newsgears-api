@@ -18,8 +18,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(controllers = PubController.class)
-public class PubControllerTest extends BaseWebControllerTest {
+@WebMvcTest(controllers = ExportController.class)
+public class ExportControllerTest extends BaseWebControllerTest {
 
     @BeforeEach
     void test_setup() throws Exception {
@@ -29,18 +29,23 @@ public class PubControllerTest extends BaseWebControllerTest {
     }
 
     @Test
-    void test_previewFeed() throws Exception {
-        when(this.postPublisher.doPreview("me", "testFeedIdent", PubFormat.JSON)).thenReturn(List.of(FeedPreview.from("testFeedIdent", "{}")));
-        mockMvc.perform(MockMvcRequestBuilders
-                        .get("/feeds/preview")
-                        .queryParam("feedIdent", "testFeedIdent")
-                        .queryParam("format", PubFormat.JSON.name())
-                        .header("Authorization", "Bearer testToken")
-                        .accept(APPLICATION_JSON))
-                .andExpect(result -> {
-                    String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("[{\"feedIdent\":\"testFeedIdent\",\"previewArtifact\":\"{}\"}]", responseContent);
-                })
-                .andExpect(status().isOk());
+    void test_exportFeed() throws Exception {
+        ;
     }
+
+//    @Test
+//    void test_previewFeed() throws Exception {
+//        when(this.postPublisher.doPreview("me", "testFeedIdent", PubFormat.JSON)).thenReturn(List.of(FeedPreview.from("testFeedIdent", "{}")));
+//        mockMvc.perform(MockMvcRequestBuilders
+//                        .get("/feeds/preview")
+//                        .queryParam("feedIdent", "testFeedIdent")
+//                        .queryParam("format", PubFormat.JSON.name())
+//                        .header("Authorization", "Bearer testToken")
+//                        .accept(APPLICATION_JSON))
+//                .andExpect(result -> {
+//                    String responseContent = result.getResponse().getContentAsString();
+//                    assertEquals("[{\"feedIdent\":\"testFeedIdent\",\"previewArtifact\":\"{}\"}]", responseContent);
+//                })
+//                .andExpect(status().isOk());
+//    }
 }

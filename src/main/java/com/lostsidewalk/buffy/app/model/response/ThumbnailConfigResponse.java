@@ -17,9 +17,16 @@ public class ThumbnailConfigResponse {
         this.errors = errors;
     }
 
-    public static ThumbnailConfigResponse from(byte[] img, List<String> errors) {
+    public static ThumbnailConfigResponse from(String encoded, List<String> errors) {
         ThumbnailConfigResponse t = new ThumbnailConfigResponse(errors);
-        t.imgSrc = encodeBase64String(img);
+        t.imgSrc = encoded;
+
+        return t;
+    }
+
+    public static ThumbnailConfigResponse from(String encoded) {
+        ThumbnailConfigResponse t = new ThumbnailConfigResponse(null);
+        t.imgSrc = encoded;
 
         return t;
     }

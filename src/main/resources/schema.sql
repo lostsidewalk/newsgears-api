@@ -31,13 +31,13 @@ drop table if exists feed_definitions cascade;
 
 create table feed_definitions (
     id bigserial not null,
-    feed_ident varchar(256) not null unique,
+    feed_ident varchar(256) not null,
     feed_title varchar(512) not null,
     feed_desc varchar(1024),
     feed_generator varchar(512),
     transport_ident varchar(256) not null,
     username varchar(100) not null references users(name) on delete cascade,
-    is_active boolean not null default true,
+    feed_status varchar(64) not null,
     export_config json,
     copyright varchar(1024),
     language varchar(16) not null,
@@ -59,32 +59,35 @@ drop table if exists staging_posts cascade;
 
 create table staging_posts (
     id bigserial not null,
-    post_title varchar(1024) not null,
-    post_desc varchar(1024) not null,
+    post_title json not null,
+    post_desc json not null,
+    post_contents json,
+    post_media json,
+    post_itunes json,
     post_url varchar(1024) not null,
+    post_urls json,
     post_img_url varchar(1024),
     post_img_transport_ident varchar(256),
     importer_id varchar(256) not null,
-    feed_ident varchar(256) not null references feed_definitions(feed_ident) on delete cascade,
+    importer_desc varchar(512),
+    feed_id bigserial not null references feed_definitions(id) on delete cascade,
     object_source json not null,
     source_name varchar(256),
     source_url varchar(1024),
     import_timestamp timestamp with time zone,
-    post_status varchar(64),
     is_published boolean not null default false,
+    post_read_status varchar(64),
+    post_pub_status varchar(64),
     post_hash varchar(64) not null,
     username varchar(100) not null references users(name) on delete cascade,
     post_comment varchar(2048),
     post_rights varchar(1024),
-    xml_base varchar(1024),
-    contributor_name varchar(256),
-    contributor_email varchar(512),
-    author_name varchar(256),
-    author_email varchar(512),
-    post_category varchar(256),
+    contributors json,
+    authors json,
+    post_categories json,
     publish_timestamp timestamp with time zone,
     expiration_timestamp timestamp with time zone,
-    enclosure_url varchar(1024),
+    enclosures json,
     last_updated_timestamp timestamp with time zone,
 
     primary key(id)
@@ -96,11 +99,60 @@ drop table if exists query_definitions cascade;
 
 create table query_definitions (
     id bigserial not null,
-    feed_ident varchar(256) not null references feed_definitions(feed_ident) on delete cascade,
+    feed_id bigserial not null references feed_definitions(id) on delete cascade,
     username varchar(100) not null references users(name) on delete cascade,
-    query_text varchar(512),
-    query_type varchar(512),
+    query_title varchar(512),
+    query_text varchar(2048) not null,
+    query_type varchar(64) not null,
     query_config json,
+
+    primary key(id)
+);
+--
+-- feed_discovery_info table
+--
+drop table if exists feed_discovery_info cascade;
+
+create table feed_discovery_info (
+    id bigserial not null,
+    error varchar(64),
+    feed_url varchar(1024) not null,
+    http_status_code integer,
+    http_status_message varchar(512),
+    redirect_feed_url varchar(1024),
+    redirect_http_status_code integer,
+    redirect_http_status_message varchar(512),
+    title json,
+    description json,
+    feed_type varchar(64),
+    author varchar(256),
+    copyright varchar(1024),
+    docs varchar(1024),
+    encoding varchar(64),
+    generator varchar(512),
+    image json,
+    icon json,
+    language varchar(16),
+    link varchar(1024),
+    managing_editor varchar(256),
+    published_date timestamp with time zone,
+    supported_types json,
+    web_master varchar(256),
+    uri varchar(1024),
+    categories json,
+    sample_entries json,
+    is_url_upgradeable boolean not null default false,
+
+    primary key(id)
+);
+--
+--
+--
+drop table if exists thumbnails cascade;
+
+create table thumbnails (
+    id bigserial not null,
+    img_src varchar(10240),
 
     primary key(id)
 );

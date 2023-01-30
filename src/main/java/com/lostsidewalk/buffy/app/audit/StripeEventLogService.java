@@ -9,11 +9,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class StripeEventLogService {
 
-    public void debugUnhandledStripeEvent(Event event, StripeObject payload) {
+    public void debugUnhandledStripeEvent(Event event, @SuppressWarnings("unused") StripeObject payload) {
         log.debug("Received un-handled callback event from Stripe: live={}, eventType={}, eventId={}", event.getLivemode(), event.getType(), event.getId());
     }
 
-    public void logStripeEvent(Event event, StripeObject stripeObj) {
+    public void logStripeEvent(Event event, @SuppressWarnings("unused") StripeObject stripeObj) {
         String eventType = event.getType();
         log.debug("Received Stripe callback event, live={}, eventType={}, eventId={}", event.getLivemode(), eventType, event.getId());
     }

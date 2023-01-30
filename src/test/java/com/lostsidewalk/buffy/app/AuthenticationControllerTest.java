@@ -1,6 +1,7 @@
 package com.lostsidewalk.buffy.app;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.app.auth.CookieBuilder;
 import com.lostsidewalk.buffy.app.model.AppToken;
 import com.lostsidewalk.buffy.app.model.request.LoginRequest;
@@ -43,7 +44,7 @@ public class AuthenticationControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("{\"authToken\":\"testToken\",\"username\":\"me\",\"hasSubscription\":true}", responseContent);
+                    assertEquals(GSON.fromJson("{\"authToken\":\"testToken\",\"username\":\"me\",\"hasSubscription\":true}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());
         verify(mockJwtUtil).requireNonExpired();
@@ -65,7 +66,7 @@ public class AuthenticationControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("{\"authToken\":\"testToken\",\"username\":\"me\",\"hasSubscription\":true}", responseContent);
+                    assertEquals(GSON.fromJson("{\"authToken\":\"testToken\",\"username\":\"me\",\"hasSubscription\":true}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());
         verify(authService).requireAuthProvider("me", LOCAL);

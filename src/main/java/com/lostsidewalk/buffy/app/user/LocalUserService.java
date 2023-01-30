@@ -15,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.google.common.collect.Sets.union;
 import static com.lostsidewalk.buffy.app.user.UserRoles.*;
@@ -23,6 +22,7 @@ import static java.lang.String.join;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -87,7 +87,7 @@ public class LocalUserService implements UserDetailsService {
             }
         }
 
-        return grantedFeatures.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
+        return grantedFeatures.stream().map(SimpleGrantedAuthority::new).collect(toSet());
     }
 
     private Set<SimpleGrantedAuthority> gatherImplicitAuthorities(User user) {

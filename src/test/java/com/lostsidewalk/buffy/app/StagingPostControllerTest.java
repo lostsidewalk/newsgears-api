@@ -1,6 +1,12 @@
 package com.lostsidewalk.buffy.app;
 
-import com.lostsidewalk.buffy.post.StagingPost;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.lostsidewalk.buffy.post.*;
+import com.rometools.modules.itunes.EntryInformationImpl;
+import com.rometools.modules.itunes.ITunes;
+import com.rometools.modules.mediarss.MediaEntryModuleImpl;
+import com.rometools.modules.mediarss.types.Metadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,36 +33,88 @@ public class StagingPostControllerTest extends BaseWebControllerTest {
         when(this.userService.loadUserByUsername("me")).thenReturn(TEST_USER_DETAILS);
     }
 
+    protected static final ContentObject TEST_POST_TITLE = ContentObject.from("text", "testPostTitle");
+
+    protected static final ContentObject TEST_POST_DESCRIPTION = ContentObject.from("text", "testPostDescription");
+
+    protected static final ContentObject TEST_POST_CONTENT = ContentObject.from("text", "testPostContent");
+
+    protected static final PostMedia TEST_POST_MEDIA;
+    static {
+        MediaEntryModuleImpl testMediaEntryModule = new MediaEntryModuleImpl();
+        Metadata metadata = new Metadata();
+        testMediaEntryModule.setMetadata(metadata);
+        TEST_POST_MEDIA = PostMedia.from(testMediaEntryModule);
+    }
+
+    protected static final PostITunes TEST_POST_ITUNES;
+    static {
+        ITunes testITunes = new EntryInformationImpl();
+        TEST_POST_ITUNES = PostITunes.from(testITunes);
+    }
+
+    protected static final PostUrl TEST_POST_URL = new PostUrl();
+    static {
+        TEST_POST_URL.setTitle("testUrlTitle");
+        TEST_POST_URL.setRel("testUrlRel");
+        TEST_POST_URL.setHref("testUrlHref");
+        TEST_POST_URL.setHreflang("testUrlHreflang");
+        TEST_POST_URL.setType("testUrlType");
+    }
+
+    protected static final PostPerson TEST_POST_CONTRIBUTOR = new PostPerson();
+    static {
+        TEST_POST_CONTRIBUTOR.setName("testContributorName");
+        TEST_POST_CONTRIBUTOR.setUri("testContributorUri");
+        TEST_POST_CONTRIBUTOR.setEmail("testContributorEmail");
+    }
+
+    protected static final PostPerson TEST_POST_AUTHOR = new PostPerson();
+    static {
+        TEST_POST_AUTHOR.setName("testAuthorName");
+        TEST_POST_AUTHOR.setUri("testAuthorUri");
+        TEST_POST_AUTHOR.setEmail("testAuthorEmail");
+    }
+
+    protected static final PostEnclosure TEST_POST_ENCLOSURE = new PostEnclosure();
+    static {
+        TEST_POST_ENCLOSURE.setType("testEnclosureType");
+        TEST_POST_ENCLOSURE.setUrl("testEnclosureUrl");
+        TEST_POST_ENCLOSURE.setLength(4821L);
+    }
+
     private static final List<StagingPost> TEST_STAGING_POSTS = List.of(
             StagingPost.from(
                     "testImporterId",
-                    "testFeedIdent",
+                    1L,
                     "testImporterDesc",
-                    null, // source
+                    "{}", // source
                     "testSourceName",
                     "testSourceUrl",
-                    "testPostTitle",
-                    "testPostDesc",
+                    TEST_POST_TITLE,
+                    TEST_POST_DESCRIPTION,
+                    List.of(TEST_POST_CONTENT),
+                    TEST_POST_MEDIA,
+                    TEST_POST_ITUNES,
                     "testPostUrl",
+                    List.of(TEST_POST_URL),
                     "testPostImgUrl",
                     null, // import timestamp
                     "testPostHash",
                     "me",
                     "testPostComment",
-                    true, // is publsihed
                     "testPostRights",
-                    "testXmlBase",
-                    "testContributorName",
-                    "testContributorEmail",
-                    "testAuthorName",
-                    "testAuthorEmail",
-                    "testPostCategory",
+                    List.of(TEST_POST_CONTRIBUTOR),
+                    List.of(TEST_POST_AUTHOR),
+                    List.of("testPostCategory"),
                     null, // publish timestamp
                     null, // expiration timestamp
-                    "testEnclosureUrl",
+                    List.of(TEST_POST_ENCLOSURE),
                     null // last updated timestamp
             )
     );
+
+    private static final Gson GSON = new Gson();
 
     @Test
     void test_getStagingPosts() throws Exception {
@@ -68,7 +126,9 @@ public class StagingPostControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("{\"stagingPosts\":[{\"post\":{\"id\":null,\"importerId\":\"testImporterId\",\"feedIdent\":\"testFeedIdent\",\"importerDesc\":\"testImporterDesc\",\"sourceObj\":null,\"sourceName\":\"testSourceName\",\"sourceUrl\":\"testSourceUrl\",\"postTitle\":\"testPostTitle\",\"postDesc\":\"testPostDesc\",\"postUrl\":\"testPostUrl\",\"postImgUrl\":\"testPostImgUrl\",\"postImgTransportIdent\":\"1AA5D827D4FFA9BD7DB928C0AE3DBF84\",\"postHash\":\"testPostHash\",\"username\":\"me\",\"postComment\":\"testPostComment\",\"postStatus\":null,\"postRights\":\"testPostRights\",\"xmlBase\":\"testXmlBase\",\"contributorName\":\"testContributorName\",\"contributorEmail\":\"testContributorEmail\",\"authorName\":\"testAuthorName\",\"authorEmail\":\"testAuthorEmail\",\"postCategory\":\"testPostCategory\",\"enclosureUrl\":\"testEnclosureUrl\",\"importTimestamp\":null,\"publishTimestamp\":null,\"expirationTimestamp\":null,\"lastUpdatedTimestamp\":null,\"published\":true},\"postImgSrc\":null}]}", responseContent);
+                    assertEquals(GSON.fromJson("{\"stagingPosts\":[{\"post\":{\"id\":null,\"importerId\":\"testImporterId\",\"feedId\":1,\"importerDesc\":\"testImporterDesc\",\"sourceObj\":\"{}\",\"sourceName\":\"testSourceName\",\"sourceUrl\":\"testSourceUrl\",\"postTitle\":{\"type\":\"text\",\"value\":\"testPostTitle\"},\"postDesc\":{\"type\":\"text\",\"value\":\"testPostDescription\"},\"postContents\":[{\"type\":\"text\",\"value\":\"testPostContent\"}],\"postMedia\":{\"postMediaMetadata\":{\"thumbnails\":[],\"community\":null,\"categories\":[],\"copyright\":null,\"copyrightUrl\":null,\"desc\":null,\"descType\":null,\"backLinks\":[],\"comments\":[],\"credits\":[],\"hash\":null,\"keywords\":[],\"licenses\":[],\"locations\":[],\"peerLinks\":[],\"prices\":[],\"ratings\":[],\"responses\":[],\"restrictions\":[],\"rights\":null,\"scenes\":[],\"status\":null,\"subTitles\":[],\"text\":[],\"title\":null,\"titleType\":null},\"postMediaGroups\":[],\"postMediaContents\":[]},\"postITunes\":{\"author\":null,\"isExplicitNullable\":null,\"image\":null,\"imageUri\":null,\"keywords\":[],\"subTitle\":null,\"summary\":null,\"explicit\":false,\"block\":false},\"postUrl\":\"testPostUrl\",\"postUrls\":[{\"title\":\"testUrlTitle\",\"type\":\"testUrlType\",\"href\":\"testUrlHref\",\"hreflang\":\"testUrlHreflang\",\"rel\":\"testUrlRel\"}],\"postImgUrl\":\"testPostImgUrl\",\"postImgTransportIdent\":\"1AA5D827D4FFA9BD7DB928C0AE3DBF84\",\"importTimestamp\":null,\"postHash\":\"testPostHash\",\"username\":\"me\",\"postComment\":\"testPostComment\",\"postRights\":\"testPostRights\",\"contributors\":[{\"name\":\"testContributorName\",\"email\":\"testContributorEmail\",\"uri\":\"testContributorUri\"}],\"authors\":[{\"name\":\"testAuthorName\",\"email\":\"testAuthorEmail\",\"uri\":\"testAuthorUri\"}],\"postCategories\":[\"testPostCategory\"],\"publishTimestamp\":null,\"expirationTimestamp\":null,\"enclosures\":[{\"url\":\"testEnclosureUrl\",\"type\":\"testEnclosureType\",\"length\":4821}],\"lastUpdatedTimestamp\":null,\"postPubStatus\":null,\"postReadStatus\":null,\"published\":false},\"postImgSrc\":null}]}",
+                            JsonObject.class), GSON.fromJson(responseContent, JsonObject.class)
+                    );
                 })
                 .andExpect(status().isOk());
     }

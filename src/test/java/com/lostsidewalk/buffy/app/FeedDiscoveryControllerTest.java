@@ -1,6 +1,9 @@
 package com.lostsidewalk.buffy.app;
 
-import com.lostsidewalk.buffy.app.model.response.FeedDiscoveryInfo;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
+import com.lostsidewalk.buffy.post.ContentObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,7 +12,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,12 +30,22 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
         when(this.userService.loadUserByUsername("me")).thenReturn(TEST_USER_DETAILS);
     }
 
+    protected static final ContentObject TEST_POST_TITLE = ContentObject.from("text", "testPostTitle");
+
+    protected static final ContentObject TEST_POST_DESCRIPTION = ContentObject.from("text", "testPostDescription");
+
     private static final FeedDiscoveryInfo TEST_FEED_DISCOVERY_INFO = FeedDiscoveryInfo.from(
-            "testTitle",
-            "testDescription",
+            "testUrl",
+            200,
+            "OK",
+            null,
+            null,
+            null,
+            TEST_POST_TITLE,
+            TEST_POST_DESCRIPTION,
             "testFeedType",
             "testAuthor",
-            "testCcopyright",
+            "testCopyright",
             "testDocs",
             "testEncoding",
             "testGenerator",
@@ -41,22 +56,32 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
             "testManagingEditor",
             null,
             "testStyleSheet",
-            null,
+            singletonList("testSupportedType"),
             "testWebMaster",
             "testUri",
-            null
+            singletonList("testCategory"),
+            null,
+            false
     );
+    static {
+        TEST_FEED_DISCOVERY_INFO.setId(1L);
+    }
+
+    private static final Gson GSON = new Gson();
 
     @Test
     void test_getFeedDiscovery() throws Exception {
         when(this.feedDiscoveryService.performDiscovery("http://test.com/rss")).thenReturn(TEST_FEED_DISCOVERY_INFO);
+        when(this.thumbnailService.addThumbnailToResponse(any(FeedDiscoveryInfo.class))).thenCallRealMethod();
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/discovery/").queryParam("url", "http://test.com/rss")
                         .header("Authorization", "Bearer testToken")
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals("{\"title\":\"testTitle\",\"description\":\"testDescription\",\"feedType\":\"testFeedType\",\"author\":\"testAuthor\",\"copyright\":\"testCcopyright\",\"docs\":\"testDocs\",\"encoding\":\"testEncoding\",\"generator\":\"testGenerator\",\"image\":null,\"icon\":null,\"language\":\"en-US\",\"link\":\"testLink\",\"managingEditor\":\"testManagingEditor\",\"publishedDate\":null,\"styleSheet\":\"testStyleSheet\",\"supportedTypes\":null,\"webMaster\":\"testWebMaster\",\"uri\":\"testUri\",\"sampleEntries\":null}", responseContent);
+                    assertEquals(GSON.fromJson("{\"id\":1,\"feedUrl\":\"testUrl\",\"title\":{\"type\":\"text\",\"value\":\"testPostTitle\"},\"description\":{\"type\":\"text\",\"value\":\"testPostDescription\"},\"feedType\":\"testFeedType\",\"author\":\"testAuthor\",\"copyright\":\"testCopyright\",\"docs\":\"testDocs\",\"encoding\":\"testEncoding\",\"generator\":\"testGenerator\",\"image\":null,\"icon\":null,\"language\":\"en-US\",\"link\":\"testLink\",\"managingEditor\":\"testManagingEditor\",\"publishedDate\":null,\"styleSheet\":\"testStyleSheet\",\"supportedTypes\":[\"testSupportedType\"],\"webMaster\":\"testWebMaster\",\"uri\":\"testUri\",\"categories\":[\"testCategory\"],\"sampleEntries\":null}", JsonObject.class),
+                            GSON.fromJson(responseContent, JsonObject.class)
+                    );
                 })
                 .andExpect(status().isOk());
     }

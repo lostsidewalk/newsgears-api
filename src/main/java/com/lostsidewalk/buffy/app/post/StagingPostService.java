@@ -1,12 +1,16 @@
 package com.lostsidewalk.buffy.app.post;
 
+import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
+import com.lostsidewalk.buffy.PostPublisher;
+import com.lostsidewalk.buffy.Publisher.PubResult;
 import com.lostsidewalk.buffy.app.model.request.PostCreateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostUpdateRequest;
 import com.lostsidewalk.buffy.post.StagingPost;
-import com.lostsidewalk.buffy.post.StagingPost.PostStatus;
+import com.lostsidewalk.buffy.post.StagingPost.PostPubStatus;
+import com.lostsidewalk.buffy.post.StagingPost.PostReadStatus;
 import com.lostsidewalk.buffy.post.StagingPostDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +29,9 @@ public class StagingPostService {
 
     @Autowired
     StagingPostDao stagingPostDao;
+
+    @Autowired
+    PostPublisher postPublisher;
 
     public List<StagingPost> getStagingPosts(String username, List<Long> feedIds) throws DataAccessException {
         List<StagingPost> list;
@@ -45,46 +52,46 @@ public class StagingPostService {
                 postUpdateRequest.getSourceUrl(),
                 postUpdateRequest.getPostTitle(),
                 postUpdateRequest.getPostDesc(),
+                postUpdateRequest.getPostContents(),
+                postUpdateRequest.getPostMedia(),
+                postUpdateRequest.getPostITunes(),
                 postUpdateRequest.getPostUrl(),
+                postUpdateRequest.getPostUrls(),
                 postUpdateRequest.getPostImgUrl(),
                 postUpdateRequest.getPostComment(),
                 postUpdateRequest.getPostRights(),
-                postUpdateRequest.getXmlBase(),
-                postUpdateRequest.getContributorName(),
-                postUpdateRequest.getContributorEmail(),
-                postUpdateRequest.getAuthorName(),
-                postUpdateRequest.getAuthorEmail(),
-                postUpdateRequest.getPostCategory(),
+                postUpdateRequest.getContributors(),
+                postUpdateRequest.getAuthors(),
+                postUpdateRequest.getPostCategories(),
                 postUpdateRequest.getExpirationTimestamp(),
-                postUpdateRequest.getEnclosureUrl()
-        );
+                postUpdateRequest.getEnclosures());
     }
 
-    public void updatePost(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
-        PostStatus newStatus = null;
+    public void updatePostReadStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+        PostReadStatus newStatus = null;
         if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
-            newStatus = StagingPost.PostStatus.valueOf(postStatusUpdateRequest.getNewStatus());
-        }
-        if (newStatus == PostStatus.PUB_PENDING) {
-            // (don't update post status if already published)
-            if (stagingPostDao.checkPublished(username, id)) {
-                return; // return ResponseEntity.badRequest().body(buildResponseMessage("Staging post Id " + id + " is already published."));
-            }
-        } else if (newStatus == PostStatus.DEPUB_PENDING) {
-            // (don't update post status if already published)
-            if (!stagingPostDao.checkPublished(username, id)) {
-                return; // return ResponseEntity.badRequest().body(buildResponseMessage("Staging post Id " + id + " is not published."));
-            }
-        } else if (newStatus == PostStatus.IGNORED) {
-            // (don't update post status if already published)
-            if (stagingPostDao.checkPublished(username, id)) {
-                return; // return ResponseEntity.badRequest().body(buildResponseMessage("Staging post Id " + id + " is already published."));
-            }
+            newStatus = PostReadStatus.valueOf(postStatusUpdateRequest.getNewStatus());
         }
         //
         // perform the update
         //
-        stagingPostDao.updatePostStatus(username, id, newStatus);
+        stagingPostDao.updatePostReadStatus(username, id, newStatus);
+    }
+
+    public List<PubResult> updatePostPubStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+        PostPubStatus newStatus = null;
+        if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
+            newStatus = PostPubStatus.valueOf(postStatusUpdateRequest.getNewStatus());
+        }
+        //
+        // perform the update
+        //
+        stagingPostDao.updatePostPubStatus(username, id, newStatus);
+        //
+        // deploy the feed
+        //
+        Long feedId = stagingPostDao.findFeedIdByStagingPostId(username, id);
+        return postPublisher.publishFeed(username, feedId);
     }
 
     public void deleteById(String username, Long id) throws DataAccessException, DataUpdateException {
@@ -102,31 +109,31 @@ public class StagingPostService {
     public Long createPost(String username, PostCreateRequest postCreateRequest) throws DataAccessException {
         Date importTimestamp = new Date();
         StagingPost stagingPost = StagingPost.from(
-                username, // importer Id (username in this case)
-                postCreateRequest.getFeedIdent(),
-                buildImporterDesc(username), // importer desc
+                "FeedGears", // importer Id ("FeedGears") // TODO: make this a property
+                postCreateRequest.getFeedId(),
+                buildImporterDesc(username), // importer desc (username)
                 buildSourceObject(), // source obj
                 postCreateRequest.getSourceName(),
                 postCreateRequest.getSourceUrl(),
-                postCreateRequest.getTitle(),
-                postCreateRequest.getDescription(),
-                postCreateRequest.getUrl(),
-                postCreateRequest.getImgUrl(),
+                postCreateRequest.getPostTitle(),
+                postCreateRequest.getPostDesc(),
+                postCreateRequest.getPostContents(),
+                postCreateRequest.getPostMedia(),
+                postCreateRequest.getPostITunes(),
+                postCreateRequest.getPostUrl(),
+                postCreateRequest.getPostUrls(),
+                postCreateRequest.getPostImgUrl(),
                 importTimestamp,
                 EMPTY, // post hash
                 username,
                 postCreateRequest.getPostComment(),
-                false, // is published
                 postCreateRequest.getPostRights(),
-                postCreateRequest.getXmlBase(),
-                postCreateRequest.getContributorName(),
-                postCreateRequest.getContributorEmail(),
-                postCreateRequest.getAuthorName(),
-                postCreateRequest.getAuthorEmail(),
-                postCreateRequest.getPostCategory(),
+                postCreateRequest.getContributors(),
+                postCreateRequest.getAuthors(),
+                postCreateRequest.getPostCategories(),
                 null, // publish timestamp
                 postCreateRequest.getExpirationTimestamp(),
-                postCreateRequest.getEnclosureUrl(),
+                postCreateRequest.getEnclosures(),
                 null
             );
 
@@ -134,10 +141,12 @@ public class StagingPostService {
     }
 
     private String buildImporterDesc(String username) {
-        return "Created by username=" + username;
+        return username;
     }
 
     private static Serializable buildSourceObject() {
-        return "{ \"desc\":\"Manual user submission\" }";
+        JsonObject sourceObject = new JsonObject();
+        sourceObject.addProperty("desc", "Manual user submission");
+        return sourceObject.toString();
     }
 }

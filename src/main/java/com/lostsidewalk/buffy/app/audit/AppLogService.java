@@ -1,10 +1,10 @@
 package com.lostsidewalk.buffy.app.audit;
 
-import com.lostsidewalk.buffy.Publisher;
+import com.lostsidewalk.buffy.Publisher.PubResult;
 import com.lostsidewalk.buffy.User;
+import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;
-import com.lostsidewalk.buffy.app.model.response.FeedToggleResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
@@ -26,8 +26,8 @@ public class AppLogService {
         auditLog("feed-fetch", "feedCt={}, queryCt={}", username, stopWatch, feedCt, queryCt);
     }
 
-    public void logFeedToggle(String username, StopWatch stopWatch, FeedToggleResponse feedToggleResponse) {
-        auditLog("feed-toggle-response", "feedToggleResponse={}", username, stopWatch, feedToggleResponse);
+    public void logFeedStatusUpdate(String username, StopWatch stopWatch, Long id, FeedStatusUpdateRequest feedStatusUpdateRequest, int rowsUpdated) {
+        auditLog("feed-status-update", "id={}, feedStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, feedStatusUpdateRequest, rowsUpdated);
     }
 
     public void logFeedUpdate(String username, StopWatch stopWatch, Long id) {
@@ -47,12 +47,20 @@ public class AppLogService {
         auditLog("thumbnail-preview", "errorCt={}", username, stopWatch, errorCt);
     }
 
+    public void logRandomThumbnailPreview(String username, StopWatch stopWatch) {
+        auditLog("random-thumbnail-preview", null, username, stopWatch);
+    }
+
     public void logFeedDelete(String username, StopWatch stopWatch, int deleteCt) {
         auditLog("feed-delete", "deleteCt={}", username, stopWatch, deleteCt);
     }
 
     public void logFeedDiscovery(String username, StopWatch stopWatch, String url) {
         auditLog("feed-discovery", "url={}", username, stopWatch, url);
+    }
+
+    public void logCatalogFetch(String username, StopWatch stopWatch) {
+        auditLog("catalog-fetch", null, username, stopWatch);
     }
 
     public void logCheckoutSessionCreate(String username, StopWatch stopWatch) {
@@ -69,15 +77,6 @@ public class AppLogService {
 
     public void logSubscriptionResume(String username, StopWatch stopWatch) {
         auditLog("subscription-resume", null, username, stopWatch);
-    }
-
-    public void logFeedPreview(String username, StopWatch stopWatch, String feedIdent, Publisher.PubFormat pubFormat, int previewPostCt) {
-        auditLog("feed-preview", "feedIdent={}, pubFormat={}, previewPostCt={}", username, stopWatch,
-                feedIdent, pubFormat, previewPostCt);
-    }
-
-    public void logFeedDeploy(String username, StopWatch stopWatch, List<Publisher.PubResult> publicationResults) {
-        auditLog("feed-deploy", "publicationResults={}", username, stopWatch, publicationResults);
     }
 
     public void logOpmlExport(String username, StopWatch stopWatch) {
@@ -104,8 +103,12 @@ public class AppLogService {
         auditLog("staging-post-update", null, username, stopWatch);
     }
 
-    public void logStagingPostStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated) {
-        auditLog("staging-post-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated);
+    public void logStagingPostReadStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated) {
+        auditLog("staging-post-read-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated);
+    }
+
+    public void logStagingPostPubStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated, List<PubResult> publicationResults) {
+        auditLog("staging-post-pub-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}, publicationResults={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated, publicationResults);
     }
 
     public void logStagingPostDelete(String username, StopWatch stopWatch, Long id, int rowsDeleted) {
@@ -140,6 +143,10 @@ public class AppLogService {
         auditLog("user-update", null, user.getUsername(), stopWatch);
     }
 
+    public void logProxyFetch(String hash, StopWatch stopWatch, String url) {
+        auditLog("proxy-fetch", "hash={}, url={}", null, stopWatch, hash, url);
+    }
+
     //
 
     private static void auditLog(String logTag, String formatStr, String username, StopWatch stopWatch, Object... args) {
@@ -158,14 +165,18 @@ public class AppLogService {
     }
 
     public void logCustomerCreated(User user) {
+        // TODO: fix this
     }
 
     public void logCustomerSubscriptionDeleted(User user) {
+        // TODO: fix this
     }
 
     public void logCustomerSubscriptionUpdated(User user) {
+        // TODO: fix this
     }
 
     public void logInvoicePaid(User user) {
+        // TODO: fix this
     }
 }

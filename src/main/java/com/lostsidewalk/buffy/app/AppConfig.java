@@ -4,15 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Configuration
 public class AppConfig {
 
     @Bean
-    Map<String, Integer> errorStatusMap() {
-        return new HashMap<>();
+    ConcurrentHashMap<String, Integer> errorStatusMap() {
+        return new ConcurrentHashMap<>();
     }
 }

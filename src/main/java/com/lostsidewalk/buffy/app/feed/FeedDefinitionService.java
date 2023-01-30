@@ -5,8 +5,9 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.model.request.ExportConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
-import com.lostsidewalk.buffy.app.model.response.FeedToggleResponse;
+import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
+import com.lostsidewalk.buffy.feed.FeedDefinition.FeedStatus;
 import com.lostsidewalk.buffy.feed.FeedDefinitionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Service
 public class FeedDefinitionService {
@@ -23,8 +25,8 @@ public class FeedDefinitionService {
     @Autowired
     FeedDefinitionDao feedDefinitionDao;
 
-    public FeedDefinition findByFeedIdent(String username, String feedIdent) throws DataAccessException {
-        return feedDefinitionDao.findByFeedIdent(username, feedIdent);
+    public FeedDefinition findByFeedId(String username, Long id) throws DataAccessException {
+        return feedDefinitionDao.findByFeedId(username, id);
     }
 
     public List<String> findIdentsByUser(String username) throws DataAccessException {
@@ -43,7 +45,7 @@ public class FeedDefinitionService {
         return emptyList();
     }
 
-    public void create(String username, FeedConfigRequest feedConfigRequest) throws DataAccessException {
+    public Long createFeed(String username, FeedConfigRequest feedConfigRequest) throws DataAccessException {
         FeedDefinition newFeedDefinition = FeedDefinition.from(
                 feedConfigRequest.getIdent(),
                 feedConfigRequest.getTitle(),
@@ -51,21 +53,20 @@ public class FeedDefinitionService {
                 feedConfigRequest.getGenerator(),
                 getNewTransportIdent().toString(),
                 username,
-                false,
                 serializeExportConfig(feedConfigRequest),
                 feedConfigRequest.getCopyright(),
                 getLanguage(feedConfigRequest.getLanguage()),
                 feedConfigRequest.getImgSrc()
             );
-        feedDefinitionDao.add(newFeedDefinition);
+        return feedDefinitionDao.add(newFeedDefinition);
     }
 
     private Serializable getNewTransportIdent() {
         return UUID.randomUUID().toString();
     }
 
-    public void update(String username, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
-        feedDefinitionDao.updateFeed(username,
+    public void update(String username, Long id, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
+        feedDefinitionDao.updateFeed(username, id,
                 feedConfigRequest.getIdent(),
                 feedConfigRequest.getDescription(),
                 feedConfigRequest.getTitle(),
@@ -75,6 +76,17 @@ public class FeedDefinitionService {
                 getLanguage(feedConfigRequest.getLanguage()),
                 feedConfigRequest.getImgSrc()
             );
+    }
+
+    public void update(String username, Long id, FeedStatusUpdateRequest feedStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+        FeedStatus newStatus = null;
+        if (isNotBlank(feedStatusUpdateRequest.getNewStatus())) {
+            newStatus = FeedStatus.valueOf(feedStatusUpdateRequest.getNewStatus());
+        }
+        //
+        // perform the update
+        //
+        feedDefinitionDao.updateFeedStatus(username, id, newStatus);
     }
 
     private String getLanguage(String lang) {
@@ -88,25 +100,8 @@ public class FeedDefinitionService {
         return e == null ? null : GSON.toJson(e);
     }
 
-    public FeedToggleResponse toggleActiveById(String username, Long id) throws DataAccessException, DataUpdateException {
-        //
-        // toggle active
-        //
-        boolean currentState = feedDefinitionDao.toggleActiveById(username, id);
-
-        FeedToggleResponse feedToggleResponse = new FeedToggleResponse();
-        feedToggleResponse.setId(id);
-        feedToggleResponse.setActive(currentState);
-        feedToggleResponse.setMessage("Feed Id " + id + " is now " + (currentState ? "active" : "inactive"));
-
-        return feedToggleResponse;
-    }
-
     public void deleteById(String username, Long id) throws DataAccessException, DataUpdateException {
+        // delete this feed
         feedDefinitionDao.deleteById(username, id);
-    }
-
-    public void markActive(String username, FeedDefinition feedDefinition) throws DataAccessException, DataUpdateException {
-        feedDefinitionDao.markActiveById(username, feedDefinition.getId());
     }
 }

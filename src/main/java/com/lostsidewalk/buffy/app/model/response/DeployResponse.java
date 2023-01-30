@@ -1,25 +1,27 @@
 package com.lostsidewalk.buffy.app.model.response;
 
-import com.lostsidewalk.buffy.Publisher;
+import com.lostsidewalk.buffy.Publisher.PubResult;
 import lombok.Data;
 
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class DeployResponse {
-    String publisherIdent;
     String feedIdent;
     Date timestamp;
 
-    private DeployResponse(String publisherIdent, String feedIdent, Date timestamp) {
-        this.publisherIdent = publisherIdent;
-        this.feedIdent = feedIdent;
+    private DeployResponse(Date timestamp) {
         this.timestamp = timestamp;
     }
 
-    public static DeployResponse from(Publisher.PubResult pubResult) {
-        String publisherIdent = pubResult.getPublisherIdent();
-        String feedIdent = pubResult.getFeedIdent();
-        return new DeployResponse(publisherIdent, feedIdent, pubResult.getPubDate());
+    public static DeployResponse from(List<PubResult> publicationResults) {
+        return new DeployResponse(
+                publicationResults.stream()
+                        .map(PubResult::getPubDate)
+                        .max(Comparator.comparing(Date::getTime))
+                        .orElse(null)
+        );
     }
 }

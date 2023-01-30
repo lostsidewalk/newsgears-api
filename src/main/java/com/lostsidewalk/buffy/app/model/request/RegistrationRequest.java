@@ -16,6 +16,6 @@ public class RegistrationRequest {
     @Size(max=512)
     String email;
     @NotBlank
-    @Size(min=6, max=512)
+    @Size(min=6, max=256)
     String password;
 }
