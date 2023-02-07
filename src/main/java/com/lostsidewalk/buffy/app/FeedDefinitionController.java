@@ -4,6 +4,7 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
+import com.lostsidewalk.buffy.app.model.QueryMetricsWithErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
@@ -13,8 +14,8 @@ import com.lostsidewalk.buffy.app.model.response.OpmlConfigResponse;
 import com.lostsidewalk.buffy.app.model.response.ThumbnailConfigResponse;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
 import com.lostsidewalk.buffy.app.query.QueryDefinitionService;
+import com.lostsidewalk.buffy.app.querymetrics.QueryMetricsService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
-import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
 import com.lostsidewalk.buffy.newsapi.NewsApiCategories;
@@ -23,6 +24,7 @@ import com.lostsidewalk.buffy.newsapi.NewsApiLanguages;
 import com.lostsidewalk.buffy.newsapi.NewsApiSources;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.query.QueryDefinition;
+import com.lostsidewalk.buffy.query.QueryMetrics;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
@@ -39,6 +41,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -47,12 +50,12 @@ import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -68,6 +71,9 @@ public class FeedDefinitionController {
 
     @Autowired
     QueryDefinitionService queryDefinitionService;
+
+    @Autowired
+    QueryMetricsService queryMetricsService;
 
     @Autowired
     ThumbnailService thumbnailService;
@@ -105,12 +111,23 @@ public class FeedDefinitionController {
         String username = userDetails.getUsername();
         log.debug("getFeeds for user={}", username);
         StopWatch stopWatch = StopWatch.createStarted();
-        List<FeedDefinition> feedDefinitions = feedDefinitionService.findByUser(username);
-        Map<String, List<QueryDefinition>> queryDefinitionsByFeed = new HashMap<>();
-        for (FeedDefinition f : feedDefinitions) {
-            List<QueryDefinition> queryDefinitions = queryDefinitionService.findByFeedId(username, f.getId());
-            queryDefinitionsByFeed.put(f.getIdent(), queryDefinitions);
+        // query definitions
+        List<QueryDefinition> allQueryDefinitions = queryDefinitionService.findByUsername(username);
+        Map<Long, List<QueryDefinition>> queryDefinitionsByFeedId = new HashMap<>();
+        for (QueryDefinition qd : allQueryDefinitions) {
+            queryDefinitionsByFeedId.computeIfAbsent(qd.getFeedId(), l -> new ArrayList<>()).add(qd);
         }
+        // query metrics
+        List<QueryMetricsWithErrorDetails> allQueryMetrics = queryMetricsService.findByUsername(username).stream()
+                .map(q -> QueryMetricsWithErrorDetails.from(q, getQueryExceptionTypeMessage(q.getErrorType())))
+                .toList();
+        Map<Long, List<QueryMetricsWithErrorDetails>> queryMetricsByQueryId = new HashMap<>();
+        for (QueryMetricsWithErrorDetails qmEd : allQueryMetrics) {
+            queryMetricsByQueryId.computeIfAbsent(qmEd.getQueryId(), l -> new ArrayList<>()).add(qmEd);
+        }
+        // feed definitions
+        List<FeedDefinition> feedDefinitions = feedDefinitionService.findByUser(username);
+        // NewsApi sources
         Map<NewsApiSources, Map<String, String>> newsApiSourcesMap = Stream.of(NewsApiSources.values())
                 .collect(toMap(s -> s, s -> Map.of(
                         "name", s.name,
@@ -121,9 +138,9 @@ public class FeedDefinitionController {
                         "language", s.language
                 )));
         stopWatch.stop();
-        appLogService.logFeedFetch(username, stopWatch, size(feedDefinitions), MapUtils.size(queryDefinitionsByFeed));
+        appLogService.logFeedFetch(username, stopWatch, size(feedDefinitions), MapUtils.size(queryDefinitionsByFeedId));
         return ok(
-                FeedFetchResponse.from(feedDefinitions, queryDefinitionsByFeed, newsApiSourcesMap,
+                FeedFetchResponse.from(feedDefinitions, queryDefinitionsByFeedId, queryMetricsByQueryId, newsApiSourcesMap,
                     List.of(NewsApiCountries.values()),
                     List.of(NewsApiCategories.values()),
                     List.of(NewsApiLanguages.values())));
@@ -132,7 +149,7 @@ public class FeedDefinitionController {
     @PostMapping("/feeds/")
     @Secured({VERIFIED_ROLE})
 //    @Transactional
-    public ResponseEntity<List<FeedConfigResponse>> createFeed(@Valid @RequestBody FeedConfigRequest[] feedConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException, FeedDiscoveryException {
+    public ResponseEntity<List<FeedConfigResponse>> createFeed(@Valid @RequestBody FeedConfigRequest[] feedConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("createFeed adding {} feeds for user={}", size(feedConfigRequests), username);
@@ -140,7 +157,6 @@ public class FeedDefinitionController {
         //
         validateFeedConfigRequests(username, List.of(feedConfigRequests));
         //
-        List<QueryDefinition> createdQueries = new ArrayList<>();
         List<FeedDefinition> createdFeeds = new ArrayList<>();
         List<FeedConfigResponse> feedConfigResponses = new ArrayList<>();
         // for ea. feed config request
@@ -148,21 +164,31 @@ public class FeedDefinitionController {
             // create the feed
             Long feedId = feedDefinitionService.createFeed(username, feedConfigRequest);
             // create the queries
-            createdQueries.addAll(queryDefinitionService.createQueries(username, feedId, feedConfigRequest));
-            // re-fetch this feed definition and query definitions
+            List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, feedConfigRequest);
+            Map<Long, List<QueryMetricsWithErrorDetails>> queryMetricsByQueryId = new HashMap<>();
+            if (isNotEmpty(createdQueries)) {
+                // perform the initial import of any newly-created queries
+                postImporter.doImport(createdQueries);
+                // gather query metrics for this feed
+                List<QueryMetricsWithErrorDetails> allQueryMetrics = queryMetricsService.findByFeedId(username, feedId).stream()
+                        .map(q -> QueryMetricsWithErrorDetails.from(q, getQueryExceptionTypeMessage(q.getErrorType())))
+                        .toList();
+                for (QueryMetricsWithErrorDetails qmEd : allQueryMetrics) {
+                    queryMetricsByQueryId.computeIfAbsent(qmEd.getQueryId(), l -> new ArrayList<>()).add(qmEd);
+                }
+            }
+            // re-fetch this feed definition
             FeedDefinition feedDefinition = feedDefinitionService.findByFeedId(username, feedId);
             createdFeeds.add(feedDefinition);
-            // (not sure if the query re-fetch is absolutely necessary)
+            // re-fetch query definitions for this feed
             List<QueryDefinition> queryDefinitions = queryDefinitionService.findByFeedId(username, feedId);
             // build feed config responses to return the front-end
-            feedConfigResponses.add(FeedConfigResponse.from(feedDefinition, queryDefinitions, buildThumbnail(feedDefinition)));
-        }
-        // perform the initial import of any newly-created queries
-        if (isNotEmpty(createdQueries)) {
-            postImporter.doImport(createdQueries);
-            try {
-                Thread.sleep(5 * 1000); // 5 second pause for the importer to complete
-            } catch (InterruptedException ignored) {}
+            feedConfigResponses.add(FeedConfigResponse.from(
+                    feedDefinition,
+                    queryDefinitions,
+                    queryMetricsByQueryId,
+                    buildThumbnail(feedDefinition))
+            );
         }
         stopWatch.stop();
         appLogService.logFeedCreate(username, stopWatch, getLength(feedConfigRequests), size(createdFeeds));
@@ -170,29 +196,61 @@ public class FeedDefinitionController {
         return ok(feedConfigResponses);
     }
 
+    private static String getQueryExceptionTypeMessage(QueryMetrics.QueryExceptionType exceptionType) {
+        return exceptionType == null ? EMPTY : switch (exceptionType) {
+            case FILE_NOT_FOUND_EXCEPTION -> "We weren't able to locate a feed at the URL you provided.";
+            case SSL_HANDSHAKE_EXCEPTION -> "We're unable to reach this URL due to a problem with the remote SSL.  Try another protocol, or resolve the issue on the remote system.";
+            case UNKNOWN_HOST_EXCEPTION -> "We're unable to resolve the hostname in the URL you provided.";
+            case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have times out; you might want to try to discover this feed later.";
+            case SOCKET_EXCEPTION -> "We encountered a problem reading network data from the URL you provided.";
+            case CONNECT_EXCEPTION -> "We were unable to connect to the remote system at the URL you provided.";
+            case PARSING_FEED_EXCEPTION -> "The feed at the URL you provided has syntax issues that prevent us being able to read it properly.";
+            case ILLEGAL_ARGUMENT_EXCEPTION -> "Sorry, we're not able to read the feed at the URL you provided.";
+            case PERMANENTLY_REDIRECTED -> "This feed has been permanently moved.  We have additional details.";
+            case IO_EXCEPTION, OTHER -> "Something horrible happened while reading the feed at the URL you provided.";
+            case UNSECURE_REDIRECT -> "This feed is unsecure, and has been redirected so we've opted not to follow it.";
+            case TOO_MANY_REDIRECTS -> "This feed is being redirected too many times.";
+            case HTTP_CLIENT_ERROR, HTTP_SERVER_ERROR -> "We encountered an HTTP error fetching the feed at the URL you provided.";
+        };
+    }
+
     @PutMapping("/feeds/{id}")
     @Secured({UNVERIFIED_ROLE})
 //    @Transactional
-    public ResponseEntity<FeedConfigResponse> updateFeed(@PathVariable("id") Long id, @Valid @RequestBody FeedConfigRequest feedConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException, FeedDiscoveryException {
+    public ResponseEntity<FeedConfigResponse> updateFeed(@PathVariable("id") Long id, @Valid @RequestBody FeedConfigRequest feedConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("updateFeed for user={}, feedId={}", username, id);
         StopWatch stopWatch = StopWatch.createStarted();
+        //
         feedDefinitionService.update(username, id, feedConfigRequest);
+        //
         List<QueryDefinition> updatedQueries = queryDefinitionService.updateQueries(username, id, feedConfigRequest);
+        Map<Long, List<QueryMetricsWithErrorDetails>> queryMetricsByQueryId = new HashMap<>();
         if (isNotEmpty(updatedQueries)) {
+            // perform the initial import of any updated queries
             postImporter.doImport(updatedQueries);
-            try {
-                Thread.sleep(5 * 1000); // 5 second pause for the importer to complete
-            } catch (InterruptedException ignored) {}
+            List<QueryMetricsWithErrorDetails> allQueryMetrics = queryMetricsService.findByFeedId(username, id).stream()
+                    .map(q -> QueryMetricsWithErrorDetails.from(q, getQueryExceptionTypeMessage(q.getErrorType())))
+                    .toList();
+            for (QueryMetricsWithErrorDetails qmEd : allQueryMetrics) {
+                queryMetricsByQueryId.computeIfAbsent(qmEd.getQueryId(), l -> new ArrayList<>()).add(qmEd);
+            }
         }
         // re-fetch this feed definition and query definitions and return to front-end
         FeedDefinition feedDefinition = feedDefinitionService.findByFeedId(username, id);
+        // query definitions
         List<QueryDefinition> queryDefinitions = queryDefinitionService.findByFeedId(username, id);
+        // thumbnail
         byte[] thumbnail = buildThumbnail(feedDefinition);
         stopWatch.stop();
         appLogService.logFeedUpdate(username, stopWatch, id);
-        return ok(FeedConfigResponse.from(feedDefinition, queryDefinitions, thumbnail));
+        return ok(FeedConfigResponse.from(
+                feedDefinition,
+                queryDefinitions,
+                queryMetricsByQueryId,
+                thumbnail)
+        );
     }
 
     /**
@@ -224,8 +282,8 @@ public class FeedDefinitionController {
         List<FeedConfigRequest> feedConfigRequests = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         for (MultipartFile opmlFile : opmlFiles) {
-            try {
-                feedConfigRequests.addAll(opmlService.parseOpmlFile(opmlFile.getInputStream()));
+            try (InputStream is = opmlFile.getInputStream()) {
+                feedConfigRequests.add(opmlService.parseOpmlFile(is));
             } catch (ValidationException e) {
                 errors.add(opmlFile.getOriginalFilename() + ": " + e.getMessage());
             } catch (Exception e) {
@@ -278,8 +336,8 @@ public class FeedDefinitionController {
         StopWatch stopWatch = StopWatch.createStarted();
         byte[] image = null;
         List<String> errors = new ArrayList<>();
-        try {
-            image = getImage(imageFile.getOriginalFilename(), imageFile.getInputStream().readAllBytes(), this.thumbnailSize);
+        try (InputStream is = imageFile.getInputStream()) {
+            image = getImage(imageFile.getOriginalFilename(), is.readAllBytes(), this.thumbnailSize);
         } catch (IOException e) {
             errors.add(imageFile.getOriginalFilename() + ": " + e.getMessage());
         }

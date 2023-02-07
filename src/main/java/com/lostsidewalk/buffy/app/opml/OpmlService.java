@@ -1,6 +1,7 @@
 package com.lostsidewalk.buffy.app.opml;
 
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.app.audit.OpmlException;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
@@ -26,10 +27,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static com.lostsidewalk.buffy.app.utils.WordUtils.randomWords;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.RandomUtils.nextLong;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -46,29 +52,53 @@ public class OpmlService {
     @Autowired
     QueryDefinitionDao queryDefinitionDao;
 
-    public List<FeedConfigRequest> parseOpmlFile(InputStream inputStream) throws OpmlException {
+    public FeedConfigRequest parseOpmlFile(InputStream inputStream) throws OpmlException {
         try {
             WireFeedInput input = new WireFeedInput();
             InputStreamReader isr = new InputStreamReader(inputStream);
             Opml feed = (Opml) input.build(isr);
-
-            return buildFeedConfigRequests(EMPTY, feed.getOutlines());
+            String ident = generateRandomFeedIdent();
+            String title = feed.getTitle();
+            String description = getDescription(getOwner(feed));
+            FeedConfigRequest feedConfigRequest = buildFeedConfigRequest(ident, title, description, feed.getOutlines());
+            Set<ConstraintViolation<FeedConfigRequest>> constraintViolations = validator.validate(feedConfigRequest);
+            if (isNotEmpty(constraintViolations)) {
+                throw new FeedConfigRequestValidationException(constraintViolations);
+            }
+            return feedConfigRequest;
         } catch (Exception e) {
             throw new OpmlException(e.getMessage());
         }
     }
 
-    static final Comparator<Outline> OUTLINE_COMPARATOR = (outline, other) -> {
-        boolean outlineIsRss = startsWithIgnoreCase(outline.getType(), "rss");
-        boolean otherIsRss = startsWithIgnoreCase(other.getType(), "rss");
-        if (outlineIsRss && !otherIsRss) {
-            return -1;
-        } else if (otherIsRss && !outlineIsRss) {
-            return 1;
-        } else {
-            return 0;
+    private static String generateRandomFeedIdent() {
+        return randomWords();
+    }
+
+    private static final String OWNER_NAME_AND_EMAIL_TEMPLATE = "%s (%s)";
+
+    private String getOwner(Opml feed) {
+        String ownerName = feed.getOwnerName();
+        String ownerEmail = feed.getOwnerEmail();
+        String ownerId = feed.getOwnerId();
+        if (isNoneBlank(ownerName, ownerEmail)) {
+            return String.format(OWNER_NAME_AND_EMAIL_TEMPLATE, ownerName, ownerEmail);
+        } else if (isNotBlank(ownerName)) {
+            return ownerName;
+        } else if (isNotBlank(ownerEmail)) {
+            return ownerEmail;
+        } else if (isNotBlank(ownerId)) {
+            return ownerId;
         }
-    };
+
+        return EMPTY;
+    }
+
+    private static final String QUEUE_CREATED_BY_TEMPLATE = "Queue created by %s";
+
+    private String getDescription(String owner) {
+        return isNotBlank(owner) ? String.format(QUEUE_CREATED_BY_TEMPLATE, owner) : EMPTY;
+    }
 
     public String generateOpml(String username) throws DataAccessException, OpmlException {
         List<FeedDefinition> feedDefinitions = feedDefinitionDao.findByUser(username);
@@ -123,66 +153,44 @@ public class OpmlService {
         }
     }
 
-    private List<FeedConfigRequest> buildFeedConfigRequests(String prefix, List<Outline> outlines) {
-        List<FeedConfigRequest> feedConfigRequests = new ArrayList<>();
-        for (Outline outline : outlines) {
-            String titleWithPrefix = isEmpty(prefix) ? outline.getTitle() : (prefix + " - " +  outline.getTitle());
-            FeedConfigRequest feedConfigRequest = FeedConfigRequest.from(
-                    titleWithPrefix,
-                    titleWithPrefix,
-                    outline.getText(),
-                    null, // generator
-                    null, // NewsApiV2 query
-                    new ArrayList<>(), // rssAtomFeedUrls
-                    null, // export config
-                    null, // copyright
-                    null, // language
-                    null // image source
-            );
-            List<Outline> children = outline.getChildren();
-            if (isNotEmpty(children)) {
-                children.sort(OUTLINE_COMPARATOR);
-                Iterator<Outline> childIter = children.iterator();
-                while (childIter.hasNext()) {
-                    Outline nextChild = childIter.next();
-                    if (startsWithIgnoreCase(nextChild.getType(), "rss")) {
-                        RssAtomUrl rssAtomUrl = new RssAtomUrl(nextLong(), nextChild.getXmlUrl());
-                        Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
-                        if (isNotEmpty(constraintViolations)) {
-                            throw new RssAtomUrlValidationException(constraintViolations);
-                        }
-                        feedConfigRequest.getRssAtomFeedUrls().add(rssAtomUrl);
-                        childIter.remove();
-                    } else {
-                        break;
-                    }
-                }
-                Set<ConstraintViolation<FeedConfigRequest>> constraintViolations = validator.validate(feedConfigRequest);
+    private FeedConfigRequest buildFeedConfigRequest(String ident, String title, String description, List<Outline> outlines) {
+
+        // ea. outline is a query
+
+        return FeedConfigRequest.from(
+                ident,
+                title,
+                description,
+                null,
+                null,
+                buildRssAtomFeedUrls(outlines, 0),
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private List<RssAtomUrl> buildRssAtomFeedUrls(List<Outline> outlines, int depth) {
+        if (depth > 2) {
+            return emptyList();
+        }
+        int outlineCt = size(outlines);
+        List<RssAtomUrl> rssAtomUrls = newArrayListWithCapacity(outlineCt);
+        for (Outline outline  : outlines) {
+            if (startsWithIgnoreCase(outline.getType(), "rss")) {
+                RssAtomUrl rssAtomUrl = new RssAtomUrl(nextLong(), outline.getXmlUrl());
+                Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
                 if (isNotEmpty(constraintViolations)) {
-                    throw new FeedConfigRequestValidationException(constraintViolations);
+                    throw new RssAtomUrlValidationException(constraintViolations);
                 }
-                feedConfigRequests.add(feedConfigRequest);
-                if (!children.isEmpty()) {
-                    feedConfigRequests.addAll(buildFeedConfigRequests(outline.getTitle(), children));
-                }
+                rssAtomUrls.add(rssAtomUrl);
+            } else {
+                List<Outline> children = outline.getChildren();
+                rssAtomUrls.addAll(buildRssAtomFeedUrls(children, depth + 1));
             }
         }
 
-        return feedConfigRequests;
+        return rssAtomUrls;
     }
 }
-/*
- * for ea. outline:
- *   add a feed config request with this parent name + this name
- *   does it contain children?
- *     yes:
- *       sort the children, RSS first
- *       add all RSS URL children
- *       anything left?
- *         yes:
- *           recurse over non-RSS/URL children with parent name eq the outline name
- *         no:
- *           continue
- *     no:
- *       continue
- */

@@ -23,6 +23,12 @@ public class CacheConfig {
         log.trace("Proxy cache cleared");
     }
 
+    @CacheEvict(allEntries = false, value = {"thumbnailRefreshCache"})
+    @Scheduled(fixedDelay=10_000, initialDelay=480_000)
+    public void clearThumbnailRefreshCache() {
+        log.trace("Thumbnail refresh cache cleared");
+    }
+
     // long-lived caches
 
     @CacheEvict(allEntries = true, value = {"thumbnailCache"})

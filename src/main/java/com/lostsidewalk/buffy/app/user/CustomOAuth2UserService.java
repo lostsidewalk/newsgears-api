@@ -3,6 +3,7 @@ package com.lostsidewalk.buffy.app.user;
 import com.lostsidewalk.buffy.*;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
+import com.lostsidewalk.buffy.app.audit.RegistrationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;

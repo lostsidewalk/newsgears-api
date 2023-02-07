@@ -16,7 +16,7 @@ import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
-import com.lostsidewalk.buffy.app.user.RegistrationException;
+import com.lostsidewalk.buffy.app.audit.RegistrationException;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;

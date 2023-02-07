@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.model.exception;
+package com.lostsidewalk.buffy.app.audit;
 
 import com.google.gson.JsonObject;
 

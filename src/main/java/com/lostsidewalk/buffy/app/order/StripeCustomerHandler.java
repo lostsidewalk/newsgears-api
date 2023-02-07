@@ -7,7 +7,7 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.User;
 import com.lostsidewalk.buffy.UserDao;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
-import com.lostsidewalk.buffy.app.model.exception.StripeEventException;
+import com.lostsidewalk.buffy.app.audit.StripeEventException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

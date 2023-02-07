@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.security;
+package com.lostsidewalk.buffy.app.audit;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

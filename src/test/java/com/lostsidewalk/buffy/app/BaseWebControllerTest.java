@@ -24,6 +24,7 @@ import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.post.PostPurger;
 import com.lostsidewalk.buffy.post.StagingPostDao;
 import com.lostsidewalk.buffy.query.QueryDefinitionDao;
+import com.lostsidewalk.buffy.query.QueryMetricsDao;
 import com.lostsidewalk.buffy.rss.RSSPublisher;
 import com.lostsidewalk.buffy.rss.RssImporter;
 import com.lostsidewalk.buffy.thumbnail.ThumbnailDao;
@@ -142,6 +143,9 @@ class BaseWebControllerTest {
 
     @MockBean
     QueryDefinitionDao queryDefinitionDao;
+
+    @MockBean
+    QueryMetricsDao queryMetricsDao;
 
     @MockBean
     ThumbnailDao thumbnailDao;

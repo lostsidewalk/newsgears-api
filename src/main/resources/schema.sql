@@ -109,13 +109,32 @@ create table query_definitions (
     primary key(id)
 );
 --
+-- query_metrics table
+--
+drop table if exists query_metrics cascade;
+
+create table query_metrics (
+    id bigserial not null,
+    query_id bigserial not null references query_definitions(id) on delete cascade,
+    http_status_code integer,
+    http_status_message varchar(512),
+    redirect_feed_url varchar(1024),
+    redirect_http_status_code integer,
+    redirect_http_status_message varchar(512),
+    import_timestamp timestamp with time zone,
+    import_ct integer,
+    error_type varchar(64),
+    error_detail varchar(1024),
+
+    primary key(id)
+);
+--
 -- feed_discovery_info table
 --
 drop table if exists feed_discovery_info cascade;
 
 create table feed_discovery_info (
     id bigserial not null,
-    error varchar(64),
     feed_url varchar(1024) not null,
     http_status_code integer,
     http_status_message varchar(512),
@@ -142,6 +161,8 @@ create table feed_discovery_info (
     categories json,
     sample_entries json,
     is_url_upgradeable boolean not null default false,
+    error_type varchar(64),
+    error_detail varchar(1024),
 
     primary key(id)
 );

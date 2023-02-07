@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.user;
+package com.lostsidewalk.buffy.app.audit;
 
 public class RegistrationException extends Exception {
 

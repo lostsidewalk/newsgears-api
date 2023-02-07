@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
@@ -56,6 +57,7 @@ public class ThumbnailService {
         return thumbnail;
     }
 
+    @Cacheable("thumbnailRefreshCache")
     public RenderedThumbnail refreshThumbnail(String transportIdent, String imgUrl, int targetSize) {
         log.info("Refreshing thumbnail cache, imgUrl={} @ transportIdent={}", imgUrl, transportIdent);
         RenderedThumbnail thumbnail = null;
@@ -79,9 +81,11 @@ public class ThumbnailService {
         URL u = new URL(url);
         URLConnection urlConnection = u.openConnection();
         // TODO: make this property-configurable
-        String userAgent = "Lost Sidewalk FeedGears RSS Aggregator v.0.3";
+        String userAgent = "Lost Sidewalk FeedGears RSS Aggregator v.0.4";
         urlConnection.setRequestProperty("User-Agent", userAgent);
-        return urlConnection.getInputStream().readAllBytes();
+        try (InputStream is = urlConnection.getInputStream()) {
+            return is.readAllBytes();
+        }
     }
 
     public RenderedThumbnail refreshThumbnailFromSrc(String transportIdent, String feedImgSrc) throws DataAccessException {

@@ -7,7 +7,7 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
 import com.lostsidewalk.buffy.app.audit.StripeEventLogService;
-import com.lostsidewalk.buffy.app.model.exception.StripeEventException;
+import com.lostsidewalk.buffy.app.audit.StripeEventException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.StripeObject;

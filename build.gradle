@@ -21,17 +21,17 @@ repositories {
 
 dependencies {
     // NewsGears importer
-    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.3'
+    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.4'
     // NewsGears publisher
-    implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.3'
+    implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.4'
     // adds NewsApi to the import path
-    implementation 'com.lostsidewalk.newsgears:newsgears-newsapi-importer:0.3'
+    implementation 'com.lostsidewalk.newsgears:newsgears-newsapi-importer:0.4'
     // adds RSS/ATOM to the import path
-    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.3'
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.4'
     // adds RSS/ATOM to the publishing path
-    implementation 'com.lostsidewalk.newsgears:newsgears-rss-publisher:0.3'
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss-publisher:0.4'
     // add JSON to the publishing path
-    implementation 'com.lostsidewalk.newsgears:newsgears-json-publisher:0.3'
+    implementation 'com.lostsidewalk.newsgears:newsgears-json-publisher:0.4'
 
     // spring-boot-starter-actuator
     implementation 'org.springframework.boot:spring-boot-starter-actuator:3.0.1'

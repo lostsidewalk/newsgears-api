@@ -4,10 +4,11 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.catalog.CatalogService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
-import com.lostsidewalk.buffy.app.model.error.ErrorDetails;
+import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
+import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType;
 import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscovery;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -27,7 +28,6 @@ import java.util.List;
 
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -61,22 +61,26 @@ public class FeedDiscoveryController {
             appLogService.logFeedDiscovery(username, stopWatch, url);
             return ok(thumbnailedFeedDiscoveryResponse);
         } catch (FeedDiscoveryException e) {
-            String messageBody = switch (e.exceptionType) {
-                case FILE_NOT_FOUND_EXCEPTION -> "We weren't able to locate a feed at the URL you provided.";
-                case SSL_HANDSHAKE_EXCEPTION -> "We're unable to reach this URL due to a problem with the remote SSL.  Try another protocol, or resolve the issue on the remote system.";
-                case UNKNOWN_HOST_EXCEPTION -> "We're unable to resolve the hostname in the URL you provided.";
-                case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have times out; you might want to try to discover this feed later.";
-                case SOCKET_EXCEPTION -> "We encountered a problem reading network data from the URL you provided.";
-                case CONNECT_EXCEPTION -> "We were unable to connect to the remote system at the URL you provided.";
-                case PARSING_FEED_EXCEPTION -> "The feed at the URL you provided has syntax issues that prevent us being able to read it properly.";
-                case ILLEGAL_ARGUMENT_EXCEPTION -> "Sorry, we're not able to read the feed at the URL you provided.";
-                case IO_EXCEPTION, OTHER -> "Something horrible happened while reading the feed at the URL you provided.";
-                case UNSECURE_REDIRECT -> "This feed is unsecure, and has been redirected so we've opted not to follow it.";
-                case TOO_MANY_REDIRECTS -> "This feed is being redirected too many times.";
-                case HTTP_CLIENT_ERROR, HTTP_SERVER_ERROR -> "We encountered an HTTP error fetching the feed at the URL you provided.";
-            };
-            return badRequest().body(new ErrorDetails(new Date(), messageBody, EMPTY));
+            return badRequest().body(
+                    new UpstreamErrorDetails(new Date(), getFeedDiscoveryExceptionTypeMessage(e.exceptionType), e.httpStatusCode, e.httpStatusMessage, e.redirectUrl, e.redirectHttpStatusCode, e.redirectHttpStatusMessage));
         }
+    }
+
+    private static String getFeedDiscoveryExceptionTypeMessage(FeedDiscoveryExceptionType exceptionType) {
+        return switch (exceptionType) {
+            case FILE_NOT_FOUND_EXCEPTION -> "We weren't able to locate a feed at the URL you provided.";
+            case SSL_HANDSHAKE_EXCEPTION -> "We're unable to reach this URL due to a problem with the remote SSL.  Try another protocol, or resolve the issue on the remote system.";
+            case UNKNOWN_HOST_EXCEPTION -> "We're unable to resolve the hostname in the URL you provided.";
+            case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have times out; you might want to try to discover this feed later.";
+            case SOCKET_EXCEPTION -> "We encountered a problem reading network data from the URL you provided.";
+            case CONNECT_EXCEPTION -> "We were unable to connect to the remote system at the URL you provided.";
+            case PARSING_FEED_EXCEPTION -> "The feed at the URL you provided has syntax issues that prevent us being able to read it properly.";
+            case ILLEGAL_ARGUMENT_EXCEPTION -> "Sorry, we're not able to read the feed at the URL you provided.";
+            case IO_EXCEPTION, OTHER -> "Something horrible happened while reading the feed at the URL you provided.";
+            case UNSECURE_REDIRECT -> "This feed is unsecure, and has been redirected so we've opted not to follow it.";
+            case TOO_MANY_REDIRECTS -> "This feed is being redirected too many times.";
+            case HTTP_CLIENT_ERROR, HTTP_SERVER_ERROR -> "We encountered an HTTP error fetching the feed at the URL you provided.";
+        };
     }
 
     @GetMapping("/catalog")

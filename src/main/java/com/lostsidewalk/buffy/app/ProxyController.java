@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app;
 
-import com.lostsidewalk.buffy.app.audit.AppLogService;
+import com.lostsidewalk.buffy.app.audit.ProxyUrlHashException;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -24,18 +24,19 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 public class ProxyController {
 
-    @Autowired
-    AppLogService appLogService;
+//    @Autowired
+//    AppLogService appLogService;
 
     @Autowired
     ProxyService proxyService;
 
     @GetMapping("/proxy/unsecured/{hash}/")
-    public ResponseEntity<byte[]> proxy(@Valid @Size(max = 1024) @PathVariable String hash, @Valid @Size(max = 1024) @RequestParam String url) throws IOException {
+    public ResponseEntity<byte[]> proxy(@Valid @Size(max = 1024) @PathVariable String hash, @Valid @Size(max = 1024) @RequestParam String url) throws IOException, ProxyUrlHashException {
         log.debug("proxy for hash={}, url={}", hash, url);
         StopWatch stopWatch = StopWatch.createStarted();
+        proxyService.validateImageUrl(url, hash);
         byte[] image = proxyService.fetch(url);
-        appLogService.logProxyFetch(hash, stopWatch, url);
+//        appLogService.logProxyFetch(hash, stopWatch, url);
         return ok()
                 .contentType(APPLICATION_OCTET_STREAM)
                 .cacheControl(maxAge(60, MINUTES))

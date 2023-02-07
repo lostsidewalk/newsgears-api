@@ -1,7 +1,7 @@
 package com.lostsidewalk.buffy.app.auth;
 
 import com.lostsidewalk.buffy.app.utils.CookieUtils;
-import com.lostsidewalk.buffy.app.security.BadRequestException;
+import com.lostsidewalk.buffy.app.audit.BadRequestException;
 import com.lostsidewalk.buffy.app.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.lostsidewalk.buffy.app.model.AppToken;
 import lombok.extern.slf4j.Slf4j;

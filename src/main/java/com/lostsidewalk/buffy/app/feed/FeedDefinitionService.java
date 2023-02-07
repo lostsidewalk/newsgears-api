@@ -45,7 +45,7 @@ public class FeedDefinitionService {
         return emptyList();
     }
 
-    public Long createFeed(String username, FeedConfigRequest feedConfigRequest) throws DataAccessException {
+    public Long createFeed(String username, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
         FeedDefinition newFeedDefinition = FeedDefinition.from(
                 feedConfigRequest.getIdent(),
                 feedConfigRequest.getTitle(),

@@ -92,7 +92,7 @@ public class AppLogService {
     }
 
     public void logStagingPostFetch(String username, StopWatch stopWatch, int feedIdCt, int stagingPostCt) {
-        auditLog("staging-post-fetch", "feedIdCt={}, stagingPostCt={}", username, stopWatch, feedIdCt, stagingPostCt);
+        auditLog("staging-post-fetch", "feedIdCt={}, stagingPostCt={}, queryMetricsCt={}", username, stopWatch, feedIdCt, stagingPostCt);
     }
 
     public void logStagingPostCreate(String username, StopWatch stopWatch, Long id) {
@@ -107,12 +107,12 @@ public class AppLogService {
         auditLog("staging-post-read-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated);
     }
 
-    public void logStagingPostPubStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated, List<PubResult> publicationResults) {
-        auditLog("staging-post-pub-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}, publicationResults={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated, publicationResults);
+    public void logFeedReadStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated) {
+        auditLog("feed-read-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated);
     }
 
-    public void logStagingPostDelete(String username, StopWatch stopWatch, Long id, int rowsDeleted) {
-        auditLog("staging-post-delete", "id={}, rowsDeleted={}", username, stopWatch, id, rowsDeleted);
+    public void logStagingPostPubStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated, List<PubResult> publicationResults) {
+        auditLog("staging-post-pub-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}, publicationResults={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated, publicationResults);
     }
 
     public void logPasswordResetInit(String username, StopWatch stopWatch) {
@@ -143,9 +143,9 @@ public class AppLogService {
         auditLog("user-update", null, user.getUsername(), stopWatch);
     }
 
-    public void logProxyFetch(String hash, StopWatch stopWatch, String url) {
-        auditLog("proxy-fetch", "hash={}, url={}", null, stopWatch, hash, url);
-    }
+//    public void logProxyFetch(String hash, StopWatch stopWatch, String url) {
+//        auditLog("proxy-fetch", "hash={}, url={}", null, stopWatch, hash, url);
+//    }
 
     //
 

@@ -78,6 +78,17 @@ public class StagingPostService {
         stagingPostDao.updatePostReadStatus(username, id, newStatus);
     }
 
+    public void updateFeedReadStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+        PostReadStatus newStatus = null;
+        if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
+            newStatus = PostReadStatus.valueOf(postStatusUpdateRequest.getNewStatus());
+        }
+        //
+        // perform the update
+        //
+        stagingPostDao.updateFeedReadStatus(username, id, newStatus);
+    }
+
     public List<PubResult> updatePostPubStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
         PostPubStatus newStatus = null;
         if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
@@ -92,14 +103,6 @@ public class StagingPostService {
         //
         Long feedId = stagingPostDao.findFeedIdByStagingPostId(username, id);
         return postPublisher.publishFeed(username, feedId);
-    }
-
-    public void deleteById(String username, Long id) throws DataAccessException, DataUpdateException {
-        if (stagingPostDao.checkPublished(username, id)) {
-            return;
-        }
-        // delete from staging
-        stagingPostDao.deleteById(username, id);
     }
 
     public StagingPost findById(String username, Long id) throws DataAccessException {

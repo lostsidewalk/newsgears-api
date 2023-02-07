@@ -2,7 +2,7 @@ package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
-import com.lostsidewalk.buffy.app.opml.OpmlException;
+import com.lostsidewalk.buffy.app.audit.OpmlException;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;

@@ -5,11 +5,8 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
 import com.lostsidewalk.buffy.app.auth.AuthService.AuthProviderException;
 import com.lostsidewalk.buffy.app.mail.MailService.MailException;
-import com.lostsidewalk.buffy.app.model.exception.StripeEventException;
-import com.lostsidewalk.buffy.app.opml.OpmlException;
 import com.lostsidewalk.buffy.app.order.StripeOrderService.StripeOrderException;
 import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
-import com.lostsidewalk.buffy.app.user.RegistrationException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
@@ -111,6 +108,10 @@ public class ErrorLogService {
 
     public void logClientAbortException(String username, Date timestamp, ClientAbortException e) {
         auditError("client-abort-exception", "message={}", username, timestamp, e.getMessage());
+    }
+
+    public void logProxyUrlHashException(String username, Date timestamp, ProxyUrlHashException e) {
+        auditError("proxy-url-hash-exception", "message={}", username, timestamp, e.getMessage());
     }
     //
     private static void auditError(String logTag, String formatStr, String username, Date timestamp, Object... args) {

@@ -43,6 +43,10 @@ public class QueryDefinitionService {
 
     private static final Gson GSON = new Gson();
 
+    public List<QueryDefinition> findByUsername(String username) throws DataAccessException {
+        return queryDefinitionDao.findByUsername(username);
+    }
+
     public List<QueryDefinition> findByFeedId(String username, Long id) throws DataAccessException {
         return queryDefinitionDao.findByFeedId(username, id);
     }
@@ -101,8 +105,8 @@ public class QueryDefinitionService {
                                                     NewsApiCountries newsApiV2Country,
                                                     NewsApiCategories newsApiV2Category)
             throws DataAccessException, DataUpdateException {
+        QueryDefinition toImport = null;
         if (isNotBlank(newsApiV2QueryText) || isNotEmpty(newsApiV2Sources) || newsApiV2Language != null || newsApiV2Country != null || newsApiV2Category != null) {
-            boolean doImport;
             List<QueryDefinition> currentQueries = queryDefinitionDao.findByFeedId(username, feedId, NEWSAPIV2_HEADLINES);
             if (isNotEmpty(currentQueries)) {
                 // update the existing query
@@ -113,34 +117,28 @@ public class QueryDefinitionService {
                         NEWSAPIV2_HEADLINES,
                         serializeQueryConfig(newsApiV2Sources, newsApiV2Language, newsApiV2Country, newsApiV2Category),
                         currentQuery.getId()}));
-                doImport = isNotBlank(newsApiV2QueryText) && !newsApiV2QueryText.equals(currentQuery.getQueryText());
+                if (isNotBlank(newsApiV2QueryText) && !newsApiV2QueryText.equals(currentQuery.getQueryText())) {
+                    toImport = currentQuery;
+                }
             } else {
                 // add a new query
-                QueryDefinition newQuery = QueryDefinition.from(
+                Long queryId = queryDefinitionDao.add(QueryDefinition.from(
                         feedId,
                         username,
                         newsApiV2QueryText,
                         newsApiV2QueryText,
                         NEWSAPIV2_HEADLINES,
                         serializeQueryConfig(newsApiV2Sources, newsApiV2Language, newsApiV2Country, newsApiV2Category)
-                );
-                queryDefinitionDao.add(newQuery);
-                doImport = true;
-            }
-            // kick off the initial (or newly updated) import
-            if (doImport) {
-                return QueryDefinition.from(
-                        feedId,
-                        username,
-                        newsApiV2QueryText,
-                        newsApiV2QueryText,
-                        NEWSAPIV2_EVERYTHING,
-                        serializeQueryConfig(newsApiV2Sources, newsApiV2Language, newsApiV2Country, newsApiV2Category)
-                );
+                ));
+                toImport = queryDefinitionDao.findById(username, queryId);
             }
         }
 
-        return null;
+        if (toImport != null) {
+            toImport.setQueryType(NEWSAPIV2_EVERYTHING);
+        }
+
+        return toImport;
     }
 
     private Serializable serializeQueryConfig(List<NewsApiSources> newsApiV2Sources,
@@ -204,9 +202,11 @@ public class QueryDefinitionService {
             }
             if (isNotEmpty(adds)) {
                 // apply additions
-                queryDefinitionDao.add(adds);
+                List<Long> queryIds = queryDefinitionDao.add(adds);
+                // re-select
+                List<QueryDefinition> newQueries = queryDefinitionDao.findByIds(username, queryIds);
                 // mark for import
-                toImport.addAll(adds);
+                toImport.addAll(newQueries);
             }
             // remove already-updated items from currentQueryDefinitionsById
             for (QueryDefinition q : updates) {

@@ -1,4 +1,4 @@
 
 NewsGears -- A platform for building and publishing curated news feeds from sources around the world
-Version 0.3
+Version 0.4
 (C) Lost Sidewalk Software, 2022

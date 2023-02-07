@@ -12,6 +12,7 @@ import com.lostsidewalk.buffy.app.model.response.PostConfigResponse;
 import com.lostsidewalk.buffy.app.model.response.PostFetchResponse;
 import com.lostsidewalk.buffy.app.model.response.ThumbnailedPostResponse;
 import com.lostsidewalk.buffy.app.post.StagingPostService;
+import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
 import com.lostsidewalk.buffy.post.*;
@@ -29,23 +30,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
-import static com.lostsidewalk.buffy.app.auth.HashingUtils.sha256;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
 import static java.net.URI.create;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.ofNullable;
-import static org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
-import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.*;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.jsoup.safety.Safelist.relaxed;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -61,6 +56,9 @@ public class StagingPostController {
 
     @Autowired
     ThumbnailService thumbnailService;
+
+    @Autowired
+    ProxyService proxyService;
 
     @Value("${newsgears.thumbnail.size}")
     int thumbnailSize;
@@ -115,7 +113,7 @@ public class StagingPostController {
      * READ_LATER -- mark the post as read-later (applies to non-published posts only)
      * null -- clear the current post-read status (i.e., UNREAD)
      */
-    @PutMapping("/staging/read-status/{id}")
+    @PutMapping("/staging/read-status/post/{id}")
     @Secured({VERIFIED_ROLE})
     @Transactional
     public ResponseEntity<?> updatePostReadStatus(@PathVariable Long id, @Valid @RequestBody PostStatusUpdateRequest postStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
@@ -127,6 +125,25 @@ public class StagingPostController {
         stopWatch.stop();
         appLogService.logStagingPostReadStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, 1);
         return ok().body(buildResponseMessage("Successfully updated post Id " + id));
+    }
+
+    /**
+     * READ -- mark the post as read (applies to non-published posts only)
+     * READ_LATER -- mark the post as read-later (applies to non-published posts only)
+     * null -- clear the current post-read status (i.e., UNREAD)
+     */
+    @PutMapping("/staging/read-status/feed/{id}")
+    @Secured({VERIFIED_ROLE})
+    @Transactional
+    public ResponseEntity<?> updateFeedReadStatus(@PathVariable Long id, @Valid @RequestBody PostStatusUpdateRequest postStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails.getUsername();
+        log.debug("updatePostStatus for user={}, postId={}, postStatusUpdateRequest={}", username, id, postStatusUpdateRequest);
+        StopWatch stopWatch = StopWatch.createStarted();
+        stagingPostService.updateFeedReadStatus(username, id, postStatusUpdateRequest);
+        stopWatch.stop();
+        appLogService.logFeedReadStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, 1);
+        return ok().body(buildResponseMessage("Successfully updated feed Id " + id));
     }
 
     /**
@@ -147,26 +164,10 @@ public class StagingPostController {
         appLogService.logStagingPostPubStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, 1, publicationResults);
         return ok().body(DeployResponse.from(publicationResults));
     }
-    //
-    // delete staging post
-    //
-    @DeleteMapping("/staging/{id}")
-    @Secured({UNVERIFIED_ROLE})
-    @Transactional
-    public ResponseEntity<?> deleteStagingPost(@PathVariable Long id, Authentication authentication) throws DataAccessException, DataUpdateException {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails.getUsername();
-        log.debug("deleteById for user={}", username);
-        StopWatch stopWatch = StopWatch.createStarted();
-        stagingPostService.deleteById(username, id);
-        stopWatch.stop();
-        appLogService.logStagingPostDelete(username, stopWatch, id, 1);
-        return ok().body(buildResponseMessage("Deleted staging post Id " + id));
-    }
 
     //
 
-    private static List<StagingPost> secureStagingPosts(List<StagingPost> stagingPosts) {
+    public List<StagingPost> secureStagingPosts(List<StagingPost> stagingPosts) {
         if (isNotEmpty(stagingPosts)) {
             for (StagingPost stagingPost : stagingPosts) {
                 String postUrl = stagingPost.getPostUrl();
@@ -197,14 +198,14 @@ public class StagingPostController {
         return stagingPosts;
     }
 
-    private static void secureHtmlContent(ContentObject obj, String baseUrl) {
+    private void secureHtmlContent(ContentObject obj, String baseUrl) {
         if (isHtmlContent(obj)) {
             String rawHtml = obj.getValue();
             String cleanHtml = Jsoup.clean(rawHtml, relaxed()); // this must remove embed and object tags
             Document document = Jsoup.parse(cleanHtml);
             document.getElementsByTag("img").forEach(e -> {
                 String imgUrl = e.attr("src");
-                e.attr("src", rewriteImageUrl(imgUrl, baseUrl));
+                e.attr("src", proxyService.rewriteImageUrl(imgUrl, baseUrl));
             });
             document.getElementsByTag("a").forEach(e -> {
                 e.attr("target", "_blank");
@@ -220,15 +221,15 @@ public class StagingPostController {
         return obj != null && containsIgnoreCase(obj.getType(), "html");
     }
 
-    private static void securePostITunes(PostITunes postITunes, String basesUrl) {
+    private void securePostITunes(PostITunes postITunes, String basesUrl) {
         if (postITunes != null && postITunes.getImageUri() != null) {
-            postITunes.setImageUri(rewriteImageUrl(postITunes.getImageUri(), basesUrl));
+            postITunes.setImageUri(proxyService.rewriteImageUrl(postITunes.getImageUri(), basesUrl));
         }
     }
 
-    private static void securePostEnclosure(PostEnclosure postEnclosure, String baseUrl) {
+    private void securePostEnclosure(PostEnclosure postEnclosure, String baseUrl) {
         if (isImageEnclosure(postEnclosure)) {
-            postEnclosure.setUrl(rewriteImageUrl(postEnclosure.getUrl(), baseUrl));
+            postEnclosure.setUrl(proxyService.rewriteImageUrl(postEnclosure.getUrl(), baseUrl));
         }
     }
 
@@ -236,7 +237,7 @@ public class StagingPostController {
         return enc != null && containsIgnoreCase(enc.getType(), "image");
     }
 
-    private static void securePostMedia(PostMedia postMedia, String baseUrl) {
+    private void securePostMedia(PostMedia postMedia, String baseUrl) {
         if (postMedia != null) {
             List<PostMediaContent> postMediaContents = postMedia.getPostMediaContents();
             if (isNotEmpty(postMediaContents)) {
@@ -258,7 +259,7 @@ public class StagingPostController {
         }
     }
 
-    private static void securePostMediaContent(PostMediaContent content, String baseUrl) {
+    private void securePostMediaContent(PostMediaContent content, String baseUrl) {
         if (isImageContent(content)) {
             securePostMediaReference(content.getReference(), baseUrl);
         }
@@ -268,13 +269,13 @@ public class StagingPostController {
         return con != null && containsIgnoreCase(con.getType(), "image");
     }
 
-    private static void securePostMediaReference(PostMediaReference reference, String baseUrl) {
+    private void securePostMediaReference(PostMediaReference reference, String baseUrl) {
         if (reference != null) {
-            reference.setUri(create(rewriteImageUrl(reference.getUri().toString(), baseUrl)));
+            reference.setUri(create(proxyService.rewriteImageUrl(reference.getUri().toString(), baseUrl)));
         }
     }
 
-    private static void securePostMediaMetadata(PostMediaMetadata metadata, String baseUrl) {
+    private void securePostMediaMetadata(PostMediaMetadata metadata, String baseUrl) {
         if (metadata != null) {
             List<PostMediaThumbnail> postMediaThumbnails = metadata.getThumbnails();
             if (isNotEmpty(postMediaThumbnails)) {
@@ -285,26 +286,10 @@ public class StagingPostController {
         }
     }
 
-    private static void securePostMediaThumbnail(PostMediaThumbnail thumbnail, String baseUrl) {
+    private void securePostMediaThumbnail(PostMediaThumbnail thumbnail, String baseUrl) {
         if (thumbnail != null) {
-            thumbnail.setUrl(create(rewriteImageUrl(thumbnail.getUrl().toString(), baseUrl)));
+            thumbnail.setUrl(create(proxyService.rewriteImageUrl(thumbnail.getUrl().toString(), baseUrl)));
         }
-    }
-
-    private static String rewriteImageUrl(String imgUrl, String baseUrl) {
-        if (startsWith(imgUrl, "/")) {
-            try {
-                URI uri = create(baseUrl);
-                imgUrl = uri.resolve("/") + imgUrl;
-            } catch (Exception ignored) {}
-        }
-        if (startsWith(imgUrl, "http")) {
-            String imgToken = encodeBase64URLSafeString(sha256(imgUrl, UTF_8).getBytes()); // SHA-256 + B64 the URL
-            // TODO: get the base URL from a property
-            return String.format("http://localhost:8080/proxy/unsecured/%s/?url=%s", strip(imgToken, "="), encode(imgUrl, UTF_8));
-        }
-
-        return EMPTY;
     }
 
     //
