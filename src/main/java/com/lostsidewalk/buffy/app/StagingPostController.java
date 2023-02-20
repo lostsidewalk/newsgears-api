@@ -35,7 +35,6 @@ import java.util.List;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
-import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
 import static java.net.URI.create;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections4.CollectionUtils.*;
@@ -70,7 +69,7 @@ public class StagingPostController {
     public ResponseEntity<PostFetchResponse> getStagingPosts(@RequestParam(required = false) List<Long> feedIds, Authentication authentication) throws DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
-        log.debug("getStagingPosts for user={}, feedIds={}", username, isEmpty(feedIds) ? "all" : feedIds);
+            log.debug("getStagingPosts for user={}, feedIds={}", username, isEmpty(feedIds) ? "all" : feedIds);
         StopWatch stopWatch = StopWatch.createStarted();
         List<ThumbnailedPostResponse> stagingPosts = addThumbnails(secureStagingPosts(stagingPostService.getStagingPosts(username, feedIds)));
         stopWatch.stop();
@@ -78,22 +77,22 @@ public class StagingPostController {
         return ok(PostFetchResponse.from(stagingPosts));
     }
 
-    @PostMapping("/staging")
-    @Secured({VERIFIED_ROLE})
-    @Transactional
-    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postCreateRequest, Authentication authentication) throws DataAccessException {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails.getUsername();
-        log.debug("createPost for user={}, postCreateRequest={}", username, postCreateRequest);
-        StopWatch stopWatch = StopWatch.createStarted();
-        Long id = stagingPostService.createPost(username, postCreateRequest);
-        stopWatch.stop();
-        appLogService.logStagingPostCreate(username, stopWatch, id);
-        return ok().body(buildResponseMessage("Successfully added post to feedId=" + postCreateRequest.getFeedId()));
-    }
+//    @PostMapping("/staging")
+//    @Secured({UNVERIFIED_ROLE})
+//    @Transactional
+//    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postCreateRequest, Authentication authentication) throws DataAccessException {
+//        UserDetails userDetails = (UserDetails) authentication.getDetails();
+//        String username = userDetails.getUsername();
+//        log.debug("createPost for user={}, postCreateRequest={}", username, postCreateRequest);
+//        StopWatch stopWatch = StopWatch.createStarted();
+//        Long id = stagingPostService.createPost(username, postCreateRequest);
+//        stopWatch.stop();
+//        appLogService.logStagingPostCreate(username, stopWatch, id);
+//        return ok().body(buildResponseMessage("Successfully added post to feedId=" + postCreateRequest.getFeedId()));
+//    }
 
     @PutMapping("/staging/{id}")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<PostConfigResponse> updatePost(@PathVariable Long id, @Valid @RequestBody PostUpdateRequest postUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -114,7 +113,7 @@ public class StagingPostController {
      * null -- clear the current post-read status (i.e., UNREAD)
      */
     @PutMapping("/staging/read-status/post/{id}")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<?> updatePostReadStatus(@PathVariable Long id, @Valid @RequestBody PostStatusUpdateRequest postStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -133,7 +132,7 @@ public class StagingPostController {
      * null -- clear the current post-read status (i.e., UNREAD)
      */
     @PutMapping("/staging/read-status/feed/{id}")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<?> updateFeedReadStatus(@PathVariable Long id, @Valid @RequestBody PostStatusUpdateRequest postStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -152,7 +151,7 @@ public class StagingPostController {
      * null -- clear the current post-pub status
      */
     @PutMapping("/staging/pub-status/{id}")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<?> updatePostPubStatus(@PathVariable Long id, @Valid @RequestBody PostStatusUpdateRequest postStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();

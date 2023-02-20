@@ -17,7 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
+import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static org.springframework.http.CacheControl.noCache;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
@@ -36,7 +36,7 @@ public class ExportController {
     // export feeds
     //
     @GetMapping("/feeds/opml")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<Resource> exportOpml(Authentication authentication) throws OpmlException, DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();

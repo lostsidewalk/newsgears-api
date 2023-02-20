@@ -97,6 +97,10 @@ public class RegistrationController {
         authService.finalizeAuthClaim(username);
         authService.finalizePwResetClaim(username);
         //
+        // (3) generate default queue
+        //
+        feedDefinitionService.createDefaultFeed(username);
+        //
         // (3) generate and send the verification token
         //
         AppToken verificationToken = authService.generateVerificationToken(username);

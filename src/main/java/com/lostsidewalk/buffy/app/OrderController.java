@@ -28,7 +28,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static com.lostsidewalk.buffy.app.order.StripeOrderService.SubscriptionStatus.ACTIVE;
 import static com.lostsidewalk.buffy.app.order.StripeOrderService.SubscriptionStatus.CANCELED;
-import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
+import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.HttpStatus.OK;
@@ -51,7 +51,7 @@ public class OrderController {
     // order initialization (checkout)
     //
     @PostMapping("/order")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<StripeResponse> initCheckout(Authentication authentication) throws StripeException, DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -78,7 +78,7 @@ public class OrderController {
     // subscription fetch
     //
     @GetMapping("/subscriptions")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     public ResponseEntity<List<SubscriptionResponse>> getSubscriptions(Authentication authentication) throws StripeException, DataAccessException, StripeOrderException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
@@ -91,7 +91,7 @@ public class OrderController {
     }
 
     @PutMapping("/subscriptions")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<?> updateSubscription(@Valid @RequestBody UpdateSubscriptionRequest updateSubscriptionRequest, Authentication authentication) throws StripeException, DataAccessException, StripeOrderException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();

@@ -15,10 +15,11 @@ public class QueryMetricsWithErrorDetails {
     private Integer redirectHttpStatusCode;
     private String redirectHttpStatusMessage;
     private Integer importCt;
+    private Integer persistCt;
     private Date importTimestamp;
     private String queryExceptionTypeMessage;
 
-    public QueryMetricsWithErrorDetails(Long queryId, Integer httpStatusCode, String httpStatusMessage, String redirectFeedUrl, Integer redirectHttpStatusCode, String redirectHttpStatusMessage, Integer importCt, Date importTimestamp, String queryExceptionTypeMessage) {
+    public QueryMetricsWithErrorDetails(Long queryId, Integer httpStatusCode, String httpStatusMessage, String redirectFeedUrl, Integer redirectHttpStatusCode, String redirectHttpStatusMessage, Integer importCt, Integer persistCt, Date importTimestamp, String queryExceptionTypeMessage) {
         this.queryId = queryId;
         this.httpStatusCode = httpStatusCode;
         this.httpStatusMessage = httpStatusMessage;
@@ -26,6 +27,7 @@ public class QueryMetricsWithErrorDetails {
         this.redirectHttpStatusCode = redirectHttpStatusCode;
         this.redirectHttpStatusMessage = redirectHttpStatusMessage;
         this.importCt = importCt;
+        this.persistCt = persistCt;
         this.importTimestamp = importTimestamp;
         this.queryExceptionTypeMessage = queryExceptionTypeMessage;
     }
@@ -39,6 +41,7 @@ public class QueryMetricsWithErrorDetails {
                 queryMetrics.getRedirectHttpStatusCode(),
                 queryMetrics.getRedirectHttpStatusMessage(),
                 queryMetrics.getImportCt(),
+                queryMetrics.getPersistCt(),
                 queryMetrics.getImportTimestamp(),
                 errorDetails);
     }

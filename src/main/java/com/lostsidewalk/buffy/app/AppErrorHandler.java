@@ -3,15 +3,15 @@ package com.lostsidewalk.buffy.app;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
+import com.lostsidewalk.buffy.app.audit.OpmlException;
 import com.lostsidewalk.buffy.app.audit.ProxyUrlHashException;
+import com.lostsidewalk.buffy.app.audit.RegistrationException;
 import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
 import com.lostsidewalk.buffy.app.auth.AuthService.AuthProviderException;
 import com.lostsidewalk.buffy.app.mail.MailService.MailException;
 import com.lostsidewalk.buffy.app.model.error.ErrorDetails;
-import com.lostsidewalk.buffy.app.audit.OpmlException;
 import com.lostsidewalk.buffy.app.order.StripeOrderService.StripeOrderException;
 import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
-import com.lostsidewalk.buffy.app.audit.RegistrationException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -165,6 +166,9 @@ public class AppErrorHandler {
         updateErrorCount(e);
         return invalidCredentialsResponse();
     }
+
+    private static final String FIELD_ERROR_TEMPLATE = "Field: %s, rejected value: %s, due to: %s";
+
     //
     // bad request conditions:
     //
@@ -180,7 +184,8 @@ public class AppErrorHandler {
     protected ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, Authentication authentication) {
         errorLogService.logMethodArgumentNotValidException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
         updateErrorCount(e);
-        return badRequestResponse("Validation Failed", e.getBindingResult().toString());
+        String fieldErrors = e.getBindingResult().getFieldErrors().stream().map(fe -> String.format(FIELD_ERROR_TEMPLATE, fe.getField(), fe.getRejectedValue(), fe.getDefaultMessage())).collect(Collectors.joining(","));
+        return badRequestResponse("Validation Failed", fieldErrors);
     }
 
     @ExceptionHandler(ValidationException.class) // runtime exception

@@ -36,7 +36,7 @@ public class Application {
         System.setProperty("sun.net.client.defaultConnectTimeout", "2000");
         System.setProperty("sun.net.client.defaultReadTimeout", "4000");
         System.setProperty("http.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36");
-        System.setProperty("http.keepAlive", "false");
+        System.setProperty("http.keepAlive", "true");
         SpringApplication.run(Application.class, args);
     }
 }

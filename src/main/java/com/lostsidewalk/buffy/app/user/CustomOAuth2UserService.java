@@ -4,6 +4,7 @@ import com.lostsidewalk.buffy.*;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
 import com.lostsidewalk.buffy.app.audit.RegistrationException;
+import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -42,6 +43,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Autowired
     ErrorLogService errorLogService;
+
+    @Autowired
+    FeedDefinitionService feedDefinitionService;
 
     @Autowired
     private UserDao userDao;
@@ -100,6 +104,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         boolean isValid = results.isEmpty();
 
         if (isValid) {
+            StopWatch stopWatch = StopWatch.createStarted();
+            //
+            // (1) create the new user entity
+            //
             User newUser = new User(
                     username, // internal username (can never change)
                     email, // email address (can change, as long as it remains unique globally)
@@ -108,10 +116,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     authProviderProfileImgUrl, // user's profile img URL at the auth provider (can change)
                     authProviderUsername // user's name at the auth provider (can change)
             );
+            //
+            // (2) generate auth claims for the user
+            //
             newUser.setAuthClaim(randomClaimValue());
             newUser.setVerified(true);
-            StopWatch stopWatch = StopWatch.createStarted();
+            //
+            // (3) persist the user entity
+            //
             User u = userDao.add(newUser);
+            //
+            // (3) generate default queue
+            //
+            feedDefinitionService.createDefaultFeed(username);
+            //
+            //
+            //
             stopWatch.stop();
             appLogService.logUserRegistration(u.getUsername(), stopWatch);
             return u;

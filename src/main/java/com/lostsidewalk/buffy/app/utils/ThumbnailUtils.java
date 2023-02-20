@@ -19,10 +19,11 @@ import static org.imgscalr.Scalr.Mode.AUTOMATIC;
 public class ThumbnailUtils {
 
     public static byte[] getImage(String path, byte[] inputSrc, int targetSize) {
-        try (ImageInputStream imageInputStream = createImageInputStream(new ByteArrayInputStream(inputSrc))) {
+        try {
+            ImageInputStream imageInputStream = createImageInputStream(new ByteArrayInputStream(inputSrc));
             return getImage(imageInputStream, targetSize);
         } catch (Exception e) {
-            log.debug("Image decoding of path={} using failed due to: {}", path, e.getMessage());
+            log.warn("Image decoding of path={} using failed due to: {}", path, e.getMessage());
         }
 
         return null;

@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
-import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -48,7 +47,7 @@ public class FeedDiscoveryController {
     CatalogService catalogService;
 
     @GetMapping("/discovery/") // Note: the trailing slash is necessary here due to a bug in Spring
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     public ResponseEntity<?> discoverFeed(@Valid @Size(max = 1024) @RequestParam String url, Authentication authentication) throws DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();

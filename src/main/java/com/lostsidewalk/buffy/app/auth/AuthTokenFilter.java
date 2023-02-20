@@ -10,6 +10,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -74,7 +75,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 				}
 			} catch (MissingOptionsHeaderException e) {
 				log.error("Invalid OPTIONS call for requestUrl={}, request header names: {}", request.getRequestURL(), e.headerNames);
-			} catch (TokenValidationException ignored) {
+			} catch (TokenValidationException | UsernameNotFoundException ignored) {
 				// ignore
 			} catch (AuthClaimException e) {
 				log.error("Cannot set user authentication for requestUrl={}, requestMethod={}, due to: {}", request.getRequestURL(), request.getMethod(), getRootCauseMessage(e));

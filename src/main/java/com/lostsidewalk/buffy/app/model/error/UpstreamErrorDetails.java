@@ -10,7 +10,7 @@ public class UpstreamErrorDetails {
     private Date timestamp;
 
     private String details;
-    private int httpStatusCode;
+    private Integer httpStatusCode;
 
     private String httpStatusMessage;
 

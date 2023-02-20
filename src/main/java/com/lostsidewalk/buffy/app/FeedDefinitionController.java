@@ -47,7 +47,6 @@ import java.util.stream.Stream;
 
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
-import static com.lostsidewalk.buffy.app.user.UserRoles.VERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -147,7 +146,7 @@ public class FeedDefinitionController {
     }
 
     @PostMapping("/feeds/")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
 //    @Transactional
     public ResponseEntity<List<FeedConfigResponse>> createFeed(@Valid @RequestBody FeedConfigRequest[] feedConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -258,7 +257,7 @@ public class FeedDefinitionController {
      * DISABLED -- un-mark the feed for import
      */
     @PutMapping("/feeds/status/{id}")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<?> updateFeedStatus(@PathVariable("id") Long id, @Valid @RequestBody FeedStatusUpdateRequest feedStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -272,7 +271,7 @@ public class FeedDefinitionController {
     }
 
     @PostMapping("/feeds/opml")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<OpmlConfigResponse> previewOpmlConfig(@RequestParam("files") MultipartFile[] opmlFiles, Authentication authentication) throws DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -328,7 +327,7 @@ public class FeedDefinitionController {
     }
 
     @PostMapping("/feeds/thumbnail")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     public ResponseEntity<ThumbnailConfigResponse> previewThumbnailConfig(@RequestParam("file") MultipartFile imageFile, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
@@ -359,7 +358,7 @@ public class FeedDefinitionController {
     }
 
     @GetMapping("/feeds/thumbnail/random")
-    @Secured({VERIFIED_ROLE})
+    @Secured({UNVERIFIED_ROLE})
     public ResponseEntity<ThumbnailConfigResponse> previewRandomThumbnail(Authentication authentication) throws DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();

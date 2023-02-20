@@ -32,7 +32,7 @@ class CurrentUserAuthHandler {
             JwtUtil jwtUtil = tokenService.instanceFor(APP_AUTH_REFRESH, cValue);
             jwtUtil.requireNonExpired();
             String username = jwtUtil.extractUsername();
-            if (isNotBlank(username)) { // sanity check
+            if (isNotBlank(username)) {
                 String authClaim = authService.requireAuthClaim(username);
                 jwtProcessor.processJwt(jwtUtil, username, authClaim, cValue);
                 authService.addTokenCookieToResponse(APP_AUTH_REFRESH, username, authClaim, response);

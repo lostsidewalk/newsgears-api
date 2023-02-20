@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
+import static com.lostsidewalk.buffy.app.utils.WordUtils.randomWords;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -59,6 +60,26 @@ public class FeedDefinitionService {
                 feedConfigRequest.getImgSrc()
             );
         return feedDefinitionDao.add(newFeedDefinition);
+    }
+
+    @SuppressWarnings("UnusedReturnValue") // there are no subsidiary entities to fetch using this Id, thus ignored
+    public Long createDefaultFeed(String username) throws DataAccessException, DataUpdateException {
+        return createFeed(username, FeedConfigRequest.from(
+                generateRandomFeedIdent(),
+                "My Queue",
+                String.format("Default queue for %s", username),
+                "FeedGears 0.4",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
+    }
+
+    private static String generateRandomFeedIdent() {
+        return randomWords();
     }
 
     private Serializable getNewTransportIdent() {

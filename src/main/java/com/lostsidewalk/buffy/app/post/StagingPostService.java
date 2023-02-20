@@ -1,11 +1,9 @@
 package com.lostsidewalk.buffy.app.post;
 
-import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.Publisher.PubResult;
-import com.lostsidewalk.buffy.app.model.request.PostCreateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostUpdateRequest;
 import com.lostsidewalk.buffy.post.StagingPost;
@@ -15,13 +13,10 @@ import com.lostsidewalk.buffy.post.StagingPostDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Serializable;
-import java.util.Date;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Service
@@ -107,49 +102,5 @@ public class StagingPostService {
 
     public StagingPost findById(String username, Long id) throws DataAccessException {
         return stagingPostDao.findById(username, id);
-    }
-
-    public Long createPost(String username, PostCreateRequest postCreateRequest) throws DataAccessException {
-        Date importTimestamp = new Date();
-        StagingPost stagingPost = StagingPost.from(
-                "FeedGears", // importer Id ("FeedGears") // TODO: make this a property
-                postCreateRequest.getFeedId(),
-                buildImporterDesc(username), // importer desc (username)
-                buildSourceObject(), // source obj
-                postCreateRequest.getSourceName(),
-                postCreateRequest.getSourceUrl(),
-                postCreateRequest.getPostTitle(),
-                postCreateRequest.getPostDesc(),
-                postCreateRequest.getPostContents(),
-                postCreateRequest.getPostMedia(),
-                postCreateRequest.getPostITunes(),
-                postCreateRequest.getPostUrl(),
-                postCreateRequest.getPostUrls(),
-                postCreateRequest.getPostImgUrl(),
-                importTimestamp,
-                EMPTY, // post hash
-                username,
-                postCreateRequest.getPostComment(),
-                postCreateRequest.getPostRights(),
-                postCreateRequest.getContributors(),
-                postCreateRequest.getAuthors(),
-                postCreateRequest.getPostCategories(),
-                null, // publish timestamp
-                postCreateRequest.getExpirationTimestamp(),
-                postCreateRequest.getEnclosures(),
-                null
-            );
-
-        return stagingPostDao.add(stagingPost);
-    }
-
-    private String buildImporterDesc(String username) {
-        return username;
-    }
-
-    private static Serializable buildSourceObject() {
-        JsonObject sourceObject = new JsonObject();
-        sourceObject.addProperty("desc", "Manual user submission");
-        return sourceObject.toString();
     }
 }

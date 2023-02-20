@@ -70,6 +70,7 @@ create table staging_posts (
     post_img_transport_ident varchar(256),
     importer_id varchar(256) not null,
     importer_desc varchar(512),
+    query_id bigserial not null,
     feed_id bigserial not null references feed_definitions(id) on delete cascade,
     object_source json not null,
     source_name varchar(256),
@@ -123,6 +124,7 @@ create table query_metrics (
     redirect_http_status_message varchar(512),
     import_timestamp timestamp with time zone,
     import_ct integer,
+    persist_ct integer,
     error_type varchar(64),
     error_detail varchar(1024),
 

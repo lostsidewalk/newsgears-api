@@ -6,18 +6,12 @@ import static org.apache.commons.lang3.RandomUtils.nextInt;
 public class WordUtils {
 
     enum WORD_SET_1 {
-        labored,
         approve,
         provide,
         utopian,
-        slave,
-        lying,
         inquisitive,
-        bewildered,
-        rotten,
         baby,
         familiar,
-        girl,
         moor,
         capable,
         corn,
@@ -29,47 +23,32 @@ public class WordUtils {
         health,
         grey,
         grass,
-        guiltless,
         mice,
         quizzical,
         diligent,
         icy,
         cows,
-        ashamed,
         wool,
         shirt,
-        low,
         toothbrush,
         evasive,
         attract,
         concentrate,
-        psychotic,
-        sleepy,
         swing,
-        drown,
         daily,
-        shame,
         quick,
         square,
         field,
         pan,
-        white,
         curved,
         teenytiny,
-        afford,
         probable,
         tip,
-        harm,
         rambunctious,
         responsible,
         opposite,
-        brown,
         sort,
         oceanic,
-        spill,
-        snakes,
-        grandiose,
-        questionable
     }
 
     enum WORD_SET_2 {
@@ -214,8 +193,8 @@ public class WordUtils {
         int thirdIdx = nextInt(0, WORD_SET_3.values().length);
         return String.format(THREE_WORD_TEMPLATE,
                 WORD_SET_1.values()[firstIdx],
-                WORD_SET_1.values()[secondIdx],
-                WORD_SET_1.values()[thirdIdx]
+                WORD_SET_2.values()[secondIdx],
+                WORD_SET_3.values()[thirdIdx]
         );
     }
 }
