@@ -61,10 +61,8 @@ public class StripeInvoiceHandler {
                         User user = userDao.findByEmailAddress(emailAddress);
                         if (user != null) {
                             add30DaysToSubscription(user);
-                            log.info("Processed invoice-paid event: Updating subscription expiration to expDate={} for userId={}, emailAddress={}, status={}",
-                                    user.getSubscriptionExpDate(), user.getId(), emailAddress, user.getSubscriptionStatus());
                             userDao.updateSubscriptionExpDate(user);
-                            appLogService.logInvoicePaid(user);
+                            appLogService.logInvoicePaid(user, emailAddress);
                         } else {
                             log.error("Unable to locate user by emailAddress={}", emailAddress);
                             throw new StripeEventException("Unable to locate user by emailAddress=" + emailAddress, payload);

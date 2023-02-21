@@ -95,9 +95,9 @@ public class AppLogService {
         auditLog("staging-post-fetch", "feedIdCt={}, stagingPostCt={}, queryMetricsCt={}", username, stopWatch, feedIdCt, stagingPostCt);
     }
 
-    public void logStagingPostCreate(String username, StopWatch stopWatch, Long id) {
-        auditLog("staging-post-create", "id={}", username, stopWatch, id);
-    }
+//    public void logStagingPostCreate(String username, StopWatch stopWatch, Long id) {
+//        auditLog("staging-post-create", "id={}", username, stopWatch, id);
+//    }
 
     public void logStagingPostUpdate(String username, StopWatch stopWatch) {
         auditLog("staging-post-update", null, username, stopWatch);
@@ -164,19 +164,22 @@ public class AppLogService {
         log.info(fullFormatStr, allArgs);
     }
 
-    public void logCustomerCreated(User user) {
-        // TODO: fix this
+    public void logCustomerCreated(User user, String emailAddress, String customerId) {
+        log.info("Processed customer-created event: Setting customer for userId={}, emailAddress={}, customerId={}",
+                user.getId(), emailAddress, customerId);
     }
 
-    public void logCustomerSubscriptionDeleted(User user) {
-        // TODO: fix this
+    public void logCustomerSubscriptionDeleted(User user, String customerId) {
+        log.info("Customer subscription deleted userId={}, customerId={}", user.getId(), customerId);
     }
 
-    public void logCustomerSubscriptionUpdated(User user) {
-        // TODO: fix this
+    public void logCustomerSubscriptionUpdated(User user, String customerId, String subStatus) {
+        log.info("Processed customer-subscription-updated event: Updating subscription status to subStatus={} for customerId={}, userId={}, emailAddress={}",
+                subStatus, customerId, user.getId(), user.getEmailAddress());
     }
 
-    public void logInvoicePaid(User user) {
-        // TODO: fix this
+    public void logInvoicePaid(User user, String emailAddress) {
+        log.info("Processed invoice-paid event: Updating subscription expiration to expDate={} for userId={}, emailAddress={}, status={}",
+                user.getSubscriptionExpDate(), user.getId(), emailAddress, user.getSubscriptionStatus());
     }
 }

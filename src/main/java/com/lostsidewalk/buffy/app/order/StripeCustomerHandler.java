@@ -39,11 +39,9 @@ public class StripeCustomerHandler {
                 User user = userDao.findByEmailAddress(emailAddress);
                 if (user != null) {
                     String customerId = payload.get(PAYLOAD_ID).getAsString();
-                    log.info("Processed customer-created event: Setting customer for userId={}, emailAddress={}, customerId={}",
-                            user.getId(), emailAddress, customerId);
                     user.setCustomerId(customerId);
                     userDao.updateCustomerId(user);
-                    appLogService.logCustomerCreated(user);
+                    appLogService.logCustomerCreated(user, emailAddress, customerId);
                 } else {
                     log.error("Unable to locate user by emailAddress={}", emailAddress);
                     throw new StripeEventException("Unable to locate user by emailAddress=" + emailAddress, payload);
@@ -72,7 +70,7 @@ public class StripeCustomerHandler {
                 user.setSubscriptionStatus(null);
                 user.setSubscriptionExpDate(null);
                 userDao.update(user);
-                appLogService.logCustomerSubscriptionDeleted(user);
+                appLogService.logCustomerSubscriptionDeleted(user, customerId);
             } else {
                 log.error("Unable to locate customer by Id={}", customerId);
                 throw new StripeEventException("Unable to locate customer by Id=" + customerId, payload);
@@ -94,11 +92,9 @@ public class StripeCustomerHandler {
             User user = userDao.findByCustomerId(customerId);
             if (user != null) {
                 String subStatus = payload.get(PAYLOAD_STATUS).getAsString();
-                log.info("Processed customer-subscription-updated event: Updating subscription status to subStatus={} for customerId={}, userId={}, emailAddress={}",
-                        subStatus, customerId, user.getId(), user.getEmailAddress());
                 user.setSubscriptionStatus(subStatus);
                 userDao.updateSubscriptionStatus(user);
-                appLogService.logCustomerSubscriptionUpdated(user);
+                appLogService.logCustomerSubscriptionUpdated(user, customerId, subStatus);
             } else {
                 log.error("Unable to locate customer by Id={}", customerId);
                 throw new StripeEventException("Unable to locate customer by Id=" + customerId, payload);
