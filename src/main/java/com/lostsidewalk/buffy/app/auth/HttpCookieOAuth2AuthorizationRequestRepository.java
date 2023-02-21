@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.security;
+package com.lostsidewalk.buffy.app.auth;
 
 import com.lostsidewalk.buffy.app.utils.CookieUtils;
 import org.springframework.stereotype.Component;

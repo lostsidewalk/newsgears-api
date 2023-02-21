@@ -1,7 +1,7 @@
 package com.lostsidewalk.buffy.app.auth;
 
+import com.lostsidewalk.buffy.app.audit.TokenValidationException;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
-import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
 import com.lostsidewalk.buffy.app.webauthtoken.WebAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;

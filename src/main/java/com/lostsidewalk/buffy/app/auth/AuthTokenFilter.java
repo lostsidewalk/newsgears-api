@@ -2,10 +2,10 @@ package com.lostsidewalk.buffy.app.auth;
 
 import com.google.common.collect.ImmutableSet;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.app.audit.AuthClaimException;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.TokenValidationException;
 import com.lostsidewalk.buffy.app.auth.OptionsAuthHandler.MissingOptionsHeaderException;
-import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

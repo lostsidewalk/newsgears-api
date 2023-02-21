@@ -1,5 +1,6 @@
 package com.lostsidewalk.buffy.app.token;
 
+import com.lostsidewalk.buffy.app.audit.TokenValidationException;
 import com.lostsidewalk.buffy.app.model.TokenType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -32,13 +33,6 @@ public class TokenService {
         Boolean isTokenExpired();
         void requireNonExpired() throws TokenValidationException;
         void validateToken() throws TokenValidationException;
-    }
-
-    public static class TokenValidationException extends Exception {
-
-        public TokenValidationException(String msg) {
-            super(msg);
-        }
     }
 
     public JwtUtil instanceFor(TokenType tokenType, String token) throws TokenValidationException {

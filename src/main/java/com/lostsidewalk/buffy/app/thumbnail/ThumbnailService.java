@@ -42,6 +42,9 @@ public class ThumbnailService {
     @Autowired
     RenderedThumbnailDao renderedThumbnailDao; // for redis interaction
 
+    @Value("${newsgears.userAgent}")
+    String feedGearsUserAgent;
+
     public RenderedThumbnail getThumbnail(String transportIdent) throws DataAccessException {
         if (isBlank(transportIdent)) {
             return null;
@@ -80,9 +83,7 @@ public class ThumbnailService {
     private byte[] fetch(String url) throws IOException {
         URL u = new URL(url);
         URLConnection urlConnection = u.openConnection();
-        // TODO: make this property-configurable
-        String userAgent = "Lost Sidewalk FeedGears RSS Aggregator v.0.4";
-        urlConnection.setRequestProperty("User-Agent", userAgent);
+        urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
         try (InputStream is = urlConnection.getInputStream()) {
             return is.readAllBytes();
         }

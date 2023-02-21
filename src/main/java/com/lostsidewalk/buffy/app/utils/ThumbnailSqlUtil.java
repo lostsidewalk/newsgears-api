@@ -1,8 +1,5 @@
 package com.lostsidewalk.buffy.app.utils;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;

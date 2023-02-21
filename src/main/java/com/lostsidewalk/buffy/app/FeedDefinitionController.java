@@ -13,6 +13,7 @@ import com.lostsidewalk.buffy.app.model.response.FeedFetchResponse;
 import com.lostsidewalk.buffy.app.model.response.OpmlConfigResponse;
 import com.lostsidewalk.buffy.app.model.response.ThumbnailConfigResponse;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
+import com.lostsidewalk.buffy.app.post.StagingPostService;
 import com.lostsidewalk.buffy.app.query.QueryDefinitionService;
 import com.lostsidewalk.buffy.app.querymetrics.QueryMetricsService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
@@ -48,8 +49,10 @@ import java.util.stream.Stream;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
+import static com.lostsidewalk.buffy.post.StagingPost.PostPubStatus.DEPUB_PENDING;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
@@ -64,6 +67,9 @@ public class FeedDefinitionController {
 
     @Autowired
     AppLogService appLogService;
+
+    @Autowired
+    StagingPostService stagingPostService;
 
     @Autowired
     FeedDefinitionService feedDefinitionService;
@@ -381,7 +387,7 @@ public class FeedDefinitionController {
         String username = userDetails.getUsername();
         log.debug("deleteFeedById for user={}", username);
         StopWatch stopWatch = StopWatch.createStarted();
-        // TODO: check deployed, undeploy if necessary
+        stagingPostService.updateFeedPubStatus(username, id, DEPUB_PENDING);
         feedDefinitionService.deleteById(username, id);
         stopWatch.stop();
         appLogService.logFeedDelete(username, stopWatch, 1);

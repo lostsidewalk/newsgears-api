@@ -17,8 +17,6 @@ import static com.lostsidewalk.buffy.AuthProvider.LOCAL;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH_REFRESH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;

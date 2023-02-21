@@ -2,11 +2,6 @@ package com.lostsidewalk.buffy.app.audit;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthProviderException;
-import com.lostsidewalk.buffy.app.mail.MailService.MailException;
-import com.lostsidewalk.buffy.app.order.StripeOrderService.StripeOrderException;
-import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;

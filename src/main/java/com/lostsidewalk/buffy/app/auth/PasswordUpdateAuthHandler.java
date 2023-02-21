@@ -1,9 +1,9 @@
 package com.lostsidewalk.buffy.app.auth;
 
 import com.lostsidewalk.buffy.DataAccessException;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.TokenValidationException;
 import com.lostsidewalk.buffy.app.token.TokenService;
-import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

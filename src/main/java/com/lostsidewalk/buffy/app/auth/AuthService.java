@@ -1,6 +1,8 @@
 package com.lostsidewalk.buffy.app.auth;
 
 import com.lostsidewalk.buffy.*;
+import com.lostsidewalk.buffy.app.audit.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.AuthProviderException;
 import com.lostsidewalk.buffy.app.model.request.PasswordResetRequest;
 import com.lostsidewalk.buffy.app.model.AppToken;
 import com.lostsidewalk.buffy.app.token.TokenService;
@@ -246,22 +248,5 @@ public class AuthService {
 
     private static String randomClaimValue() {
         return randomAlphanumeric(16);
-    }
-
-    public static class AuthProviderException extends Exception {
-
-        public final String username;
-
-        public AuthProviderException(String username, AuthProvider expected, AuthProvider actual) {
-            super("User has incorrect auth provider, username=" + username + ", expected=" + expected + ", actual=" + actual);
-            this.username = username;
-        }
-    }
-
-    public static class AuthClaimException extends Exception {
-
-        public AuthClaimException(String msg) {
-            super(msg);
-        }
     }
 }

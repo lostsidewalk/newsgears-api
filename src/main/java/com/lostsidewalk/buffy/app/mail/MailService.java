@@ -3,6 +3,7 @@ package com.lostsidewalk.buffy.app.mail;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.User;
 import com.lostsidewalk.buffy.UserDao;
+import com.lostsidewalk.buffy.app.audit.MailException;
 import com.lostsidewalk.buffy.app.model.AppToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,11 +102,5 @@ public class MailService {
         }
 
         mailSender.send(message);
-    }
-    public static class MailException extends Exception {
-
-        public MailException(String msg) {
-            super(msg);
-        }
     }
 }

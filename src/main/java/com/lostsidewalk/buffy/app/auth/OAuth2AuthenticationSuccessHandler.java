@@ -2,7 +2,6 @@ package com.lostsidewalk.buffy.app.auth;
 
 import com.lostsidewalk.buffy.app.utils.CookieUtils;
 import com.lostsidewalk.buffy.app.audit.BadRequestException;
-import com.lostsidewalk.buffy.app.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.lostsidewalk.buffy.app.model.AppToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +19,14 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static com.lostsidewalk.buffy.app.security.HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH_REFRESH;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 @Slf4j
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    public static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect_uri";
 
     @Autowired
     AuthService authService;

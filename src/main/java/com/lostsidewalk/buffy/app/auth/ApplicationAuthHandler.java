@@ -1,10 +1,10 @@
 package com.lostsidewalk.buffy.app.auth;
 
 import com.lostsidewalk.buffy.DataAccessException;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.TokenValidationException;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
-import com.lostsidewalk.buffy.app.token.TokenService.TokenValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;

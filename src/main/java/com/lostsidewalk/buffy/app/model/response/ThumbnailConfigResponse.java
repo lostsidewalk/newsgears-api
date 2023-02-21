@@ -4,8 +4,6 @@ import lombok.Data;
 
 import java.util.List;
 
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-
 @Data
 public class ThumbnailConfigResponse {
 

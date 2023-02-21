@@ -2,9 +2,9 @@ package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
+import com.lostsidewalk.buffy.app.audit.AuthClaimException;
+import com.lostsidewalk.buffy.app.audit.AuthProviderException;
 import com.lostsidewalk.buffy.app.auth.AuthService;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthClaimException;
-import com.lostsidewalk.buffy.app.auth.AuthService.AuthProviderException;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
 import com.lostsidewalk.buffy.app.model.request.LoginRequest;
 import com.lostsidewalk.buffy.app.model.response.LoginResponse;

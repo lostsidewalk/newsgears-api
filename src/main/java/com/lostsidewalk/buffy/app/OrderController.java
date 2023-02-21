@@ -2,11 +2,11 @@ package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
+import com.lostsidewalk.buffy.app.audit.StripeOrderException;
 import com.lostsidewalk.buffy.app.model.request.UpdateSubscriptionRequest;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import com.lostsidewalk.buffy.app.model.response.SubscriptionResponse;
 import com.lostsidewalk.buffy.app.order.StripeOrderService;
-import com.lostsidewalk.buffy.app.order.StripeOrderService.StripeOrderException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-import static com.lostsidewalk.buffy.app.order.StripeOrderService.SubscriptionStatus.ACTIVE;
-import static com.lostsidewalk.buffy.app.order.StripeOrderService.SubscriptionStatus.CANCELED;
+import static com.lostsidewalk.buffy.app.model.request.SubscriptionStatus.ACTIVE;
+import static com.lostsidewalk.buffy.app.model.request.SubscriptionStatus.CANCELED;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.StringUtils.EMPTY;

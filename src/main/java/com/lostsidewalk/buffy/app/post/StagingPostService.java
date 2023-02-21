@@ -100,6 +100,17 @@ public class StagingPostService {
         return postPublisher.publishFeed(username, feedId);
     }
 
+    public List<PubResult> updateFeedPubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
+        //
+        // perform the update
+        //
+        stagingPostDao.updateFeedPubStatus(username, id, newStatus);
+        //
+        // deploy the feed
+        //
+        return postPublisher.publishFeed(username, id);
+    }
+
     public StagingPost findById(String username, Long id) throws DataAccessException {
         return stagingPostDao.findById(username, id);
     }

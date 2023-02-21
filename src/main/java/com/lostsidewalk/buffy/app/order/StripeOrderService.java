@@ -3,6 +3,7 @@ package com.lostsidewalk.buffy.app.order;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.User;
 import com.lostsidewalk.buffy.UserDao;
+import com.lostsidewalk.buffy.app.audit.StripeOrderException;
 import com.lostsidewalk.buffy.app.model.response.InvoiceResponse;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import com.lostsidewalk.buffy.app.model.response.SubscriptionResponse;
@@ -39,9 +40,6 @@ import static java.util.stream.Collectors.toList;
 @Transactional
 public class StripeOrderService {
 
-    public enum SubscriptionStatus {
-        CANCELED, ACTIVE
-    }
 
     @Autowired
     UserDao userDao;
@@ -176,15 +174,6 @@ public class StripeOrderService {
         SubscriptionUpdateParams updateParams = new SubscriptionUpdateParams.Builder().setCancelAtPeriodEnd(false).build();
         for (Subscription subscription : subscriptions) {
             subscription.update(updateParams);
-        }
-    }
-
-    //
-
-    public static class StripeOrderException extends Exception {
-
-        StripeOrderException(String msg) {
-            super(msg);
         }
     }
 }

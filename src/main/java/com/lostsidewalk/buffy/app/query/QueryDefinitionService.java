@@ -16,6 +16,7 @@ import com.lostsidewalk.buffy.query.QueryDefinition;
 import com.lostsidewalk.buffy.query.QueryDefinitionDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
@@ -40,6 +41,9 @@ public class QueryDefinitionService {
 
     @Autowired
     QueryDefinitionDao queryDefinitionDao;
+
+    @Value("${newsgears.userAgent}")
+    String feedGearsUserAgent;
 
     private static final Gson GSON = new Gson();
 
@@ -232,7 +236,7 @@ public class QueryDefinitionService {
     private String discoverFeedTitle(String url) {
         String title;
         try {
-            FeedDiscoveryInfo feedDiscoveryInfo = discoverUrl(url);
+            FeedDiscoveryInfo feedDiscoveryInfo = discoverUrl(url, feedGearsUserAgent);
             ContentObject titleObj = feedDiscoveryInfo.getTitle();
             title = titleObj.getValue(); // TODO: might be worth paying attention to 'type', and constructing the title accordingly
         } catch (Exception e) {
