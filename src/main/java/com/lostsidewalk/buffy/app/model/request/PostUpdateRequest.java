@@ -10,10 +10,6 @@ import java.util.List;
 
 @Data
 public class PostUpdateRequest {
-    @Size(max=256)
-    String sourceName;
-    @Size(max=1024)
-    String sourceUrl;
     @Size(max=1024)
     ContentObject postTitle;
     @Size(max=8192)

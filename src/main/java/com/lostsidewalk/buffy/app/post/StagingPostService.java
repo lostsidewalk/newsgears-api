@@ -43,8 +43,6 @@ public class StagingPostService {
 
     public void updatePost(String username, long id, PostUpdateRequest postUpdateRequest) throws DataUpdateException, DataAccessException {
         stagingPostDao.updatePost(username, id,
-                postUpdateRequest.getSourceName(),
-                postUpdateRequest.getSourceUrl(),
                 postUpdateRequest.getPostTitle(),
                 postUpdateRequest.getPostDesc(),
                 postUpdateRequest.getPostContents(),
@@ -100,6 +98,7 @@ public class StagingPostService {
         return postPublisher.publishFeed(username, feedId);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public List<PubResult> updateFeedPubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
         //
         // perform the update

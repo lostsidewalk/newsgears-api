@@ -14,10 +14,6 @@ import java.util.List;
 public class PostCreateRequest {
     @NotNull
     Long feedId;
-    @Size(max=256)
-    String sourceName;
-    @Size(max=1024)
-    String sourceUrl;
     @NotBlank
     @Size(max=1024)
     ContentObject postTitle;

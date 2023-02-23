@@ -110,7 +110,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"exportConfig\":null,\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"feedImgSrc\":null,\"feedImgTransportIdent\":null,\"lastDeployed\":null},\"queryDefinitions\":[{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"NEWSAPIV2_HEADLINES\",\"queryConfig\":null}],\"queryMetrics\":{},\"feedImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\"},\"queryDefinitions\":[{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"NEWSAPIV2_HEADLINES\"}],\"queryMetrics\":{},\"feedImgSrc\":null}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());

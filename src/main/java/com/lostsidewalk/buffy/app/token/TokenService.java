@@ -41,8 +41,7 @@ public class TokenService {
         try {
             claims = Jwts.parser().requireAudience(tokenType.name()).setSigningKey(this.secretKey).parseClaimsJws(token).getBody();
         } catch (Exception e) {
-            log.error("Token parsing error due to: {}", getRootCauseMessage(e));
-            throw new TokenValidationException("Unable to parse token");
+            throw new TokenValidationException("Unable to parse token due to: " + getRootCauseMessage(e));
         }
 
         JwtUtil i = new JwtUtil() {
