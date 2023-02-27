@@ -88,7 +88,7 @@ public class AppErrorHandler {
     }
 
     @ExceptionHandler(IOException.class)
-    public ResponseEntity<?> handleIOException(IOException e, Authentication authentication) {
+    public void handleIOException(IOException e, Authentication authentication) {
         String username = ofNullable(authentication).map(Authentication::getName).orElse(null);
         Date timestamp = new Date();
         if (e instanceof ClientAbortException) {
@@ -97,7 +97,6 @@ public class AppErrorHandler {
             errorLogService.logIOException(username, timestamp, e);
         }
         updateErrorCount(e);
-        return internalServerErrorResponse();
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
