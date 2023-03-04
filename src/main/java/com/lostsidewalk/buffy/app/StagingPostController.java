@@ -5,15 +5,11 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.Publisher.PubResult;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
-import com.lostsidewalk.buffy.app.model.request.PostUpdateRequest;
 import com.lostsidewalk.buffy.app.model.response.DeployResponse;
-import com.lostsidewalk.buffy.app.model.response.PostConfigResponse;
 import com.lostsidewalk.buffy.app.model.response.PostFetchResponse;
 import com.lostsidewalk.buffy.app.model.response.ThumbnailedPostResponse;
 import com.lostsidewalk.buffy.app.post.StagingPostService;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
-import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
-import com.lostsidewalk.buffy.model.RenderedThumbnail;
 import com.lostsidewalk.buffy.post.*;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -22,7 +18,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
@@ -35,7 +30,6 @@ import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static java.net.URI.create;
-import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections4.CollectionUtils.*;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -53,13 +47,7 @@ public class StagingPostController {
     StagingPostService stagingPostService;
 
     @Autowired
-    ThumbnailService thumbnailService;
-
-    @Autowired
     ProxyService proxyService;
-
-    @Value("${newsgears.thumbnail.size}")
-    int thumbnailSize;
     //
     // get staging posts
     //
@@ -74,36 +62,6 @@ public class StagingPostController {
         stopWatch.stop();
         appLogService.logStagingPostFetch(username, stopWatch, size(feedIds), size(stagingPosts));
         return ok(PostFetchResponse.from(stagingPosts));
-    }
-
-//    @PostMapping("/staging")
-//    @Secured({UNVERIFIED_ROLE})
-//    @Transactional
-//    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postCreateRequest, Authentication authentication) throws DataAccessException {
-//        UserDetails userDetails = (UserDetails) authentication.getDetails();
-//        String username = userDetails.getUsername();
-//        log.debug("createPost for user={}, postCreateRequest={}", username, postCreateRequest);
-//        StopWatch stopWatch = StopWatch.createStarted();
-//        Long id = stagingPostService.createPost(username, postCreateRequest);
-//        stopWatch.stop();
-//        appLogService.logStagingPostCreate(username, stopWatch, id);
-//        return ok().body(buildResponseMessage("Successfully added post to feedId=" + postCreateRequest.getFeedId()));
-//    }
-
-    @PutMapping("/staging/{id}")
-    @Secured({UNVERIFIED_ROLE})
-    @Transactional
-    public ResponseEntity<PostConfigResponse> updatePost(@PathVariable Long id, @Valid @RequestBody PostUpdateRequest postUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails.getUsername();
-        log.debug("updatePost for user={}, postId={}, postUpdateRequest={}", username, id, postUpdateRequest);
-        StopWatch stopWatch = StopWatch.createStarted();
-        stagingPostService.updatePost(username, id, postUpdateRequest);
-        StagingPost s = stagingPostService.findById(username, id);
-        byte[] thumbnail = buildThumbnail(s);
-        stopWatch.stop();
-        appLogService.logStagingPostUpdate(username, stopWatch);
-        return ok(PostConfigResponse.from(thumbnail));
     }
 
     /**
@@ -292,7 +250,7 @@ public class StagingPostController {
 
     //
 
-    private List<ThumbnailedPostResponse> addThumbnails(List<StagingPost> stagingPosts) throws DataAccessException {
+    private List<ThumbnailedPostResponse> addThumbnails(List<StagingPost> stagingPosts) {
         List<ThumbnailedPostResponse> responses = newArrayListWithCapacity(size(stagingPosts));
         for (StagingPost stagingPost : stagingPosts) {
             responses.add(this.addThumbnail(stagingPost));
@@ -300,21 +258,14 @@ public class StagingPostController {
         return responses;
     }
 
-    private ThumbnailedPostResponse addThumbnail(StagingPost s) throws DataAccessException {
-        byte[] image = buildThumbnail(s);
-        return ThumbnailedPostResponse.from(s, image);
+    private ThumbnailedPostResponse addThumbnail(StagingPost s) {
+        String imageProxyUrl = buildThumbnailProxyUrl(s);
+        return ThumbnailedPostResponse.from(s, imageProxyUrl);
     }
 
-    private byte[] buildThumbnail(StagingPost s) throws DataAccessException {
+    private String buildThumbnailProxyUrl(StagingPost s) {
         if (isNotBlank(s.getPostImgUrl())) {
-            String transportIdent = s.getPostImgTransportIdent();
-            byte[] image = ofNullable(thumbnailService.getThumbnail(transportIdent)).map(RenderedThumbnail::getImage).orElse(null);
-            if (image == null) {
-                image = ofNullable(thumbnailService.refreshThumbnail(transportIdent, s.getPostImgUrl(), this.thumbnailSize))
-                        .map(RenderedThumbnail::getImage)
-                        .orElse(null);
-            }
-            return image;
+            return proxyService.rewriteImageUrl(s.getPostImgUrl(), s.getPostUrl());
         }
 
         return null;

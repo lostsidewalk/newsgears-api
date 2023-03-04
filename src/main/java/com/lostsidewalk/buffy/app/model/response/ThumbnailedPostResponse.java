@@ -8,7 +8,6 @@ import java.io.Serial;
 import java.io.Serializable;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 @Data
 @JsonInclude(NON_EMPTY)
@@ -25,9 +24,9 @@ public class ThumbnailedPostResponse implements Serializable {
         this.post = staginPost;
     }
 
-    public static ThumbnailedPostResponse from(StagingPost stagingPost, byte[] postImg) {
+    public static ThumbnailedPostResponse from(StagingPost stagingPost, String postImgSrc) {
         ThumbnailedPostResponse r = new ThumbnailedPostResponse(stagingPost);
-        r.postImgSrc = encodeBase64String(postImg);
+        r.postImgSrc = postImgSrc;
 
         return r;
     }
