@@ -3,7 +3,6 @@ package com.lostsidewalk.buffy.app.order;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.User;
 import com.lostsidewalk.buffy.UserDao;
-import com.lostsidewalk.buffy.app.audit.StripeOrderException;
 import com.lostsidewalk.buffy.app.model.response.InvoiceResponse;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import com.lostsidewalk.buffy.app.model.response.SubscriptionResponse;
@@ -108,7 +107,7 @@ public class StripeOrderService {
         return Webhook.constructEvent(eventStr, sigHeader, whApiKey);
     }
 
-    public List<SubscriptionResponse> getSubscriptions(String username) throws StripeException, DataAccessException, StripeOrderException {
+    public List<SubscriptionResponse> getSubscriptions(String username) throws StripeException, DataAccessException {
         return _getSubscriptions(username).stream()
                 .map(s -> SubscriptionResponse.from(
                         s.getCancelAtPeriodEnd(),
@@ -121,14 +120,14 @@ public class StripeOrderService {
                 .collect(toList());
     }
 
-    private List<Subscription> _getSubscriptions(String username) throws StripeException, DataAccessException, StripeOrderException {
+    private List<Subscription> _getSubscriptions(String username) throws StripeException, DataAccessException {
         User user = userDao.findByName(username);
         if (user == null) {
             throw new UsernameNotFoundException(username);
         }
         String customerId = user.getCustomerId();
         if (customerId == null) {
-            throw new StripeOrderException("User does not have a customer Id, userId=" + user.getId());
+            return List.of();
         }
         SubscriptionCollection subscriptionCollection = Subscription.list(
                 SubscriptionListParams.builder()
@@ -161,7 +160,7 @@ public class StripeOrderService {
                 invoice.getDescription());
     }
 
-    public void cancelSubscription(String username) throws StripeException, DataAccessException, StripeOrderException {
+    public void cancelSubscription(String username) throws StripeException, DataAccessException {
         List<Subscription> subscriptions = _getSubscriptions(username);
         SubscriptionUpdateParams updateParams = new SubscriptionUpdateParams.Builder().setCancelAtPeriodEnd(true).build();
         for (Subscription subscription : subscriptions) {
@@ -169,7 +168,7 @@ public class StripeOrderService {
         }
     }
 
-    public void resumeSubscription(String username) throws StripeException, DataAccessException, StripeOrderException {
+    public void resumeSubscription(String username) throws StripeException, DataAccessException {
         List<Subscription> subscriptions = _getSubscriptions(username);
         SubscriptionUpdateParams updateParams = new SubscriptionUpdateParams.Builder().setCancelAtPeriodEnd(false).build();
         for (Subscription subscription : subscriptions) {

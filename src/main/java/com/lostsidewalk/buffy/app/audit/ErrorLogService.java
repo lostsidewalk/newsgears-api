@@ -54,11 +54,6 @@ public class ErrorLogService {
         auditError("stripe-exception", "message={}", username, timestamp, e.getMessage());
     }
 
-    // Note: this is an exception that is thrown when the StripeOrderService blows up when servicing a controller-initiated request
-    public void logStripeOrderException(String username, Date timestamp, StripeOrderException e) {
-        auditError("stripe-order-exception", "message={}", username, timestamp, e.getMessage());
-    }
-
     // Note: this is an exception that is thrown when one of the Stripe callback handlers blows a gasket
     public void logStripeEventException(String username, Date timestamp, StripeEventException e) {
         auditError("stripe-event-exception", "message={}, payload={}", username, timestamp, e.getMessage(), e.eventPayload);

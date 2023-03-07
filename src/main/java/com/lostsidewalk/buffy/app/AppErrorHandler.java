@@ -56,7 +56,6 @@ public class AppErrorHandler {
     // IO exception/client abort exception
     // illegal argument exception (runtime)
     // stripe exception
-    // stripe order exception
     // mail exception
     //
     @ExceptionHandler(DataAccessException.class)
@@ -109,13 +108,6 @@ public class AppErrorHandler {
     @ExceptionHandler(StripeException.class)
     public ResponseEntity<?> handleStripeException(StripeException e, Authentication authentication) {
         errorLogService.logStripeException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
-        updateErrorCount(e);
-        return internalServerErrorResponse();
-    }
-
-    @ExceptionHandler(StripeOrderException.class)
-    public ResponseEntity<?> hanldeStripeOrderException(StripeOrderException e, Authentication authentication) {
-        errorLogService.logStripeOrderException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
         updateErrorCount(e);
         return internalServerErrorResponse();
     }

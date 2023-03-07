@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.FrameworkConfig;
 import com.lostsidewalk.buffy.app.model.response.SettingsResponse;
+import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +50,23 @@ public class SettingsControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals(GSON.fromJson("{\"username\":\"me\",\"emailAddress\":\"testEmailAddress\",\"authProvider\":\"LOCAL\",\"authProviderProfileImgUrl\":\"testAuthProviderProfileImgUrl\",\"authProviderUsername\":\"testAuthProviderUsername\",\"frameworkConfig\":{\"userId\":null,\"notifications\":{}}}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
+                    assertEquals(GSON.fromJson("{\"username\":\"me\",\"emailAddress\":\"testEmailAddress\",\"authProvider\":\"LOCAL\",\"authProviderProfileImgUrl\":\"testAuthProviderProfileImgUrl\",\"authProviderUsername\":\"testAuthProviderUsername\",\"frameworkConfig\":{\"userId\":null,\"notifications\":{}},\"subscription\":null}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
+                })
+                .andExpect(status().isOk());
+    }
+
+    private static final StripeResponse TEST_STRIPE_RESPONSE = StripeResponse.from("testSessionId", "testSessionUrl");
+
+    @Test
+    void test_initCheckout() throws Exception {
+        when(this.stripeOrderService.createCheckoutSession("me")).thenReturn(TEST_STRIPE_RESPONSE);
+        mockMvc.perform(MockMvcRequestBuilders
+                        .post("/order")
+                        .header("Authorization", "Bearer testToken")
+                        .accept(APPLICATION_JSON))
+                .andExpect(result -> {
+                    String responseContent = result.getResponse().getContentAsString();
+                    assertEquals(GSON.fromJson("{\"sessionId\":\"testSessionId\",\"sessionUrl\":\"testSessionUrl\"}", JsonObject.class), GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());
     }
