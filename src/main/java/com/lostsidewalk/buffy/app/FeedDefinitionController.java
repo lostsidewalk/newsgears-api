@@ -8,12 +8,10 @@ import com.lostsidewalk.buffy.app.model.QueryMetricsWithErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
-import com.lostsidewalk.buffy.app.model.response.FeedConfigResponse;
-import com.lostsidewalk.buffy.app.model.response.FeedFetchResponse;
-import com.lostsidewalk.buffy.app.model.response.OpmlConfigResponse;
-import com.lostsidewalk.buffy.app.model.response.ThumbnailConfigResponse;
+import com.lostsidewalk.buffy.app.model.response.*;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
 import com.lostsidewalk.buffy.app.post.StagingPostService;
+import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import com.lostsidewalk.buffy.app.query.QueryDefinitionService;
 import com.lostsidewalk.buffy.app.querymetrics.QueryMetricsService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
@@ -46,6 +44,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
@@ -87,6 +86,9 @@ public class FeedDefinitionController {
     OpmlService opmlService;
 
     @Autowired
+    ProxyService proxyService;
+
+    @Autowired
     PostImporter postImporter;
 
     @Value("${newsgears.thumbnail.size}")
@@ -118,9 +120,9 @@ public class FeedDefinitionController {
         StopWatch stopWatch = StopWatch.createStarted();
         // query definitions
         List<QueryDefinition> allQueryDefinitions = queryDefinitionService.findByUsername(username);
-        Map<Long, List<QueryDefinition>> queryDefinitionsByFeedId = new HashMap<>();
+        Map<Long, List<ThumbnailedQueryDefinition>> queryDefinitionsByFeedId = new HashMap<>();
         for (QueryDefinition qd : allQueryDefinitions) {
-            queryDefinitionsByFeedId.computeIfAbsent(qd.getFeedId(), l -> new ArrayList<>()).add(qd);
+            queryDefinitionsByFeedId.computeIfAbsent(qd.getFeedId(), l -> new ArrayList<>()).add(addThumbnail(qd));
         }
         // query metrics
         List<QueryMetricsWithErrorDetails> allQueryMetrics = queryMetricsService.findByUsername(username).stream()
@@ -186,7 +188,7 @@ public class FeedDefinitionController {
             FeedDefinition feedDefinition = feedDefinitionService.findByFeedId(username, feedId);
             createdFeeds.add(feedDefinition);
             // re-fetch query definitions for this feed
-            List<QueryDefinition> queryDefinitions = queryDefinitionService.findByFeedId(username, feedId);
+            List<ThumbnailedQueryDefinition> queryDefinitions = addThumbnails(queryDefinitionService.findByFeedId(username, feedId));
             // build feed config responses to return the front-end
             feedConfigResponses.add(FeedConfigResponse.from(
                     feedDefinition,
@@ -245,7 +247,7 @@ public class FeedDefinitionController {
         // re-fetch this feed definition and query definitions and return to front-end
         FeedDefinition feedDefinition = feedDefinitionService.findByFeedId(username, id);
         // query definitions
-        List<QueryDefinition> queryDefinitions = queryDefinitionService.findByFeedId(username, id);
+        List<ThumbnailedQueryDefinition> queryDefinitions = addThumbnails(queryDefinitionService.findByFeedId(username, id));
         // thumbnail
         byte[] thumbnail = buildThumbnail(feedDefinition);
         stopWatch.stop();
@@ -392,6 +394,29 @@ public class FeedDefinitionController {
         stopWatch.stop();
         appLogService.logFeedDelete(username, stopWatch, 1);
         return ok().body(buildResponseMessage("Deleted feed Id " + id));
+    }
+
+    //
+
+    private List<ThumbnailedQueryDefinition> addThumbnails(List<QueryDefinition> queryDefinitions) {
+        List<ThumbnailedQueryDefinition> responses = newArrayListWithCapacity(size(queryDefinitions));
+        for (QueryDefinition queryDefinition : queryDefinitions) {
+            responses.add(addThumbnail(queryDefinition));
+        }
+        return responses;
+    }
+
+    private ThumbnailedQueryDefinition addThumbnail(QueryDefinition q) {
+        String imageProxyUrl = buildThumbnailProxyUrl(q);
+        return ThumbnailedQueryDefinition.from(q, imageProxyUrl);
+    }
+
+    private String buildThumbnailProxyUrl(QueryDefinition q) {
+        if (isNotBlank(q.getQueryImageUrl())) {
+            return proxyService.rewriteImageUrl(q.getQueryImageUrl(), EMPTY);
+        }
+
+        return null;
     }
 
     private byte[] buildThumbnail(FeedDefinition f) throws DataAccessException {

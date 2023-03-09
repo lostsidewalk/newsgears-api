@@ -253,7 +253,7 @@ public class StagingPostController {
     private List<ThumbnailedPostResponse> addThumbnails(List<StagingPost> stagingPosts) {
         List<ThumbnailedPostResponse> responses = newArrayListWithCapacity(size(stagingPosts));
         for (StagingPost stagingPost : stagingPosts) {
-            responses.add(this.addThumbnail(stagingPost));
+            responses.add(addThumbnail(stagingPost));
         }
         return responses;
     }

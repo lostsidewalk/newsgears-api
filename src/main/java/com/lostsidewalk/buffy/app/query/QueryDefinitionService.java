@@ -6,6 +6,7 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
+import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.newsapi.NewsApiCategories;
 import com.lostsidewalk.buffy.newsapi.NewsApiCountries;
@@ -33,6 +34,7 @@ import static java.util.List.copyOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Slf4j
@@ -117,6 +119,7 @@ public class QueryDefinitionService {
                 QueryDefinition currentQuery = currentQueries.get(0);
                 queryDefinitionDao.updateQueries(singletonList(new Object[] {
                         newsApiV2QueryText,
+                        null, // no image for these queries
                         newsApiV2QueryText,
                         NEWSAPIV2_HEADLINES,
                         serializeQueryConfig(newsApiV2Sources, newsApiV2Language, newsApiV2Country, newsApiV2Category),
@@ -185,13 +188,19 @@ public class QueryDefinitionService {
                             currentQueryDefinitionsById.remove(r.getId());
                         } else {
                             String url = r.getFeedUrl();
+                            FeedDiscoveryInfo discoveryInfo = discoverFeed(url);
+                            q.setQueryTitle(getFeedTitle(discoveryInfo));
+                            q.setQueryImageUrl(getFeedImageUrl(discoveryInfo));
                             q.setQueryText(url);
-                            q.setQueryTitle(discoverFeedTitle(url));
                             updates.add(q);
                         }
                     } else {
                         String url = r.getFeedUrl();
-                        adds.add(QueryDefinition.from(feedId, username, discoverFeedTitle(url), url, RSS, null));
+                        FeedDiscoveryInfo discoveryInfo = discoverFeed(url);
+                        String title = getFeedTitle(discoveryInfo);
+                        String imageUrl = getFeedImageUrl(discoveryInfo);
+                        QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, null);
+                        adds.add(newQuery);
                     }
                 } // r.getId() == null case is ignored
             }
@@ -199,7 +208,12 @@ public class QueryDefinitionService {
                 // apply updates
                 // query_text = ?, query_type = ?, query_config = ?::json where id = ?
                 queryDefinitionDao.updateQueries(updates.stream().map(u -> new Object[] {
-                        u.getQueryTitle(), u.getQueryText(), u.getQueryType(), u.getQueryConfig(), u.getId()
+                        u.getQueryTitle(),
+                        u.getQueryImageUrl(),
+                        u.getQueryText(),
+                        u.getQueryType(),
+                        u.getQueryConfig(),
+                        u.getId()
                 }).collect(toList()));
                 // mark for import
                 toImport.addAll(updates);
@@ -233,17 +247,37 @@ public class QueryDefinitionService {
         return toImport;
     }
 
-    private String discoverFeedTitle(String url) {
-        String title;
+    private FeedDiscoveryInfo discoverFeed(String url) {
         try {
-            FeedDiscoveryInfo feedDiscoveryInfo = discoverUrl(url, feedGearsUserAgent);
-            ContentObject titleObj = feedDiscoveryInfo.getTitle();
-            title = titleObj.getValue(); // TODO: might be worth paying attention to 'type', and constructing the title accordingly
+            return discoverUrl(url, feedGearsUserAgent);
         } catch (Exception e) {
-            log.debug("Unable to perform feed title discovery due to: {}", e.getMessage());
-            title = url;
+            log.debug("Unable to perform feed discovery due to: {}", e.getMessage());
         }
 
-        return title;
+        return null;
+    }
+
+    private String getFeedTitle(FeedDiscoveryInfo feedDiscoveryInfo) {
+        if (feedDiscoveryInfo != null) {
+            ContentObject titleObj = feedDiscoveryInfo.getTitle();
+            return titleObj.getValue(); // TODO: might be worth paying attention to 'type', and constructing the title accordingly
+        }
+
+        return null;
+    }
+
+    private String getFeedImageUrl(FeedDiscoveryInfo feedDiscoveryInfo) {
+        if (feedDiscoveryInfo != null) {
+            FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
+            if (imageInfo != null) {
+                return imageInfo.getUrl();
+            }
+            FeedDiscoveryImageInfo iconInfo = feedDiscoveryInfo.getIcon();
+            if (iconInfo != null) {
+                return iconInfo.getUrl();
+            }
+        }
+
+        return EMPTY;
     }
 }

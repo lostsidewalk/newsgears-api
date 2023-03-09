@@ -57,6 +57,7 @@ create table feed_definitions (
 --
 drop table if exists staging_posts cascade;
 
+-- TODO: rename post_img_url -> post_image_url
 create table staging_posts (
     id bigserial not null,
     post_title json not null,
@@ -100,6 +101,7 @@ create table query_definitions (
     feed_id bigserial not null references feed_definitions(id) on delete cascade,
     username varchar(100) not null references users(name) on delete cascade,
     query_title varchar(512),
+    query_image_url varchar(1024),
     query_text varchar(2048) not null,
     query_type varchar(64) not null,
     query_config json,
