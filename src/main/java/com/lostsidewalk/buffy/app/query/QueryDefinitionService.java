@@ -34,8 +34,7 @@ import static java.util.List.copyOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.*;
 
 @Slf4j
 @Service
@@ -270,11 +269,11 @@ public class QueryDefinitionService {
         if (feedDiscoveryInfo != null) {
             FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
             if (imageInfo != null) {
-                return imageInfo.getUrl();
+                return stripEnd(imageInfo.getUrl(), "/");
             }
             FeedDiscoveryImageInfo iconInfo = feedDiscoveryInfo.getIcon();
             if (iconInfo != null) {
-                return iconInfo.getUrl();
+                return stripEnd(iconInfo.getUrl(), "/");
             }
         }
 
