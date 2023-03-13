@@ -1,14 +1,10 @@
 package com.lostsidewalk.buffy.app.model.request;
 
-import com.lostsidewalk.buffy.newsapi.NewsApiCategories;
-import com.lostsidewalk.buffy.newsapi.NewsApiCountries;
-import com.lostsidewalk.buffy.newsapi.NewsApiLanguages;
 import com.lostsidewalk.buffy.newsapi.NewsApiSources;
-import lombok.Data;
-
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -37,11 +33,11 @@ public class FeedConfigRequest {
     @Size(max=20)
     List<NewsApiSources> newsApiV2Sources; // optional
 
-    NewsApiLanguages newsApiV2Language; // optional
+    String newsApiV2Language; // optional
 
-    NewsApiCountries newsApiV2Country; // optional
+    String newsApiV2Country; // optional
 
-    NewsApiCategories newsApiV2Category; // optional
+    String newsApiV2Category; // optional
 
     @Valid
     List<RssAtomUrl> rssAtomFeedUrls; // optional

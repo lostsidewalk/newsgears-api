@@ -63,9 +63,9 @@ public class QueryDefinitionService {
                 feedId,
                 feedConfigRequest.getNewsApiV2QueryText(),
                 feedConfigRequest.getNewsApiV2Sources(),
-                feedConfigRequest.getNewsApiV2Language(),
-                feedConfigRequest.getNewsApiV2Country(),
-                feedConfigRequest.getNewsApiV2Category()
+                NewsApiLanguages.byCode(feedConfigRequest.getNewsApiV2Language()),
+                NewsApiCountries.byCode(feedConfigRequest.getNewsApiV2Country()),
+                NewsApiCategories.byName(feedConfigRequest.getNewsApiV2Category())
         );
         if (everythingQuery != null) {
             updatedQueries.add(everythingQuery);
@@ -87,9 +87,9 @@ public class QueryDefinitionService {
                     feedId,
                     feedConfigRequest.getNewsApiV2QueryText(),
                     feedConfigRequest.getNewsApiV2Sources(),
-                    feedConfigRequest.getNewsApiV2Language(),
-                    feedConfigRequest.getNewsApiV2Country(),
-                    feedConfigRequest.getNewsApiV2Category());
+                    NewsApiLanguages.byCode(feedConfigRequest.getNewsApiV2Language()),
+                    NewsApiCountries.byCode(feedConfigRequest.getNewsApiV2Country()),
+                    NewsApiCategories.byName(feedConfigRequest.getNewsApiV2Category()));
             if (q != null) {
                 createdQueries.add(q);
             }
