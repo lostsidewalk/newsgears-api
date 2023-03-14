@@ -11,8 +11,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.ArrayList;
+
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
-import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -56,10 +57,10 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
             "testManagingEditor",
             null,
             "testStyleSheet",
-            singletonList("testSupportedType"),
+            singletonArrayList("testSupportedType"),
             "testWebMaster",
             "testUri",
-            singletonList("testCategory"),
+            singletonArrayList("testCategory"),
             null,
             false
     );
@@ -84,5 +85,15 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
                     );
                 })
                 .andExpect(status().isOk());
+    }
+
+    private static <T> ArrayList<T> singletonArrayList(T item) {
+        if (item != null) {
+            ArrayList<T> l = new ArrayList<>();
+            l.add(item);
+            return l;
+        }
+
+        return null;
     }
 }
