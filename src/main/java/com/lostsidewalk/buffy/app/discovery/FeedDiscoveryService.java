@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.discoverUrl;
+import static com.lostsidewalk.buffy.rss.RssDiscovery.discoverUrl;
 
 @Slf4j
 @Service

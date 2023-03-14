@@ -71,7 +71,7 @@ public class QueryDefinitionService {
         return updatedQueries;
     }
 
-    public List<QueryDefinition> createQueries(String username, Long feedId, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
+    public List<QueryDefinition> addQueries(String username, Long feedId, FeedConfigRequest feedConfigRequest, List<RssAtomUrl> rssAtomUrls) throws DataAccessException, DataUpdateException {
         List<QueryDefinition> createdQueries = new ArrayList<>();
         String newsApiV2QueryText = feedConfigRequest.getNewsApiV2QueryText();
         if (isNotBlank(newsApiV2QueryText)) {
@@ -86,7 +86,42 @@ public class QueryDefinitionService {
                 createdQueries.add(q);
             }
         }
-        List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
+        if (isNotEmpty(rssAtomUrls)) {
+            createdQueries.addAll(addRssAtomQueries(username, feedId, rssAtomUrls));
+        }
+
+        return createdQueries;
+    }
+
+    private List<QueryDefinition> addRssAtomQueries(String username, Long feedId, List<RssAtomUrl> rssAtomFeedUrls) throws DataAccessException, DataUpdateException {
+        List<QueryDefinition> adds = new ArrayList<>();
+        for (RssAtomUrl r : rssAtomFeedUrls) {
+            String url = r.getFeedUrl();
+            String title = r.getFeedTitle();
+            String imageUrl = r.getFeedImageUrl();
+            QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, null);
+            adds.add(newQuery);
+        }
+        List<Long> queryIds = queryDefinitionDao.add(adds);
+
+        return queryDefinitionDao.findByIds(username, queryIds);
+    }
+
+    public List<QueryDefinition> createQueries(String username, Long feedId, FeedConfigRequest feedConfigRequest, List<RssAtomUrl> rssAtomUrls) throws DataAccessException, DataUpdateException {
+        List<QueryDefinition> createdQueries = new ArrayList<>();
+        String newsApiV2QueryText = feedConfigRequest.getNewsApiV2QueryText();
+        if (isNotBlank(newsApiV2QueryText)) {
+            QueryDefinition q = configureNewsApiV2Query(username,
+                    feedId,
+                    feedConfigRequest.getNewsApiV2QueryText(),
+                    feedConfigRequest.getNewsApiV2Sources(),
+                    NewsApiLanguages.byCode(feedConfigRequest.getNewsApiV2Language()),
+                    NewsApiCountries.byCode(feedConfigRequest.getNewsApiV2Country()),
+                    NewsApiCategories.byName(feedConfigRequest.getNewsApiV2Category()));
+            if (q != null) {
+                createdQueries.add(q);
+            }
+        }
         if (isNotEmpty(rssAtomUrls)) {
             createdQueries.addAll(configureRssAtomQueries(username, feedId, rssAtomUrls));
         }

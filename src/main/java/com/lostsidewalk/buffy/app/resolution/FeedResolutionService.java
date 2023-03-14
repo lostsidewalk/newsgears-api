@@ -1,11 +1,14 @@
 package com.lostsidewalk.buffy.app.resolution;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.lostsidewalk.buffy.post.ContentObject;
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -18,16 +21,24 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
+import static com.google.common.collect.ImmutableMap.copyOf;
 import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType.PARSING_FEED_EXCEPTION;
-import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.discoverUrl;
+import static com.lostsidewalk.buffy.rss.RssDiscovery.discoverUrl;
+import static java.lang.Math.min;
+import static java.lang.Runtime.getRuntime;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.StringUtils.*;
-import static org.apache.commons.lang3.StringUtils.stripEnd;
 
 @Slf4j
 @Service
@@ -41,6 +52,20 @@ public class FeedResolutionService {
     @Value("${feedfinder.urlTemplate}")
     String feedFinderUrlTemplate;
 
+    private ExecutorService feedResolutionThreadPool;
+
+    @PostConstruct
+    public void postConstruct() {
+        //
+        // setup the feed definition thread pool
+        //
+        int availableProcessors = getRuntime().availableProcessors();
+        int processorCt = availableProcessors > 1 ? min(24, availableProcessors - 1) : availableProcessors;
+        processorCt = processorCt >= 2 ? processorCt - 1 : processorCt; // account for the import processor thread
+        log.info("Starting feed resolution thread pool: processCount={}", processorCt);
+        this.feedResolutionThreadPool = newFixedThreadPool(processorCt, new ThreadFactoryBuilder().setNameFormat("feed-resolution-%d").build());
+    }
+
     @Cacheable(value="feedResolutionCache", key="#url")
     public String performResolution(String url) {
         try {
@@ -52,7 +77,36 @@ public class FeedResolutionService {
         return null;
     }
 
-    public void resolveIfNecessary(RssAtomUrl rssAtomUrl) throws IOException {
+    public ImmutableMap<String, FeedDiscoveryInfo> resolveIfNecessary(List<RssAtomUrl> rssAtomUrls) {
+        CountDownLatch latch = new CountDownLatch(size(rssAtomUrls));
+        Map<String, FeedDiscoveryInfo> discoveryCache = new HashMap<>();
+        if (isNotEmpty(rssAtomUrls)) {
+            for (RssAtomUrl r : rssAtomUrls) {
+                this.feedResolutionThreadPool.submit(() -> {
+                    FeedDiscoveryInfo discoveryInfo;
+                    try {
+                        discoveryInfo = resolveIfNecessary(r);
+                        if (discoveryInfo != null) {
+                            discoveryCache.put(r.getFeedUrl(), discoveryInfo);
+                        }
+                    } catch (IOException e) {
+                        log.warn("Feed resolution failed due to: {}", e.getMessage());
+                    }
+                    latch.countDown();
+                });
+            }
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            log.error("Feed resolution interrupted due to: {}", e.getMessage());
+        }
+
+        return copyOf(discoveryCache);
+    }
+
+    private FeedDiscoveryInfo resolveIfNecessary(RssAtomUrl rssAtomUrl) throws IOException {
+        log.info("Performing feed resolution on URL={}", rssAtomUrl.getFeedUrl());
         FeedDiscoveryInfo discoveryInfo = null;
         String feedUrl = rssAtomUrl.getFeedUrl();
         try {
@@ -64,19 +118,23 @@ public class FeedResolutionService {
                     rssAtomUrl.setFeedUrl(resolvedUrl);
                     discoveryInfo = discoverFeed(resolvedUrl);
                 }
+            } else {
+                log.warn("Feed resolution failed for URL={} due to: {}", rssAtomUrl.getFeedUrl(), e.getMessage());
             }
         }
         if (discoveryInfo != null) {
             rssAtomUrl.setFeedTitle(getFeedTitle(discoveryInfo));
             rssAtomUrl.setFeedImageUrl(getFeedImageUrl(discoveryInfo));
         }
+
+        return discoveryInfo;
     }
 
     private FeedDiscoveryInfo discoverFeed(String url) {
         try {
             return discoverUrl(url, feedGearsUserAgent);
         } catch (Exception e) {
-            log.debug("Unable to perform feed discovery due to: {}", e.getMessage());
+            log.warn("Unable to perform feed discovery due to: {}", e.getMessage());
         }
 
         return null;

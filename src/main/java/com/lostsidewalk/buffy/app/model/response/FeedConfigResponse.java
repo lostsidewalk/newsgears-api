@@ -1,11 +1,9 @@
 package com.lostsidewalk.buffy.app.model.response;
 
-import com.lostsidewalk.buffy.app.model.QueryMetricsWithErrorDetails;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
@@ -14,17 +12,15 @@ public class FeedConfigResponse {
 
     FeedDefinition feedDefinition;
     List<ThumbnailedQueryDefinition> queryDefinitions;
-    Map<Long, List<QueryMetricsWithErrorDetails>> queryMetrics;
     String feedImgSrc;
 
-    private FeedConfigResponse(FeedDefinition feedDefinition, List<ThumbnailedQueryDefinition> queryDefinitions, Map<Long, List<QueryMetricsWithErrorDetails>> queryMetrics) {
+    private FeedConfigResponse(FeedDefinition feedDefinition, List<ThumbnailedQueryDefinition> queryDefinitions) {
         this.feedDefinition = feedDefinition;
         this.queryDefinitions = queryDefinitions;
-        this.queryMetrics = queryMetrics;
     }
 
-    public static FeedConfigResponse from(FeedDefinition feedDefinition, List<ThumbnailedQueryDefinition> queryDefinitions, Map<Long, List<QueryMetricsWithErrorDetails>> queryMetrics, byte[] feedImg) {
-        FeedConfigResponse f = new FeedConfigResponse(feedDefinition, queryDefinitions, queryMetrics);
+    public static FeedConfigResponse from(FeedDefinition feedDefinition, List<ThumbnailedQueryDefinition> queryDefinitions, byte[] feedImg) {
+        FeedConfigResponse f = new FeedConfigResponse(feedDefinition, queryDefinitions);
         f.feedImgSrc = encodeBase64String(feedImg);
 
         return f;
