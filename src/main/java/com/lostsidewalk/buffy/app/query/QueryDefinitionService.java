@@ -6,18 +6,14 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
-import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
-import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.newsapi.NewsApiCategories;
 import com.lostsidewalk.buffy.newsapi.NewsApiCountries;
 import com.lostsidewalk.buffy.newsapi.NewsApiLanguages;
 import com.lostsidewalk.buffy.newsapi.NewsApiSources;
-import com.lostsidewalk.buffy.post.ContentObject;
 import com.lostsidewalk.buffy.query.QueryDefinition;
 import com.lostsidewalk.buffy.query.QueryDefinitionDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
@@ -25,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.discoverUrl;
 import static com.lostsidewalk.buffy.newsapi.NewsApiImporter.NEWSAPIV2_EVERYTHING;
 import static com.lostsidewalk.buffy.newsapi.NewsApiImporter.NEWSAPIV2_HEADLINES;
 import static com.lostsidewalk.buffy.rss.RssImporter.RSS;
@@ -34,7 +29,7 @@ import static java.util.List.copyOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Slf4j
 @Service
@@ -42,9 +37,6 @@ public class QueryDefinitionService {
 
     @Autowired
     QueryDefinitionDao queryDefinitionDao;
-
-    @Value("${newsgears.userAgent}")
-    String feedGearsUserAgent;
 
     private static final Gson GSON = new Gson();
 
@@ -184,20 +176,18 @@ public class QueryDefinitionService {
                     QueryDefinition q = currentQueryDefinitionsById.get(r.getId());
                     if (q != null) {
                         if (r.getFeedUrl().equals(q.getQueryText())) {
-                            currentQueryDefinitionsById.remove(r.getId());
+                            currentQueryDefinitionsById.remove(r.getId()); // no change
                         } else {
                             String url = r.getFeedUrl();
-                            FeedDiscoveryInfo discoveryInfo = discoverFeed(url);
-                            q.setQueryTitle(getFeedTitle(discoveryInfo));
-                            q.setQueryImageUrl(getFeedImageUrl(discoveryInfo));
+                            q.setQueryTitle(r.getFeedTitle());
+                            q.setQueryImageUrl(r.getFeedImageUrl());
                             q.setQueryText(url);
                             updates.add(q);
                         }
                     } else {
                         String url = r.getFeedUrl();
-                        FeedDiscoveryInfo discoveryInfo = discoverFeed(url);
-                        String title = getFeedTitle(discoveryInfo);
-                        String imageUrl = getFeedImageUrl(discoveryInfo);
+                        String title = r.getFeedTitle();
+                        String imageUrl = r.getFeedImageUrl();
                         QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, null);
                         adds.add(newQuery);
                     }
@@ -244,39 +234,5 @@ public class QueryDefinitionService {
         }
 
         return toImport;
-    }
-
-    private FeedDiscoveryInfo discoverFeed(String url) {
-        try {
-            return discoverUrl(url, feedGearsUserAgent);
-        } catch (Exception e) {
-            log.debug("Unable to perform feed discovery due to: {}", e.getMessage());
-        }
-
-        return null;
-    }
-
-    private String getFeedTitle(FeedDiscoveryInfo feedDiscoveryInfo) {
-        if (feedDiscoveryInfo != null) {
-            ContentObject titleObj = feedDiscoveryInfo.getTitle();
-            return titleObj.getValue(); // TODO: might be worth paying attention to 'type', and constructing the title accordingly
-        }
-
-        return null;
-    }
-
-    private String getFeedImageUrl(FeedDiscoveryInfo feedDiscoveryInfo) {
-        if (feedDiscoveryInfo != null) {
-            FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
-            if (imageInfo != null) {
-                return stripEnd(imageInfo.getUrl(), "/");
-            }
-            FeedDiscoveryImageInfo iconInfo = feedDiscoveryInfo.getIcon();
-            if (iconInfo != null) {
-                return stripEnd(iconInfo.getUrl(), "/");
-            }
-        }
-
-        return EMPTY;
     }
 }

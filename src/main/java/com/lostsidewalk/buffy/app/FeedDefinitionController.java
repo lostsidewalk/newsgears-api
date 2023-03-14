@@ -14,6 +14,7 @@ import com.lostsidewalk.buffy.app.post.StagingPostService;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import com.lostsidewalk.buffy.app.query.QueryDefinitionService;
 import com.lostsidewalk.buffy.app.querymetrics.QueryMetricsService;
+import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
@@ -89,6 +90,9 @@ public class FeedDefinitionController {
     ProxyService proxyService;
 
     @Autowired
+    FeedResolutionService feedResolutionService;
+
+    @Autowired
     PostImporter postImporter;
 
     @Value("${newsgears.thumbnail.size}")
@@ -156,7 +160,7 @@ public class FeedDefinitionController {
     @PostMapping("/feeds/")
     @Secured({UNVERIFIED_ROLE})
 //    @Transactional
-    public ResponseEntity<List<FeedConfigResponse>> createFeed(@Valid @RequestBody FeedConfigRequest[] feedConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException {
+    public ResponseEntity<List<FeedConfigResponse>> createFeed(@Valid @RequestBody FeedConfigRequest[] feedConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException, IOException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("createFeed adding {} feeds for user={}", size(feedConfigRequests), username);
@@ -168,6 +172,13 @@ public class FeedDefinitionController {
         List<FeedConfigResponse> feedConfigResponses = new ArrayList<>();
         // for ea. feed config request
         for (FeedConfigRequest feedConfigRequest : feedConfigRequests) {
+            // resolve query URL, title, and image properties
+            List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
+            if (isNotEmpty(rssAtomUrls)) {
+                for (RssAtomUrl r : rssAtomUrls) {
+                    feedResolutionService.resolveIfNecessary(r);
+                }
+            }
             // create the feed
             Long feedId = feedDefinitionService.createFeed(username, feedConfigRequest);
             // create the queries
@@ -224,14 +235,21 @@ public class FeedDefinitionController {
     @PutMapping("/feeds/{id}")
     @Secured({UNVERIFIED_ROLE})
 //    @Transactional
-    public ResponseEntity<FeedConfigResponse> updateFeed(@PathVariable("id") Long id, @Valid @RequestBody FeedConfigRequest feedConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
+    public ResponseEntity<FeedConfigResponse> updateFeed(@PathVariable("id") Long id, @Valid @RequestBody FeedConfigRequest feedConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException, IOException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("updateFeed for user={}, feedId={}", username, id);
         StopWatch stopWatch = StopWatch.createStarted();
-        //
+        // resolve query URL, title, and image properties
+        List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
+        if (isNotEmpty(rssAtomUrls)) {
+            for (RssAtomUrl r : rssAtomUrls) {
+                feedResolutionService.resolveIfNecessary(r);
+            }
+        }
+        // update the feed
         feedDefinitionService.update(username, id, feedConfigRequest);
-        //
+        // update the queries
         List<QueryDefinition> updatedQueries = queryDefinitionService.updateQueries(username, id, feedConfigRequest);
         Map<Long, List<QueryMetricsWithErrorDetails>> queryMetricsByQueryId = new HashMap<>();
         if (isNotEmpty(updatedQueries)) {

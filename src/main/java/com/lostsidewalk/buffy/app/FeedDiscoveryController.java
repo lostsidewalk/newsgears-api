@@ -5,6 +5,7 @@ import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.catalog.CatalogService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
+import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
@@ -13,6 +14,7 @@ import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscovery;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
+import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType.PARSING_FEED_EXCEPTION;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -39,6 +42,9 @@ public class FeedDiscoveryController {
 
     @Autowired
     FeedDiscoveryService feedDiscoveryService;
+
+    @Autowired
+    FeedResolutionService feedResolutionService;
 
     @Autowired
     ThumbnailService thumbnailService;
@@ -60,6 +66,27 @@ public class FeedDiscoveryController {
             appLogService.logFeedDiscovery(username, stopWatch, url);
             return ok(thumbnailedFeedDiscoveryResponse);
         } catch (FeedDiscoveryException e) {
+            if (e.exceptionType == PARSING_FEED_EXCEPTION) {
+                try {
+                    String resolvedUrl = feedResolutionService.performResolution(url);
+                    if (!StringUtils.equals(resolvedUrl, url)) {
+                        FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl);
+                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = thumbnailService.addThumbnailToResponse(feedDiscoveryInfo);
+                        stopWatch.stop();
+                        appLogService.logFeedDiscovery(username, stopWatch, resolvedUrl);
+                        // (the resolved path is different from the original path, and has been discovered successfully)
+                        return ok(thumbnailedFeedDiscoveryResponse);
+                    }
+                    // (the resolved path is the same as the original path, which has error-ed out)
+                    return badRequest().body(
+                            new UpstreamErrorDetails(new Date(), getFeedDiscoveryExceptionTypeMessage(e.exceptionType), e.httpStatusCode, e.httpStatusMessage, e.redirectUrl, e.redirectHttpStatusCode, e.redirectHttpStatusMessage));
+                } catch (FeedDiscoveryException e1) {
+                    // (the resolved path is different from the original path, but has error-ed out)
+                    return badRequest().body(
+                            new UpstreamErrorDetails(new Date(), getFeedDiscoveryExceptionTypeMessage(e1.exceptionType), e1.httpStatusCode, e1.httpStatusMessage, e1.redirectUrl, e1.redirectHttpStatusCode, e1.redirectHttpStatusMessage));
+                }
+            }
+            // (the original path error-ed out due to a reason other than feed resolution)
             return badRequest().body(
                     new UpstreamErrorDetails(new Date(), getFeedDiscoveryExceptionTypeMessage(e.exceptionType), e.httpStatusCode, e.httpStatusMessage, e.redirectUrl, e.redirectHttpStatusCode, e.redirectHttpStatusMessage));
         }

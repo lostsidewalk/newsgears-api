@@ -16,4 +16,8 @@ public class RssAtomUrl {
     @NotBlank
     @Size(max=512)
     String feedUrl;
+
+    String feedTitle;
+
+    String feedImageUrl;
 }
