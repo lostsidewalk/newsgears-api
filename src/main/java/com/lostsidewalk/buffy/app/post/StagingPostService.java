@@ -5,7 +5,6 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.Publisher.PubResult;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
-import com.lostsidewalk.buffy.app.model.request.PostUpdateRequest;
 import com.lostsidewalk.buffy.post.StagingPost;
 import com.lostsidewalk.buffy.post.StagingPost.PostPubStatus;
 import com.lostsidewalk.buffy.post.StagingPost.PostReadStatus;
@@ -39,25 +38,6 @@ public class StagingPostService {
             return list;
         }
         return emptyList();
-    }
-
-    public void updatePost(String username, long id, PostUpdateRequest postUpdateRequest) throws DataUpdateException, DataAccessException {
-        stagingPostDao.updatePost(username, id,
-                postUpdateRequest.getPostTitle(),
-                postUpdateRequest.getPostDesc(),
-                postUpdateRequest.getPostContents(),
-                postUpdateRequest.getPostMedia(),
-                postUpdateRequest.getPostITunes(),
-                postUpdateRequest.getPostUrl(),
-                postUpdateRequest.getPostUrls(),
-                postUpdateRequest.getPostImgUrl(),
-                postUpdateRequest.getPostComment(),
-                postUpdateRequest.getPostRights(),
-                postUpdateRequest.getContributors(),
-                postUpdateRequest.getAuthors(),
-                postUpdateRequest.getPostCategories(),
-                postUpdateRequest.getExpirationTimestamp(),
-                postUpdateRequest.getEnclosures());
     }
 
     public void updatePostReadStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
@@ -108,9 +88,5 @@ public class StagingPostService {
         // deploy the feed
         //
         return postPublisher.publishFeed(username, id);
-    }
-
-    public StagingPost findById(String username, Long id) throws DataAccessException {
-        return stagingPostDao.findById(username, id);
     }
 }

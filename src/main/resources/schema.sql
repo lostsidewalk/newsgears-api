@@ -124,6 +124,7 @@ create table query_metrics (
     import_timestamp timestamp with time zone,
     import_ct integer,
     persist_ct integer,
+    archive_ct integer,
     error_type varchar(64),
     error_detail varchar(1024),
 
