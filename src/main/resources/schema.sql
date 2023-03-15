@@ -49,6 +49,7 @@ create table feed_definitions (
     category_value varchar(256),
     category_domain varchar(256),
     last_deployed_timestamp timestamp with time zone,
+    is_deleted boolean not null default false,
 
     primary key (id)
 );
