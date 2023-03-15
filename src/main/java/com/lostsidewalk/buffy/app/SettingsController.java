@@ -23,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.lostsidewalk.buffy.app.model.request.SubscriptionStatus.ACTIVE;
 import static com.lostsidewalk.buffy.app.model.request.SubscriptionStatus.CANCELED;
@@ -46,6 +47,19 @@ public class SettingsController {
 
     @Autowired
     StripeOrderService stripeOrderService;
+
+    @Secured({UNVERIFIED_ROLE})
+    @GetMapping("/settings/display")
+    public ResponseEntity<Map<String, String>> getDisplaySettings(Authentication authentication) throws DataAccessException {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails.getUsername();
+        StopWatch stopWatch = StopWatch.createStarted();
+        Map<String, String> displayConfig = settingsService.getDisplayConfig(username);
+        stopWatch.stop();
+        appLogService.logDisplayConfigFetch(username, stopWatch);
+        //
+        return ok(displayConfig);
+    }
 
     @Secured({UNVERIFIED_ROLE})
     @GetMapping("/settings")

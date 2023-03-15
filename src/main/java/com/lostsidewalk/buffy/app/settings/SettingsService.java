@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Service
@@ -20,6 +22,15 @@ public class SettingsService {
 
     @Autowired
     private FrameworkConfigDao frameworkConfigDao;
+
+    public Map<String, String> getDisplayConfig(String username) throws DataAccessException {
+        User user = userDao.findByName(username);
+        if (user == null) {
+            throw new UsernameNotFoundException(username);
+        }
+        FrameworkConfig frameworkConfig = frameworkConfigDao.findByUserId(user.getId());
+        return frameworkConfig.getDisplay();
+    }
 
     public SettingsResponse getFrameworkConfig(String username) throws DataAccessException {
         User user = userDao.findByName(username);

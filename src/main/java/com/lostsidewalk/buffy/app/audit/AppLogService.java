@@ -91,6 +91,10 @@ public class AppLogService {
         auditLog("settings-update", "settingsUpdateRequest={}", username, stopWatch, settingsUpdateRequest);
     }
 
+    public void logDisplayConfigFetch(String username, StopWatch stopWatch) {
+        auditLog("display-config-fetch", null, username, stopWatch);
+    }
+
     public void logStagingPostFetch(String username, StopWatch stopWatch, int feedIdCt, int stagingPostCt) {
         auditLog("staging-post-fetch", "feedIdCt={}, stagingPostCt={}, queryMetricsCt={}", username, stopWatch, feedIdCt, stagingPostCt);
     }
