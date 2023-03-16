@@ -116,7 +116,7 @@ drop table if exists query_metrics cascade;
 
 create table query_metrics (
     id bigserial not null,
-    query_id bigserial not null references query_definitions(id) on delete cascade,
+    query_id bigserial not null,
     http_status_code integer,
     http_status_message varchar(512),
     redirect_feed_url varchar(1024),
