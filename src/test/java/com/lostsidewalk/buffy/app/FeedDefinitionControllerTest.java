@@ -3,8 +3,8 @@ package com.lostsidewalk.buffy.app;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.lostsidewalk.buffy.feed.FeedDefinition;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
+import com.lostsidewalk.buffy.feed.FeedDefinition;
 import com.lostsidewalk.buffy.query.QueryDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
-import static com.lostsidewalk.buffy.newsapi.NewsApiImporter.NEWSAPIV2_HEADLINES;
+import static com.lostsidewalk.buffy.rss.RssImporter.RSS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
@@ -46,7 +46,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
     }
 
     private static final List<QueryDefinition> TEST_QUERY_DEFINITIONS = List.of(
-            QueryDefinition.from(1L, "me", "testQueryTitle", "testQueryText", NEWSAPIV2_HEADLINES, null)
+            QueryDefinition.from(1L, "me", "testQueryTitle", "testQueryText", RSS, null)
     );
     static {
         TEST_QUERY_DEFINITIONS.get(0).setId(1L);
@@ -57,8 +57,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
             "testTitle",
             "testDescription",
             "testGenerator",
-            "testNewsApiV2QueryText",
-            null,
+            List.of(),
             null,
             "testCopyright",
             "testLanguage",
@@ -110,7 +109,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\"},\"queryDefinitions\":[{\"queryDefinition\":{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"NEWSAPIV2_HEADLINES\"}}],\"feedImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\"},\"queryDefinitions\":[{\"queryDefinition\":{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"RSS\"}}],\"feedImgSrc\":null}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());

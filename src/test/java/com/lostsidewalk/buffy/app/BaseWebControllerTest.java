@@ -19,7 +19,6 @@ import com.lostsidewalk.buffy.app.user.UserRoles;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfoDao;
 import com.lostsidewalk.buffy.feed.FeedDefinitionDao;
 import com.lostsidewalk.buffy.json.JSONPublisher;
-import com.lostsidewalk.buffy.newsapi.NewsApiImporter;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.post.PostPurger;
 import com.lostsidewalk.buffy.post.StagingPostDao;
@@ -155,9 +154,6 @@ class BaseWebControllerTest {
 
     @MockBean
     UserDao userDao;
-
-    @MockBean
-    NewsApiImporter newsApiImporter;
 
     @MockBean
     RssImporter rssImporter;

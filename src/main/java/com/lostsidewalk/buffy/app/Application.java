@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ComponentScan({
         "com.lostsidewalk.buffy",
         "com.listsidewalk.buffy.app",
-        "com.lostsidewalk.buffy.newsapi",
         "com.lostsidewalk.buffy.rss",
         "com.lostsidewalk.buffy.mail",
         "com.lostsidewalk.buffy.order",

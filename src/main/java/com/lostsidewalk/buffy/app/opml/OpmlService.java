@@ -162,7 +162,6 @@ public class OpmlService {
                 title,
                 description,
                 null,
-                null,
                 buildRssAtomFeedUrls(outlines, 0),
                 null,
                 null,

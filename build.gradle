@@ -24,8 +24,6 @@ dependencies {
     implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.4'
     // NewsGears publisher
     implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.4'
-    // adds NewsApi to the import path
-    implementation 'com.lostsidewalk.newsgears:newsgears-newsapi-importer:0.4'
     // adds RSS/ATOM to the import path
     implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.4'
     // adds RSS/ATOM to the publishing path

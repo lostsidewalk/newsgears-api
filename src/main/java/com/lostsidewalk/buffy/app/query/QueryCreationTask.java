@@ -16,6 +16,4 @@ public class QueryCreationTask {
     String username;
 
     Long feedId;
-
-    FeedConfigRequest feedConfigRequest;
 }

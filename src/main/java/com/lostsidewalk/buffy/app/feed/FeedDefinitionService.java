@@ -73,7 +73,6 @@ public class FeedDefinitionService {
                 null,
                 null,
                 null,
-                null,
                 null
         ));
     }

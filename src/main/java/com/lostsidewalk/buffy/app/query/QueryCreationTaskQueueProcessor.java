@@ -59,7 +59,6 @@ public class QueryCreationTaskQueueProcessor implements DisposableBean, Runnable
                 List<QueryDefinition> createdQueries = queryDefinitionService.addQueries(
                         creationTask.username,
                         creationTask.feedId,
-                        creationTask.feedConfigRequest,
                         creationTask.rssAtomUrls);
                 if (isNotEmpty(createdQueries)) {
                     // perform import-from-cache (again, first partition only)

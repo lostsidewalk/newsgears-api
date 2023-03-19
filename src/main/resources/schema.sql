@@ -103,7 +103,7 @@ create table query_definitions (
     username varchar(100) not null references users(name) on delete cascade,
     query_title varchar(512),
     query_image_url varchar(1024),
-    query_text varchar(2048) not null,
+    query_text varchar(2048),
     query_type varchar(64) not null,
     query_config json,
 

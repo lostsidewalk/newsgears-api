@@ -22,10 +22,6 @@ import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
-import com.lostsidewalk.buffy.newsapi.NewsApiCategories;
-import com.lostsidewalk.buffy.newsapi.NewsApiCountries;
-import com.lostsidewalk.buffy.newsapi.NewsApiLanguages;
-import com.lostsidewalk.buffy.newsapi.NewsApiSources;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.query.QueryDefinition;
 import com.lostsidewalk.buffy.query.QueryMetrics;
@@ -48,7 +44,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
@@ -56,7 +51,6 @@ import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
 import static com.lostsidewalk.buffy.post.StagingPost.PostPubStatus.DEPUB_PENDING;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
@@ -143,23 +137,11 @@ public class FeedDefinitionController {
         }
         // feed definitions
         List<FeedDefinition> feedDefinitions = feedDefinitionService.findByUser(username);
-        // NewsApi sources
-        Map<NewsApiSources, Map<String, String>> newsApiSourcesMap = Stream.of(NewsApiSources.values())
-                .collect(toMap(s -> s, s -> Map.of(
-                        "name", s.name,
-                        "description", s.description,
-                        "url", s.url,
-                        "category", s.category,
-                        "country", s.country,
-                        "language", s.language
-                )));
         stopWatch.stop();
         appLogService.logFeedFetch(username, stopWatch, size(feedDefinitions), MapUtils.size(queryDefinitionsByFeedId));
         return ok(
-                FeedFetchResponse.from(feedDefinitions, queryDefinitionsByFeedId, queryMetricsByQueryId, newsApiSourcesMap,
-                    List.of(NewsApiCountries.values()),
-                    List.of(NewsApiCategories.values()),
-                    List.of(NewsApiLanguages.values())));
+                FeedFetchResponse.from(feedDefinitions, queryDefinitionsByFeedId, queryMetricsByQueryId)
+        );
     }
 
     @PostMapping("/feeds/")
@@ -189,13 +171,13 @@ public class FeedDefinitionController {
                 // perform synchronous resolution on the first partition
                 ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
                 // create the queries (for the first partition)
-                List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, feedConfigRequest, firstPartition);
+                List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, firstPartition);
                 if (isNotEmpty(createdQueries)) {
                     // perform import-from-cache (first partition only)
                     postImporter.doImport(createdQueries, discoveryCache);
                 }
                 // queue up the remaining partitions
-                partitions.forEach(p -> addToCreationQueue(p, username, feedId, feedConfigRequest));
+                partitions.forEach(p -> addToCreationQueue(p, username, feedId));
             } catch (Exception e) {
                 log.warn("Feed initial import failed due to: {}", e.getMessage());
             }
@@ -222,8 +204,8 @@ public class FeedDefinitionController {
     @Autowired
     private BlockingQueue<QueryCreationTask> creationTaskQueue;
 
-    private void addToCreationQueue(List<RssAtomUrl> partition, String username, Long feedId, FeedConfigRequest feedConfigRequest) {
-        creationTaskQueue.add(new QueryCreationTask(partition, username, feedId, feedConfigRequest));
+    private void addToCreationQueue(List<RssAtomUrl> partition, String username, Long feedId) {
+        creationTaskQueue.add(new QueryCreationTask(partition, username, feedId));
     }
 
     private static String getQueryExceptionTypeMessage(QueryMetrics.QueryExceptionType exceptionType) {
