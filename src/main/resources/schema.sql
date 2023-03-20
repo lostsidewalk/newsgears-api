@@ -103,7 +103,7 @@ create table query_definitions (
     username varchar(100) not null references users(name) on delete cascade,
     query_title varchar(512),
     query_image_url varchar(1024),
-    query_text varchar(2048),
+    query_text varchar(2048) not null,
     query_type varchar(64) not null,
     query_config json,
 
@@ -234,3 +234,37 @@ create table framework_config
 
   primary key (id)
 );
+--
+-- indexes
+--
+drop index if exists idx_staging_posts_post_pub_status;
+drop index if exists idx_staging_posts_post_hash;
+drop index if exists idx_staging_posts_feed_id;
+drop index if exists idx_staging_posts_username;
+drop index if exists idx_feed_definitions_username;
+drop index if exists idx_feed_definitions_transport_ident;
+drop index if exists idx_query_definitions_feed_id;
+drop index if exists idx_query_definitions_username;
+drop index if exists idx_query_metrics_query_id;
+drop index if exists idx_roles_name;
+drop index if exists idx_features_in_roles_role;
+drop index if exists idx_users_email_address;
+drop index if exists idx_users_customer_id;
+drop index if exists idx_users_auth_provider;
+drop index if exists idx_users_name;
+
+create index idx_staging_posts_post_pub_status on staging_posts(post_pub_status);
+create index idx_staging_posts_post_hash on staging_posts(post_hash);
+create index idx_staging_posts_feed_id on staging_posts(feed_id);
+create index idx_staging_posts_username on staging_posts(username);
+create index idx_feed_definitions_username on feed_definitions(username);
+create index idx_feed_definitions_transport_ident on feed_definitions(transport_ident);
+create index idx_query_definitions_feed_id on query_definitions(feed_id);
+create index idx_query_definitions_username on query_definitions(username);
+create index idx_query_metrics_query_id on query_metrics(query_id);
+create index idx_roles_name on roles(name);
+create index idx_features_in_roles_role on features_in_roles(role);
+create index idx_users_email_address on users(email_address);
+create index idx_users_customer_id on users(customer_id);
+create index idx_users_auth_provider on users(auth_provider);
+create index idx_users_name on users(name);
