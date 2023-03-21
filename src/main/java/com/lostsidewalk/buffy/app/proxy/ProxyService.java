@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.zip.GZIPInputStream;
 
 import static com.lostsidewalk.buffy.app.auth.HashingUtils.sha256;
 import static java.net.URI.create;
@@ -35,9 +36,15 @@ public class ProxyService {
         URL u = new URL(url.replace(" ", "+"));
         URLConnection urlConnection = u.openConnection();
         urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
-        urlConnection.setRequestProperty("Accept-Encoding", "identity");
+        urlConnection.setRequestProperty("Accept-Encoding", "gzip");
         try (InputStream is = urlConnection.getInputStream()) {
-            return is.readAllBytes();
+            InputStream toRead;
+            if (containsIgnoreCase(urlConnection.getContentEncoding(), "gzip")) {
+                toRead = new GZIPInputStream(is);
+            } else {
+                toRead = is;
+            }
+            return toRead.readAllBytes();
         }
     }
 

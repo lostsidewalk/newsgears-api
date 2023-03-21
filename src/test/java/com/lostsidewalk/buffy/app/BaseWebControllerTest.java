@@ -17,6 +17,7 @@ import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
 import com.lostsidewalk.buffy.app.user.UserRoles;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfoDao;
+import com.lostsidewalk.buffy.feed.FeedCredentialsDao;
 import com.lostsidewalk.buffy.feed.FeedDefinitionDao;
 import com.lostsidewalk.buffy.json.JSONPublisher;
 import com.lostsidewalk.buffy.post.PostImporter;
@@ -130,6 +131,9 @@ class BaseWebControllerTest {
 
     @MockBean
     FeedDefinitionDao feedDefinitionDao;
+
+    @MockBean
+    FeedCredentialsDao feedCredentialsDao;
 
     @MockBean
     FeedDiscoveryInfoDao feedDiscoveryInfoDao;

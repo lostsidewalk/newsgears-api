@@ -179,7 +179,7 @@ public class OpmlService {
         for (Outline outline  : outlines) {
             if (startsWithIgnoreCase(outline.getType(), "rss")) {
                 // Note: feed title and image URL properties will be resolved when the feed config request is processed on post-back
-                RssAtomUrl rssAtomUrl = new RssAtomUrl(nextLong(), outline.getXmlUrl(), outline.getTitle(), null);
+                RssAtomUrl rssAtomUrl = new RssAtomUrl(nextLong(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
                 Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
                 if (isNotEmpty(constraintViolations)) {
                     throw new RssAtomUrlValidationException(constraintViolations);

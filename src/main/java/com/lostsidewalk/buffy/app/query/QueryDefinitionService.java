@@ -1,5 +1,6 @@
 package com.lostsidewalk.buffy.app.query;
 
+import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
@@ -7,9 +8,11 @@ import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
 import com.lostsidewalk.buffy.query.QueryDefinition;
 import com.lostsidewalk.buffy.query.QueryDefinitionDao;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +64,7 @@ public class QueryDefinitionService {
             String url = r.getFeedUrl();
             String title = r.getFeedTitle();
             String imageUrl = r.getFeedImageUrl();
-            QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, null);
+            QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, serializeQueryConfig(r));
             adds.add(newQuery);
         }
         List<Long> queryIds = queryDefinitionDao.add(adds);
@@ -91,23 +94,25 @@ public class QueryDefinitionService {
             List<QueryDefinition> updates = new ArrayList<>();
             List<QueryDefinition> adds = new ArrayList<>();
             for (RssAtomUrl r : rssAtomFeedUrls) {
+                String url = r.getFeedUrl();
                 if (r.getId() != null) {
                     QueryDefinition q = currentQueryDefinitionsById.get(r.getId());
                     if (q != null) {
-                        if (r.getFeedUrl().equals(q.getQueryText())) {
-                            currentQueryDefinitionsById.remove(r.getId()); // no change
+                        q.setQueryTitle(r.getFeedTitle());
+                        q.setQueryImageUrl(r.getFeedImageUrl());
+                        q.setQueryText(url);
+                        String feedUsername = r.getUsername();
+                        String feedPassword = r.getPassword();
+                        if (StringUtils.isNotBlank(feedUsername) || StringUtils.isNotBlank(feedPassword)) {
+                            q.setQueryConfig(serializeQueryConfig(r));
                         } else {
-                            String url = r.getFeedUrl();
-                            q.setQueryTitle(r.getFeedTitle());
-                            q.setQueryImageUrl(r.getFeedImageUrl());
-                            q.setQueryText(url);
-                            updates.add(q);
+                            q.setQueryConfig(null);
                         }
+                        updates.add(q);
                     } else {
-                        String url = r.getFeedUrl();
                         String title = r.getFeedTitle();
                         String imageUrl = r.getFeedImageUrl();
-                        QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, null);
+                        QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, serializeQueryConfig(r));
                         adds.add(newQuery);
                     }
                 } // r.getId() == null case is ignored
@@ -139,7 +144,7 @@ public class QueryDefinitionService {
                 currentQueryDefinitionsById.remove(q.getId());
             }
             currentQueryDefinitionsById.values().removeIf(updates::contains);
-            // (the keyset now contains Ids of queries that weren't posted back, i.e., deletions)
+            // (the key set now contains Ids of queries that weren't posted back, i.e., deletions)
             doDelete = true;
         } else {
             if (!currentQueryDefinitionsById.isEmpty()) {
@@ -153,5 +158,12 @@ public class QueryDefinitionService {
         }
 
         return toImport;
+    }
+
+    private Serializable serializeQueryConfig(RssAtomUrl rssAtomUrl) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("username", rssAtomUrl.getUsername());
+        jsonObject.addProperty("password", rssAtomUrl.getPassword());
+        return jsonObject.toString();
     }
 }

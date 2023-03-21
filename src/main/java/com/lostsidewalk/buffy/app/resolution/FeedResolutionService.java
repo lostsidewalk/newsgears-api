@@ -110,13 +110,17 @@ public class FeedResolutionService {
         FeedDiscoveryInfo discoveryInfo = null;
         String feedUrl = rssAtomUrl.getFeedUrl();
         try {
-            discoveryInfo = discoverUrl(feedUrl, EMPTY);
+            discoveryInfo = discoverUrl(feedUrl, rssAtomUrl.getUsername(), rssAtomUrl.getPassword(), feedGearsUserAgent);
         } catch (FeedDiscoveryException e) {
             if (e.exceptionType == PARSING_FEED_EXCEPTION) {
                 String resolvedUrl = resolveUrl(feedUrl);
                 if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, feedUrl)) {
                     rssAtomUrl.setFeedUrl(resolvedUrl);
-                    discoveryInfo = discoverFeed(resolvedUrl);
+                    try {
+                        discoveryInfo = discoverUrl(resolvedUrl, rssAtomUrl.getUsername(), rssAtomUrl.getPassword(), feedGearsUserAgent);
+                    } catch (Exception e1) {
+                        log.warn("Unable to perform feed discovery due to: {}", e1.getMessage());
+                    }
                 }
             } else {
                 log.warn("Feed resolution failed for URL={} due to: {}", rssAtomUrl.getFeedUrl(), e.getMessage());
@@ -128,16 +132,6 @@ public class FeedResolutionService {
         }
 
         return discoveryInfo;
-    }
-
-    private FeedDiscoveryInfo discoverFeed(String url) {
-        try {
-            return discoverUrl(url, feedGearsUserAgent);
-        } catch (Exception e) {
-            log.warn("Unable to perform feed discovery due to: {}", e.getMessage());
-        }
-
-        return null;
     }
 
     private String getFeedTitle(FeedDiscoveryInfo feedDiscoveryInfo) {

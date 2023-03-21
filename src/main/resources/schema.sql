@@ -35,7 +35,7 @@ create table feed_definitions (
     feed_title varchar(512) not null,
     feed_desc varchar(1024),
     feed_generator varchar(512),
-    transport_ident varchar(256) not null,
+    transport_ident varchar(256) unique not null,
     username varchar(100) not null references users(name) on delete cascade,
     feed_status varchar(64) not null,
     export_config json,
@@ -50,6 +50,20 @@ create table feed_definitions (
     category_domain varchar(256),
     last_deployed_timestamp timestamp with time zone,
     is_deleted boolean not null default false,
+    is_authenticated boolean not null default false,
+
+    primary key (id)
+);
+--
+-- feed_credentials table
+--
+drop table if exists feed_credentials cascade;
+
+create table feed_credentials (
+    id bigserial not null,
+    transport_ident varchar(256) not null references feed_definitions(transport_ident) on delete cascade,
+    username varchar(100) not null,
+    password varchar(256) not null,
 
     primary key (id)
 );
@@ -125,6 +139,7 @@ create table query_metrics (
     import_timestamp timestamp with time zone,
     import_ct integer,
     persist_ct integer,
+    skip_ct integer,
     archive_ct integer,
     error_type varchar(64),
     error_detail varchar(1024),
@@ -243,6 +258,7 @@ drop index if exists idx_staging_posts_feed_id;
 drop index if exists idx_staging_posts_username;
 drop index if exists idx_feed_definitions_username;
 drop index if exists idx_feed_definitions_transport_ident;
+drop index if exists idx_feed_credentials_transport_ident;
 drop index if exists idx_query_definitions_feed_id;
 drop index if exists idx_query_definitions_username;
 drop index if exists idx_query_metrics_query_id;
@@ -259,6 +275,7 @@ create index idx_staging_posts_feed_id on staging_posts(feed_id);
 create index idx_staging_posts_username on staging_posts(username);
 create index idx_feed_definitions_username on feed_definitions(username);
 create index idx_feed_definitions_transport_ident on feed_definitions(transport_ident);
+create index idx_feed_credentials_transport_ident on feed_credentials(transport_ident);
 create index idx_query_definitions_feed_id on query_definitions(feed_id);
 create index idx_query_definitions_username on query_definitions(username);
 create index idx_query_metrics_query_id on query_metrics(query_id);

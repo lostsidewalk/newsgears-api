@@ -19,7 +19,7 @@ public class FeedDiscoveryService {
     // MANUAL DISCOVERY
     //
     @Cacheable(value="feedDiscoveryCache", key="#url")
-    public FeedDiscoveryInfo performDiscovery(String url) throws FeedDiscoveryException {
-        return discoverUrl(url, feedGearsUserAgent);
+    public FeedDiscoveryInfo performDiscovery(String url, String username, String password) throws FeedDiscoveryException {
+        return discoverUrl(url, username, password, feedGearsUserAgent);
     }
 }

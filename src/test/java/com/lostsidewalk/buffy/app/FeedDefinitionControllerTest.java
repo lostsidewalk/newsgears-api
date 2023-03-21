@@ -40,7 +40,8 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
             null,
             "Test Feed Copyright",
             "en-US",
-            null);
+            null,
+            false);
     static {
         TEST_FEED_DEFINITION.setId(1L);
     }
@@ -109,7 +110,7 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\"},\"queryDefinitions\":[{\"queryDefinition\":{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"RSS\"}}],\"feedImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false},\"queryDefinitions\":[{\"queryDefinition\":{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"RSS\"}}],\"feedImgSrc\":null}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());

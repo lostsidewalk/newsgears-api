@@ -6,20 +6,25 @@ values ('me', 'password', 'michaeledwardharris@gmail.com', 'auth', 'pw_reset', '
 --
 -- feed_definitions
 --
-insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, export_config, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp)
-values ('programming', 'programming', 'programming', 'programming-generator', '1', 'me', 'ENABLED', '{ }', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null);
+insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, export_config, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp, is_authenticated)
+values ('programming', 'programming', 'programming', 'programming-generator', '1', 'me', 'ENABLED', '{ }', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null, true);
 
-insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp)
-values ('elder_scrolls', 'elder_scrolls', 'elder_scrolls', 'elder_scrolls-generator', '2', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null);
+insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp, is_authenticated)
+values ('elder_scrolls', 'elder_scrolls', 'elder_scrolls', 'elder_scrolls-generator', '2', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null, false);
 
-insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp)
-values ('linux', 'linux', 'linux', 'linux-generator', '3', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null);
+insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp, is_authenticated)
+values ('linux', 'linux', 'linux', 'linux-generator', '3', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null, false);
 
-insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp)
-values ('sci_tech', 'sci_tech', 'sci_tech', 'sci_tech-generator', '4', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null);
+insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp, is_authenticated)
+values ('sci_tech', 'sci_tech', 'sci_tech', 'sci_tech-generator', '4', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null, false);
 
-insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp)
-values ('cnn_inbound', 'cnn_inbound', 'cnn_inbound', 'cnn_inbound-generator', '5', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null);
+insert into feed_definitions(feed_ident, feed_title, feed_desc, feed_generator, transport_ident, username, feed_status, copyright, language, feed_img_src, feed_img_transport_ident, category_term, category_label, category_scheme, category_value, category_domain, last_deployed_timestamp, is_authenticated)
+values ('cnn_inbound', 'cnn_inbound', 'cnn_inbound', 'cnn_inbound-generator', '5', 'me', 'ENABLED', 'Copyright (c) 2022 Lost Sidewalk Software, Inc. All Rights Reserved.', 'en-US', null, null, null, null, null, null, null, null, false);
+--
+-- feed_credentials
+--
+insert into feed_credentials(transport_ident, username, password)
+values ('1', 'me', 'me');
 --
 -- query_definitions
 --

@@ -23,14 +23,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.*;
 
 @Slf4j
 @Service
@@ -84,8 +84,15 @@ public class ThumbnailService {
         URL u = new URL(url);
         URLConnection urlConnection = u.openConnection();
         urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
+        urlConnection.setRequestProperty("Accept-Encoding", "gzip");
         try (InputStream is = urlConnection.getInputStream()) {
-            return is.readAllBytes();
+            InputStream toRead;
+            if (containsIgnoreCase(urlConnection.getContentEncoding(), "gzip")) {
+                toRead = new GZIPInputStream(is);
+            } else {
+                toRead = is;
+            }
+            return toRead.readAllBytes();
         }
     }
 

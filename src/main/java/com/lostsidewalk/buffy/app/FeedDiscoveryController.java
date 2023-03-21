@@ -5,6 +5,7 @@ import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.catalog.CatalogService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
+import com.lostsidewalk.buffy.app.model.request.FeedDiscoveryRequest;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
@@ -12,7 +13,6 @@ import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType;
 import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscovery;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -22,7 +22,8 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
@@ -30,6 +31,7 @@ import java.util.List;
 
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType.PARSING_FEED_EXCEPTION;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -52,25 +54,28 @@ public class FeedDiscoveryController {
     @Autowired
     CatalogService catalogService;
 
-    @GetMapping("/discovery/") // Note: the trailing slash is necessary here due to a bug in Spring
+    @PostMapping("/discovery")
     @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<?> discoverFeed(@Valid @Size(max = 1024) @RequestParam String url, Authentication authentication) throws DataAccessException {
+    public ResponseEntity<?> discoverFeed(@Valid @RequestBody FeedDiscoveryRequest feedDiscoveryRequest, Authentication authentication) throws DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
-        log.debug("discoverFeed for user={}, url={}", username, url);
+        log.debug("discoverFeed for user={}, feedDiscoveryRequest={}", username, feedDiscoveryRequest);
         StopWatch stopWatch = StopWatch.createStarted();
+        String discoveryUrl = feedDiscoveryRequest.getUrl();
+        String discoveryUsername = feedDiscoveryRequest.getUsername();
+        String discoveryPassword = feedDiscoveryRequest.getPassword();
         try {
-            FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(url);
+            FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(discoveryUrl, discoveryUsername, discoveryPassword);
             ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = thumbnailService.addThumbnailToResponse(feedDiscoveryInfo);
             stopWatch.stop();
-            appLogService.logFeedDiscovery(username, stopWatch, url);
+            appLogService.logFeedDiscovery(username, stopWatch, discoveryUrl);
             return ok(thumbnailedFeedDiscoveryResponse);
         } catch (FeedDiscoveryException e) {
             if (e.exceptionType == PARSING_FEED_EXCEPTION) {
                 try {
-                    String resolvedUrl = feedResolutionService.performResolution(url);
-                    if (!StringUtils.equals(resolvedUrl, url)) {
-                        FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl);
+                    String resolvedUrl = feedResolutionService.performResolution(discoveryUrl);
+                    if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, discoveryUrl)) {
+                        FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl, discoveryUsername, discoveryPassword);
                         ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = thumbnailService.addThumbnailToResponse(feedDiscoveryInfo);
                         stopWatch.stop();
                         appLogService.logFeedDiscovery(username, stopWatch, resolvedUrl);

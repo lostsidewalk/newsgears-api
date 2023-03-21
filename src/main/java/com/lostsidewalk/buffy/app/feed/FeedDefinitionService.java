@@ -57,7 +57,8 @@ public class FeedDefinitionService {
                 serializeExportConfig(feedConfigRequest),
                 feedConfigRequest.getCopyright(),
                 getLanguage(feedConfigRequest.getLanguage()),
-                feedConfigRequest.getImgSrc()
+                feedConfigRequest.getImgSrc(),
+                false
             );
         return feedDefinitionDao.add(newFeedDefinition);
     }
@@ -94,7 +95,8 @@ public class FeedDefinitionService {
                 serializeExportConfig(feedConfigRequest),
                 feedConfigRequest.getCopyright(),
                 getLanguage(feedConfigRequest.getLanguage()),
-                feedConfigRequest.getImgSrc()
+                feedConfigRequest.getImgSrc(),
+                false
             );
     }
 

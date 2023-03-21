@@ -55,6 +55,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
+import static org.apache.commons.collections4.MapUtils.isNotEmpty;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -242,8 +243,10 @@ public class FeedDefinitionController {
         // update the queries
         List<QueryDefinition> updatedQueries = queryDefinitionService.updateQueries(username, id, feedConfigRequest);
         if (isNotEmpty(updatedQueries)) {
-            // perform the initial import of any updated queries
-            postImporter.doImport(updatedQueries, discoveryCache);
+            // perform the initial import of any updated queries (the discovery cache will be populated if the feed is reachable)
+            if (isNotEmpty(discoveryCache)) {
+                postImporter.doImport(updatedQueries, discoveryCache);
+            }
         }
         // re-fetch this feed definition and query definitions and return to front-end
         FeedDefinition feedDefinition = feedDefinitionService.findByFeedId(username, id);

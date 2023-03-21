@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.lostsidewalk.buffy.app.model.request.FeedDiscoveryRequest;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.post.ContentObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,12 +71,20 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
 
     private static final Gson GSON = new Gson();
 
+    private static final FeedDiscoveryRequest TEST_FEED_DISCOVERY_REQUEST = new FeedDiscoveryRequest(
+            "http://test.com/rss",
+            "testUsername",
+            "testPassword"
+    );
+
     @Test
     void test_getFeedDiscovery() throws Exception {
-        when(this.feedDiscoveryService.performDiscovery("http://test.com/rss")).thenReturn(TEST_FEED_DISCOVERY_INFO);
+        when(this.feedDiscoveryService.performDiscovery(eq("http://test.com/rss"), eq("testUsername"), eq("testPassword"))).thenReturn(TEST_FEED_DISCOVERY_INFO);
         when(this.thumbnailService.addThumbnailToResponse(any(FeedDiscoveryInfo.class))).thenCallRealMethod();
         mockMvc.perform(MockMvcRequestBuilders
-                        .get("/discovery/").queryParam("url", "http://test.com/rss")
+                        .post("/discovery")
+                        .contentType(APPLICATION_JSON)
+                        .content(GSON.toJson(TEST_FEED_DISCOVERY_REQUEST))
                         .header("Authorization", "Bearer testToken")
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
