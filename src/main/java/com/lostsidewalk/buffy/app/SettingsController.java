@@ -3,8 +3,10 @@ package com.lostsidewalk.buffy.app;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
+import com.lostsidewalk.buffy.app.model.request.DisplaySettingsUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.UpdateSubscriptionRequest;
+import com.lostsidewalk.buffy.app.model.response.DisplaySettingsResponse;
 import com.lostsidewalk.buffy.app.model.response.SettingsResponse;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import com.lostsidewalk.buffy.app.model.response.SubscriptionResponse;
@@ -23,7 +25,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.lostsidewalk.buffy.app.model.request.SubscriptionStatus.ACTIVE;
 import static com.lostsidewalk.buffy.app.model.request.SubscriptionStatus.CANCELED;
@@ -50,15 +51,28 @@ public class SettingsController {
 
     @Secured({UNVERIFIED_ROLE})
     @GetMapping("/settings/display")
-    public ResponseEntity<Map<String, String>> getDisplaySettings(Authentication authentication) throws DataAccessException {
+    public ResponseEntity<DisplaySettingsResponse> getDisplaySettings(Authentication authentication) throws DataAccessException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         StopWatch stopWatch = StopWatch.createStarted();
-        Map<String, String> displayConfig = settingsService.getDisplayConfig(username);
+        DisplaySettingsResponse displaySettingsResponse = settingsService.getDisplaySettings(username);
         stopWatch.stop();
-        appLogService.logDisplayConfigFetch(username, stopWatch);
+        appLogService.logDisplaySettingsFetch(username, stopWatch);
         //
-        return ok(displayConfig);
+        return ok(displaySettingsResponse);
+    }
+
+    @Secured({UNVERIFIED_ROLE})
+    @Transactional
+    @PutMapping("/settings/display")
+    public ResponseEntity<?> updateDisplaySettings(@Valid @RequestBody DisplaySettingsUpdateRequest displaySettingsUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails.getUsername();
+        StopWatch stopWatch = StopWatch.createStarted();
+        settingsService.updateDisplaySettings(username, displaySettingsUpdateRequest);
+        stopWatch.stop();
+        appLogService.logDisplaySettingsUpdate(username, stopWatch);
+        return ok(EMPTY);
     }
 
     @Secured({UNVERIFIED_ROLE})

@@ -142,6 +142,9 @@ class BaseWebControllerTest {
     FrameworkConfigDao frameworkConfigDao;
 
     @MockBean
+    ThemeConfigDao themeConfigDao;
+
+    @MockBean
     StagingPostDao stagingPostDao;
 
     @MockBean

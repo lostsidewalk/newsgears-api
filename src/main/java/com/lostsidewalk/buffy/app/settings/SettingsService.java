@@ -1,6 +1,9 @@
 package com.lostsidewalk.buffy.app.settings;
 
+import com.google.gson.Gson;
 import com.lostsidewalk.buffy.*;
+import com.lostsidewalk.buffy.app.model.request.DisplaySettingsUpdateRequest;
+import com.lostsidewalk.buffy.app.model.response.DisplaySettingsResponse;
 import com.lostsidewalk.buffy.app.model.response.SettingsResponse;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -23,13 +27,34 @@ public class SettingsService {
     @Autowired
     private FrameworkConfigDao frameworkConfigDao;
 
-    public Map<String, String> getDisplayConfig(String username) throws DataAccessException {
+    @Autowired
+    private ThemeConfigDao themeConfigDao;
+
+    public DisplaySettingsResponse getDisplaySettings(String username) throws DataAccessException {
         User user = userDao.findByName(username);
         if (user == null) {
             throw new UsernameNotFoundException(username);
         }
         FrameworkConfig frameworkConfig = frameworkConfigDao.findByUserId(user.getId());
-        return frameworkConfig.getDisplay();
+        Map<String, String> displayConfig = frameworkConfig.getDisplay();
+        ThemeConfig themeConfig = themeConfigDao.findByUserId(user.getId());
+        return DisplaySettingsResponse.from(displayConfig, themeConfig);
+    }
+
+    public void updateDisplaySettings(String username, DisplaySettingsUpdateRequest updateRequest) throws DataAccessException, DataUpdateException {
+        User user = userDao.findByName(username);
+        if (user == null) {
+            throw new UsernameNotFoundException(username);
+        }
+        ThemeConfig themeConfig = updateRequest.getThemeConfig();
+        if (themeConfig != null) {
+            themeConfigDao.upsertThemeConfig(user.getId(),
+                    serializeTheme(themeConfig.getLightTheme()),
+                    serializeTheme(themeConfig.getDarkTheme())
+            );
+        }
+
+        log.debug("Theme configuration updated for userId={}", user.getId());
     }
 
     public SettingsResponse getFrameworkConfig(String username) throws DataAccessException {
@@ -67,6 +92,12 @@ public class SettingsService {
             frameworkConfigDao.save(frameworkConfig);
         }
 
-        log.info("Framework configuration updated for username={}", username);
+        log.debug("Framework configuration updated for userId={}", user.getId());
+    }
+
+    private static final Gson GSON = new Gson();
+
+    private Serializable serializeTheme(Map<String, String> theme) {
+        return theme == null ? null : GSON.toJson(theme);
     }
 }

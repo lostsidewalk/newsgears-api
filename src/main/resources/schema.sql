@@ -250,6 +250,21 @@ create table framework_config
   primary key (id)
 );
 --
+--
+--
+drop table if exists theme_config cascade;
+
+create table theme_config
+(
+  id serial not null,
+  user_id integer not null references users(id) on delete cascade,
+  light_theme json,
+  dark_theme json,
+
+  primary key (id)
+);
+
+--
 -- indexes
 --
 drop index if exists idx_staging_posts_post_pub_status;
@@ -268,6 +283,8 @@ drop index if exists idx_users_email_address;
 drop index if exists idx_users_customer_id;
 drop index if exists idx_users_auth_provider;
 drop index if exists idx_users_name;
+drop index if exists idx_framework_config_user_id;
+drop index if exists idx_theme_config_user_id;
 
 create index idx_staging_posts_post_pub_status on staging_posts(post_pub_status);
 create index idx_staging_posts_post_hash on staging_posts(post_hash);
@@ -285,3 +302,5 @@ create index idx_users_email_address on users(email_address);
 create index idx_users_customer_id on users(customer_id);
 create index idx_users_auth_provider on users(auth_provider);
 create index idx_users_name on users(name);
+create index idx_framework_config_user_id on framework_config(user_id);
+create index idx_theme_config_user_id on theme_config(user_id);
