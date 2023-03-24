@@ -173,12 +173,12 @@ public class FeedDefinitionController {
                 ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
                 // create the queries (for the first partition)
                 List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, firstPartition);
-                if (isNotEmpty(createdQueries)) {
+                if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
                     // perform import-from-cache (first partition only)
                     postImporter.doImport(createdQueries, discoveryCache);
                 }
                 // queue up the remaining partitions
-                partitions.forEach(p -> addToCreationQueue(p, username, feedId));
+                iter.forEachRemaining(p -> addToCreationQueue(p, username, feedId));
             } catch (Exception e) {
                 log.warn("Feed initial import failed due to: {}", e.getMessage());
             }
