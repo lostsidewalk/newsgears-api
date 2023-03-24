@@ -22,6 +22,7 @@ import static java.util.List.copyOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 @Service
@@ -62,6 +63,10 @@ public class QueryDefinitionService {
         List<QueryDefinition> adds = new ArrayList<>();
         for (RssAtomUrl r : rssAtomFeedUrls) {
             String url = r.getFeedUrl();
+            if (isBlank(url)) {
+                log.warn("Query is missing a URL, skipping...");
+                continue;
+            }
             String title = r.getFeedTitle();
             String imageUrl = r.getFeedImageUrl();
             QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, serializeQueryConfig(r));
@@ -95,6 +100,10 @@ public class QueryDefinitionService {
             List<QueryDefinition> adds = new ArrayList<>();
             for (RssAtomUrl r : rssAtomFeedUrls) {
                 String url = r.getFeedUrl();
+                if (isBlank(url)) {
+                    log.warn("Query is missing a URL, skipping...");
+                    continue;
+                }
                 if (r.getId() != null) {
                     QueryDefinition q = currentQueryDefinitionsById.get(r.getId());
                     if (q != null) {

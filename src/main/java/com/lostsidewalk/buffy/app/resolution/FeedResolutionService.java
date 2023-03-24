@@ -82,6 +82,10 @@ public class FeedResolutionService {
         Map<String, FeedDiscoveryInfo> discoveryCache = new HashMap<>();
         if (isNotEmpty(rssAtomUrls)) {
             for (RssAtomUrl r : rssAtomUrls) {
+                if (isBlank(r.getFeedUrl())) {
+                    log.warn("Unable to perform feed URL due to missing URL, skipping...");
+                    continue;
+                }
                 this.feedResolutionThreadPool.submit(() -> {
                     FeedDiscoveryInfo discoveryInfo;
                     try {
