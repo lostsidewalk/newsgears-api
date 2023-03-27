@@ -32,7 +32,7 @@ drop table if exists feed_definitions cascade;
 create table feed_definitions (
     id bigserial not null,
     feed_ident varchar(256) not null,
-    feed_title varchar(512) not null,
+    feed_title varchar(512),
     feed_desc varchar(1024),
     feed_generator varchar(512),
     transport_ident varchar(256) unique not null,

@@ -293,7 +293,7 @@ public class FeedDefinitionController {
         List<String> errors = new ArrayList<>();
         for (MultipartFile opmlFile : opmlFiles) {
             try (InputStream is = opmlFile.getInputStream()) {
-                feedConfigRequests.add(opmlService.parseOpmlFile(is));
+                feedConfigRequests.addAll(opmlService.parseOpmlFile(is));
             } catch (ValidationException e) {
                 errors.add(opmlFile.getOriginalFilename() + ": " + e.getMessage());
             } catch (Exception e) {

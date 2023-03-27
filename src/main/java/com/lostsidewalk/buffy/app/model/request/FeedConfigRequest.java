@@ -16,9 +16,8 @@ public class FeedConfigRequest {
     @Size(max=256)
     String ident;
 
-    @NotBlank
     @Size(max=512)
-    String title;
+    String title; // optional
 
     @Size(max=1024)
     String description; // optional

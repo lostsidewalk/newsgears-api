@@ -27,15 +27,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.utils.WordUtils.randomWords;
-import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.RandomUtils.nextLong;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -52,35 +51,123 @@ public class OpmlService {
     @Autowired
     QueryDefinitionDao queryDefinitionDao;
 
-    public FeedConfigRequest parseOpmlFile(InputStream inputStream) throws OpmlException {
+    public List<FeedConfigRequest> parseOpmlFile(InputStream inputStream) throws OpmlException {
         try {
             WireFeedInput input = new WireFeedInput();
             InputStreamReader isr = new InputStreamReader(inputStream);
             Opml feed = (Opml) input.build(isr);
-            String ident = generateRandomFeedIdent();
-            String title = feed.getTitle();
-            String description = getDescription(getOwner(feed));
-            FeedConfigRequest feedConfigRequest = buildFeedConfigRequest(ident, title, description, feed.getOutlines());
-            Set<ConstraintViolation<FeedConfigRequest>> constraintViolations = validator.validate(feedConfigRequest);
-            if (isNotEmpty(constraintViolations)) {
-                throw new FeedConfigRequestValidationException(constraintViolations);
+            List<FeedConfigRequest> feedConfigRequests = importOpml(feed);
+            for (FeedConfigRequest feedConfigRequest : feedConfigRequests) {
+                Set<ConstraintViolation<FeedConfigRequest>> constraintViolations = validator.validate(feedConfigRequest);
+                if (isNotEmpty(constraintViolations)) {
+                    throw new FeedConfigRequestValidationException(constraintViolations);
+                }
             }
-            return feedConfigRequest;
+            return feedConfigRequests;
         } catch (Exception e) {
             throw new OpmlException(e.getMessage());
         }
     }
 
+    private List<FeedConfigRequest> importOpml(Opml opml) {
+
+        List<FeedConfigRequest> feedConfigRequests = new ArrayList<>();
+
+        String ident = generateRandomFeedIdent();
+        String title = opml.getTitle();
+        String description = getDescription(getOwner(opml));
+        List<Outline> outlines = opml.getOutlines();
+        List<RssAtomUrl> rssAtomUrls = new ArrayList<>();
+        for (Outline outline : outlines) {
+            if (equalsIgnoreCase(outline.getType(), "rss")) {
+                RssAtomUrl rssAtomUrl = new RssAtomUrl(generateRandomId(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
+                Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
+                if (isNotEmpty(constraintViolations)) {
+                    throw new RssAtomUrlValidationException(constraintViolations);
+                } else {
+                    rssAtomUrls.add(rssAtomUrl);
+                }
+            } else {
+                feedConfigRequests.addAll(buildFeedConfigRequests(singletonList(outline)));
+            }
+        }
+        FeedConfigRequest topLevelFeedConfigRequest = null;
+        if (!rssAtomUrls.isEmpty()) {
+            topLevelFeedConfigRequest = FeedConfigRequest.from(
+                    ident,
+                    title,
+                    description,
+                    "FeedGears 0.4",
+                    rssAtomUrls,
+                    null,
+                    null,
+                    null,
+                    null);
+        }
+        if (topLevelFeedConfigRequest != null) {
+            feedConfigRequests.add(topLevelFeedConfigRequest);
+        }
+
+        return feedConfigRequests;
+    }
+
+    private List<FeedConfigRequest> buildFeedConfigRequests(List<Outline> outlines) {
+
+        List<FeedConfigRequest> feedConfigRequests = new ArrayList<>();
+        for (Outline outline : outlines) {
+            String ident = generateRandomFeedIdent();
+            String title = outline.getTitle();
+            String description = outline.getText();
+            List<Outline> children = outline.getChildren();
+            List<RssAtomUrl> rssAtomUrls = new ArrayList<>();
+            for (Outline child : children) {
+                if (equalsIgnoreCase(child.getType(), "rss")) {
+                    RssAtomUrl rssAtomUrl = new RssAtomUrl(generateRandomId(), child.getXmlUrl(), child.getTitle(), null, null, null);
+                    Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
+                    if (isNotEmpty(constraintViolations)) {
+                        throw new RssAtomUrlValidationException(constraintViolations);
+                    }
+                    rssAtomUrls.add(rssAtomUrl);
+                } else {
+                    feedConfigRequests.addAll(buildFeedConfigRequests(outline.getChildren()));
+                }
+            }
+            if (isNotBlank(title) || isNotEmpty(rssAtomUrls)) {
+                feedConfigRequests.add(FeedConfigRequest.from(
+                        ident,
+                        title,
+                        description,
+                        "FeedGears 0.4",
+                        rssAtomUrls,
+                        null,
+                        null,
+                        null,
+                        null
+                ));
+            }
+        }
+
+        return feedConfigRequests;
+    }
+
+    //
+    //
+    //
+
     private static String generateRandomFeedIdent() {
         return randomWords();
     }
 
+    private static long generateRandomId() {
+        return nextLong();
+    }
+
     private static final String OWNER_NAME_AND_EMAIL_TEMPLATE = "%s (%s)";
 
-    private String getOwner(Opml feed) {
-        String ownerName = feed.getOwnerName();
-        String ownerEmail = feed.getOwnerEmail();
-        String ownerId = feed.getOwnerId();
+    private static String getOwner(Opml opml) {
+        String ownerName = opml.getOwnerName();
+        String ownerEmail = opml.getOwnerEmail();
+        String ownerId = opml.getOwnerId();
         if (isNoneBlank(ownerName, ownerEmail)) {
             return String.format(OWNER_NAME_AND_EMAIL_TEMPLATE, ownerName, ownerEmail);
         } else if (isNotBlank(ownerName)) {
@@ -94,11 +181,15 @@ public class OpmlService {
         return EMPTY;
     }
 
-    private static final String QUEUE_CREATED_BY_TEMPLATE = "Queue created by %s";
+    private static final String QUEUE_CREATED_BY_TEMPLATE = "Queue created via OMPL import, owner=by %s";
 
-    private String getDescription(String owner) {
+    private static String getDescription(String owner) {
         return isNotBlank(owner) ? String.format(QUEUE_CREATED_BY_TEMPLATE, owner) : EMPTY;
     }
+
+    //
+    //
+    //
 
     public String generateOpml(String username) throws DataAccessException, OpmlException {
         List<FeedDefinition> feedDefinitions = feedDefinitionDao.findByUser(username);
@@ -143,6 +234,10 @@ public class OpmlService {
         return new Outline(null, xmlUrl, null);
     }
 
+    //
+    //
+    //
+
     public static class RssAtomUrlValidationException extends ValidationException {
         RssAtomUrlValidationException(Set<ConstraintViolation<RssAtomUrl>> constraintViolations) {
             super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
@@ -153,46 +248,5 @@ public class OpmlService {
         FeedConfigRequestValidationException(Set<ConstraintViolation<FeedConfigRequest>> constraintViolations) {
             super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
         }
-    }
-
-    private FeedConfigRequest buildFeedConfigRequest(String ident, String title, String description, List<Outline> outlines) {
-
-        // ea. outline is a query
-
-        return FeedConfigRequest.from(
-                ident,
-                title,
-                description,
-                null,
-                buildRssAtomFeedUrls(outlines, 0),
-                null,
-                null,
-                null,
-                null
-        );
-    }
-
-    private List<RssAtomUrl> buildRssAtomFeedUrls(List<Outline> outlines, int depth) {
-        if (depth > 2) {
-            return emptyList();
-        }
-        int outlineCt = size(outlines);
-        List<RssAtomUrl> rssAtomUrls = newArrayListWithCapacity(outlineCt);
-        for (Outline outline  : outlines) {
-            if (startsWithIgnoreCase(outline.getType(), "rss")) {
-                // Note: feed title and image URL properties will be resolved when the feed config request is processed on post-back
-                RssAtomUrl rssAtomUrl = new RssAtomUrl(nextLong(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
-                Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
-                if (isNotEmpty(constraintViolations)) {
-                    throw new RssAtomUrlValidationException(constraintViolations);
-                }
-                rssAtomUrls.add(rssAtomUrl);
-            } else {
-                List<Outline> children = outline.getChildren();
-                rssAtomUrls.addAll(buildRssAtomFeedUrls(children, depth + 1));
-            }
-        }
-
-        return rssAtomUrls;
     }
 }
