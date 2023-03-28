@@ -84,6 +84,7 @@ public class FeedResolutionService {
             for (RssAtomUrl r : rssAtomUrls) {
                 if (isBlank(r.getFeedUrl())) {
                     log.warn("Unable to perform feed URL due to missing URL, skipping...");
+                    latch.countDown();
                     continue;
                 }
                 this.feedResolutionThreadPool.submit(() -> {
