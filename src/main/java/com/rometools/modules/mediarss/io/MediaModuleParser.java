@@ -50,6 +50,8 @@ import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Long.parseLong;
 
 /**
  * @author Nathanial X. Freitas
@@ -97,7 +99,7 @@ public class MediaModuleParser implements ModuleParser {
         String nonWSFileSize = fileSizeAttrValue.replaceAll("\\s", "");
 
         if(nonWSFileSize.matches("\\d+")) {
-            return Long.parseLong(nonWSFileSize);
+            return parseLong(nonWSFileSize);
         }
 
         Matcher sizeWithUnitMatcher = FILESIZE_WITH_UNIT_PATTERN.matcher(nonWSFileSize);
@@ -230,7 +232,7 @@ public class MediaModuleParser implements ModuleParser {
                     }
 
                     if (content.getAttributeValue("isDefault") != null) {
-                        mc.setDefaultContent(Boolean.parseBoolean(content.getAttributeValue("isDefault")));
+                        mc.setDefaultContent(parseBoolean(content.getAttributeValue("isDefault")));
                     }
                 } else {
                     LOG.debug("Could not find MediaContent.");
@@ -443,10 +445,28 @@ public class MediaModuleParser implements ModuleParser {
         final List<Element> priceElements = e.getChildren("price", getNS());
         final Price[] prices = new Price[priceElements.size()];
         for (int i = 0; i < priceElements.size(); i++) {
+
             final Element priceElement = priceElements.get(i);
             prices[i] = new Price();
-            prices[i].setCurrency(priceElement.getAttributeValue("currency"));
-            prices[i].setPrice(Doubles.parse(priceElement.getAttributeValue("price")));
+
+            final String currency = priceElement.getAttributeValue("currency");
+            if (currency != null) {
+                try {
+                    prices[i].setCurrency(Currency.getInstance(currency));
+                } catch (IllegalArgumentException ex) {
+                    LOG.warn("Invalid currency", ex);
+                }
+            }
+
+            final String price = priceElement.getAttributeValue("price");
+            if (price != null) {
+                try {
+                    prices[i].setPrice(new BigDecimal(price));
+                } catch (NumberFormatException ex) {
+                    LOG.warn("Invalid price", ex);
+                }
+            }
+
             if (priceElement.getAttributeValue("type") != null) {
                 prices[i].setType(Price.Type.valueOf(priceElement.getAttributeValue("type").toUpperCase()));
             }
@@ -837,7 +857,9 @@ public class MediaModuleParser implements ModuleParser {
                 relationship = Restriction.Relationship.DENY;
             }
 
-            final Restriction value = new Restriction(Objects.requireNonNull(relationship), type, r.getTextTrim());
+            assert relationship != null;
+            final Restriction value;
+            value = new Restriction(relationship, type, r.getTextTrim());
             values.add(value);
         }
 
