@@ -80,7 +80,6 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
     @Test
     void test_getFeedDiscovery() throws Exception {
         when(this.feedDiscoveryService.performDiscovery(eq("http://test.com/rss"), eq("testUsername"), eq("testPassword"))).thenReturn(TEST_FEED_DISCOVERY_INFO);
-        when(this.thumbnailService.addThumbnailToResponse(any(FeedDiscoveryInfo.class))).thenCallRealMethod();
         mockMvc.perform(MockMvcRequestBuilders
                         .post("/discovery")
                         .contentType(APPLICATION_JSON)

@@ -49,13 +49,14 @@ public class ProxyService {
     }
 
     public String rewriteImageUrl(String imgUrl, String baseUrl) {
-        if (startsWith(imgUrl, "/")) {
+        if (startsWith(imgUrl, "/") && isNotBlank(baseUrl)) {
             try {
                 URI uri = create(baseUrl);
                 imgUrl = uri.resolve("/") + imgUrl;
             } catch (Exception ignored) {}
         }
         if (startsWith(imgUrl, "http")) {
+            imgUrl = stripEnd(imgUrl, "/");
             String imgToken = encodeBase64URLSafeString(sha256(imgUrl, UTF_8).getBytes()); // SHA-256 + B64 the URL
             return String.format(this.imageProxyUrlTemplate, strip(imgToken, "="), encode(imgUrl, UTF_8));
         }

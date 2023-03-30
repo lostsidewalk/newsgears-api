@@ -6,8 +6,9 @@ import com.lostsidewalk.buffy.app.catalog.CatalogService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedDiscoveryRequest;
+import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
-import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
+import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType;
@@ -49,14 +50,11 @@ public class FeedDiscoveryController {
     FeedResolutionService feedResolutionService;
 
     @Autowired
-    ThumbnailService thumbnailService;
-
-    @Autowired
     CatalogService catalogService;
 
     @PostMapping("/discovery")
     @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<?> discoverFeed(@Valid @RequestBody FeedDiscoveryRequest feedDiscoveryRequest, Authentication authentication) throws DataAccessException {
+    public ResponseEntity<?> discoverFeed(@Valid @RequestBody FeedDiscoveryRequest feedDiscoveryRequest, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("discoverFeed for user={}, feedDiscoveryRequest={}", username, feedDiscoveryRequest);
@@ -65,8 +63,10 @@ public class FeedDiscoveryController {
         String discoveryUsername = feedDiscoveryRequest.getUsername();
         String discoveryPassword = feedDiscoveryRequest.getPassword();
         try {
+            // perform discovery
             FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(discoveryUrl, discoveryUsername, discoveryPassword);
-            ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = thumbnailService.addThumbnailToResponse(feedDiscoveryInfo);
+            //
+            ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo);
             stopWatch.stop();
             appLogService.logFeedDiscovery(username, stopWatch, discoveryUrl);
             return ok(thumbnailedFeedDiscoveryResponse);
@@ -76,7 +76,7 @@ public class FeedDiscoveryController {
                     String resolvedUrl = feedResolutionService.performResolution(discoveryUrl);
                     if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, discoveryUrl)) {
                         FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl, discoveryUsername, discoveryPassword);
-                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = thumbnailService.addThumbnailToResponse(feedDiscoveryInfo);
+                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo);
                         stopWatch.stop();
                         appLogService.logFeedDiscovery(username, stopWatch, resolvedUrl);
                         // (the resolved path is different from the original path, and has been discovered successfully)
@@ -94,6 +94,30 @@ public class FeedDiscoveryController {
             // (the original path error-ed out due to a reason other than feed resolution)
             return badRequest().body(
                     new UpstreamErrorDetails(new Date(), getFeedDiscoveryExceptionTypeMessage(e.exceptionType), e.httpStatusCode, e.httpStatusMessage, e.redirectUrl, e.redirectHttpStatusCode, e.redirectHttpStatusMessage));
+        }
+    }
+
+    public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo) {
+        //
+        FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
+        secureFeedDiscoveryImageInfo(imageInfo);
+        //
+        FeedDiscoveryImageInfo iconInfo = feedDiscoveryInfo.getIcon();
+        secureFeedDiscoveryImageInfo(iconInfo);
+        //
+        return ThumbnailedFeedDiscovery.from(
+                feedDiscoveryInfo,
+                imageInfo,
+                iconInfo
+        );
+    }
+
+    @Autowired
+    ProxyService proxyService;
+
+    private void secureFeedDiscoveryImageInfo(FeedDiscoveryImageInfo feedDiscoveryImageInfo) {
+        if (feedDiscoveryImageInfo != null) {
+            feedDiscoveryImageInfo.setUrl(proxyService.rewriteImageUrl(feedDiscoveryImageInfo.getUrl(), null));
         }
     }
 

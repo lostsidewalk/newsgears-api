@@ -37,12 +37,6 @@ public class CacheConfig {
         log.trace("Thumbnail cache cleared");
     }
 
-    @CacheEvict(allEntries = true, value = {"thumbnailedDiscoveryCache"})
-    @Scheduled(fixedDelay=10_800_000, initialDelay=480_000)
-    public void clearThumbnailedDiscoveryCache() {
-        log.trace("Thumbnailed discovery cache cleared");
-    }
-
     @CacheEvict(allEntries = true, value = {"thumbnailedCatalogCache"})
     @Scheduled(fixedDelay=10_800_000, initialDelay=480_000)
     public void clearThumbnailedCatalogCache() {

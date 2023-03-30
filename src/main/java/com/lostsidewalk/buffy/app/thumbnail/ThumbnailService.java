@@ -3,34 +3,22 @@ package com.lostsidewalk.buffy.app.thumbnail;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.RenderedThumbnailDao;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
-import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
-import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
-import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscovery;
-import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscoveryImage;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
 import com.lostsidewalk.buffy.thumbnail.ThumbnailDao;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Date;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
-import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
-import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 @Service
@@ -41,9 +29,6 @@ public class ThumbnailService {
 
     @Autowired
     RenderedThumbnailDao renderedThumbnailDao; // for redis interaction
-
-    @Value("${newsgears.userAgent}")
-    String feedGearsUserAgent;
 
     public RenderedThumbnail getThumbnail(String transportIdent) throws DataAccessException {
         if (isBlank(transportIdent)) {
@@ -58,42 +43,6 @@ public class ThumbnailService {
         }
 
         return thumbnail;
-    }
-
-    @Cacheable("thumbnailRefreshCache")
-    public RenderedThumbnail refreshThumbnail(String transportIdent, String imgUrl, int targetSize) {
-        log.info("Refreshing thumbnail cache, imgUrl={} @ transportIdent={}", imgUrl, transportIdent);
-        RenderedThumbnail thumbnail = null;
-        try {
-            byte[] imageBytes = getImage(imgUrl, fetch(imgUrl), targetSize);
-            if (imageBytes == null) {
-                log.error("Failed to decode image at imgUrl={} @ transportIdent={} due to unknown format", imgUrl, transportIdent);
-            }
-            thumbnail = RenderedThumbnail.from(transportIdent, imageBytes);
-            renderedThumbnailDao.putThumbnailAtTransportIdent(transportIdent, thumbnail);
-            log.debug("Thumbnail cache updated for imgUrl={} @ transportIdent={}", imgUrl, transportIdent);
-        } catch (Exception e) {
-            log.warn("Failed to update thumbnail cache for imgUrl={} @ transportIdent={} due to: {}",
-                    imgUrl, transportIdent, e.getMessage());
-        }
-
-        return thumbnail;
-    }
-
-    private byte[] fetch(String url) throws IOException {
-        URL u = new URL(url);
-        URLConnection urlConnection = u.openConnection();
-        urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
-        urlConnection.setRequestProperty("Accept-Encoding", "gzip");
-        try (InputStream is = urlConnection.getInputStream()) {
-            InputStream toRead;
-            if (containsIgnoreCase(urlConnection.getContentEncoding(), "gzip")) {
-                toRead = new GZIPInputStream(is);
-            } else {
-                toRead = is;
-            }
-            return toRead.readAllBytes();
-        }
     }
 
     public RenderedThumbnail refreshThumbnailFromSrc(String transportIdent, String feedImgSrc) throws DataAccessException {
@@ -113,9 +62,6 @@ public class ThumbnailService {
 
     @Autowired
     ThumbnailDao thumbnailDao;
-
-    @Value("${newsgears.thumbnail.size}")
-    int thumbnailSize;
 
     @PostConstruct
     public void postConstruct() {
@@ -139,38 +85,5 @@ public class ThumbnailService {
     @Cacheable(value = "thumbnailCache")
     List<String> getThumbnailCache() throws DataAccessException {
         return thumbnailDao.findAll();
-    }
-
-    @Cacheable(value = "thumbnailedDiscoveryCache")
-    public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo) throws DataAccessException {
-        return ThumbnailedFeedDiscovery.from(
-                feedDiscoveryInfo,
-                addThumbnail(feedDiscoveryInfo.getImage()),
-                addThumbnail(feedDiscoveryInfo.getIcon())
-        );
-    }
-
-    private ThumbnailedFeedDiscoveryImage addThumbnail(FeedDiscoveryImageInfo imageInfo) throws DataAccessException {
-        if (imageInfo != null) {
-            byte[] image = buildThumbnail(imageInfo);
-            return image == null ? null : ThumbnailedFeedDiscoveryImage.from(imageInfo, image);
-        }
-
-        return null;
-    }
-
-    private byte[] buildThumbnail(FeedDiscoveryImageInfo imageInfo) throws DataAccessException {
-        if (isNotBlank(imageInfo.getUrl())) {
-            String transportIdent = imageInfo.getTransportIdent();
-            byte[] image = ofNullable(getThumbnail(transportIdent)).map(RenderedThumbnail::getImage).orElse(null);
-            if (image == null) {
-                image = ofNullable(refreshThumbnail(transportIdent, imageInfo.getUrl(), this.thumbnailSize))
-                        .map(RenderedThumbnail::getImage)
-                        .orElse(null);
-            }
-            return image;
-        }
-
-        return null;
     }
 }

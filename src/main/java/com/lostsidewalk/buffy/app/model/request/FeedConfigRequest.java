@@ -1,5 +1,6 @@
 package com.lostsidewalk.buffy.app.model.request;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,8 +9,11 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
+
 @Data
 @NoArgsConstructor
+@JsonInclude(NON_ABSENT)
 public class FeedConfigRequest {
 
     @NotBlank
