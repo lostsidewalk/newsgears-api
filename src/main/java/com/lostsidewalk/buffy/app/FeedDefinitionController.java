@@ -162,25 +162,28 @@ public class FeedDefinitionController {
         for (FeedConfigRequest feedConfigRequest : feedConfigRequests) {
             // create the feed
             Long feedId = feedDefinitionService.createFeed(username, feedConfigRequest);
-            try {
-                // marshall up all RSS/ATOM subscription URLs
-                List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
-                // partition them into groups of 25 ea.
-                List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 25);
-                Iterator<List<RssAtomUrl>> iter = partitions.iterator();
-                List<RssAtomUrl> firstPartition = iter.next();
-                // perform synchronous resolution on the first partition
-                ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
-                // create the queries (for the first partition)
-                List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, firstPartition);
-                if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
-                    // perform import-from-cache (first partition only)
-                    postImporter.doImport(createdQueries, discoveryCache);
+            List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
+            if (isNotEmpty(rssAtomUrls)) {
+                try {
+                    // marshall up all RSS/ATOM subscription URLs
+
+                    // partition them into groups of 25 ea.
+                    List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 25);
+                    Iterator<List<RssAtomUrl>> iter = partitions.iterator();
+                    List<RssAtomUrl> firstPartition = iter.next();
+                    // perform synchronous resolution on the first partition
+                    ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
+                    // create the queries (for the first partition)
+                    List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, firstPartition);
+                    if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
+                        // perform import-from-cache (first partition only)
+                        postImporter.doImport(createdQueries, discoveryCache);
+                    }
+                    // queue up the remaining partitions
+                    iter.forEachRemaining(p -> addToCreationQueue(p, username, feedId));
+                } catch (Exception e) {
+                    log.warn("Feed initial import failed due to: {}", e.getMessage());
                 }
-                // queue up the remaining partitions
-                iter.forEachRemaining(p -> addToCreationQueue(p, username, feedId));
-            } catch (Exception e) {
-                log.warn("Feed initial import failed due to: {}", e.getMessage(), e);
             }
 
             // re-fetch this feed definition
