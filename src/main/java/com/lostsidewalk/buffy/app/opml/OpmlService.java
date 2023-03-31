@@ -23,15 +23,16 @@ import org.jdom2.output.XMLOutputter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static com.lostsidewalk.buffy.app.utils.WordUtils.randomWords;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
@@ -51,10 +52,26 @@ public class OpmlService {
     @Autowired
     QueryDefinitionDao queryDefinitionDao;
 
-    public List<FeedConfigRequest> parseOpmlFile(InputStream inputStream) throws OpmlException {
+    public List<FeedConfigRequest> parseOpmlFile(InputStream inputStream) throws OpmlException, IOException {
+        //
+        // extract the OPML text from the input stream for logging
+        //
+        StringBuilder opmlTextBuilder = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName(UTF_8.name())))) {
+            int c;
+            while ((c = reader.read()) != -1) {
+                opmlTextBuilder.append((char) c);
+            }
+        }
+        String opmlText = opmlTextBuilder.toString();
+        log.info("OPML parse, file={}", opmlText);
+        //
+        // re-create the input stream for processing
+        //
+        InputStream textStream = new ByteArrayInputStream(opmlText.getBytes(UTF_8));
         try {
             WireFeedInput input = new WireFeedInput();
-            InputStreamReader isr = new InputStreamReader(inputStream);
+            InputStreamReader isr = new InputStreamReader(textStream);
             Opml feed = (Opml) input.build(isr);
             List<FeedConfigRequest> feedConfigRequests = importOpml(feed);
             for (FeedConfigRequest feedConfigRequest : feedConfigRequests) {
