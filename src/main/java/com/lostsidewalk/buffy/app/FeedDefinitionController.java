@@ -180,7 +180,7 @@ public class FeedDefinitionController {
                 // queue up the remaining partitions
                 iter.forEachRemaining(p -> addToCreationQueue(p, username, feedId));
             } catch (Exception e) {
-                log.warn("Feed initial import failed due to: {}", e.getMessage());
+                log.warn("Feed initial import failed due to: {}", e.getMessage(), e);
             }
 
             // re-fetch this feed definition
