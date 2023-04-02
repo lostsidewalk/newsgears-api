@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.lostsidewalk.buffy.rss.RssImporter.RSS;
 import static java.util.List.copyOf;
@@ -99,17 +100,12 @@ public class QueryDefinitionService {
             List<QueryDefinition> updates = new ArrayList<>();
             List<QueryDefinition> adds = new ArrayList<>();
             for (RssAtomUrl r : rssAtomFeedUrls) {
-                String url = r.getFeedUrl();
-                if (isBlank(url)) {
-                    log.warn("Query is missing a URL, skipping...");
-                    continue;
-                }
                 if (r.getId() != null) {
                     QueryDefinition q = currentQueryDefinitionsById.get(r.getId());
-                    if (q != null) {
+                    if (q != null && needsUpdate(r, q)) {
                         q.setQueryTitle(r.getFeedTitle());
                         q.setQueryImageUrl(r.getFeedImageUrl());
-                        q.setQueryText(url);
+                        q.setQueryText(r.getFeedUrl());
                         String feedUsername = r.getUsername();
                         String feedPassword = r.getPassword();
                         if (StringUtils.isNotBlank(feedUsername) || StringUtils.isNotBlank(feedPassword)) {
@@ -121,7 +117,7 @@ public class QueryDefinitionService {
                     } else {
                         String title = r.getFeedTitle();
                         String imageUrl = r.getFeedImageUrl();
-                        QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, serializeQueryConfig(r));
+                        QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, r.getFeedUrl(), RSS, serializeQueryConfig(r));
                         adds.add(newQuery);
                     }
                 } // r.getId() == null case is ignored
@@ -167,6 +163,25 @@ public class QueryDefinitionService {
         }
 
         return toImport;
+    }
+
+    private boolean needsUpdate(RssAtomUrl rssAtomUrl, QueryDefinition q) {
+        if (!StringUtils.equals(q.getQueryTitle(), rssAtomUrl.getFeedTitle())) {
+            return true;
+        }
+        if (!StringUtils.equals(q.getQueryImageUrl(), rssAtomUrl.getFeedImageUrl())) {
+            return true;
+        }
+        if (!StringUtils.equals(q.getQueryText(), rssAtomUrl.getFeedUrl())) {
+            return true;
+        }
+        if (!StringUtils.equals(q.getQueryTitle(), rssAtomUrl.getFeedTitle())) {
+            return true;
+        }
+        if (!StringUtils.equals(q.getQueryTitle(), rssAtomUrl.getFeedTitle())) {
+            return true;
+        }
+        return !Objects.equals(serializeQueryConfig(rssAtomUrl), q.getQueryConfig());
     }
 
     private Serializable serializeQueryConfig(RssAtomUrl rssAtomUrl) {
