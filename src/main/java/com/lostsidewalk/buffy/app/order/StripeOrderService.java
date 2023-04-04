@@ -61,6 +61,7 @@ public class StripeOrderService {
     @PostConstruct
     void postConstruct() {
         // set the private keys
+        log.info("Stripe order service initialized");
         log.debug("Stripe order service initialized with API key={}, WH API key={}", apiKey, whApiKey);
         Stripe.apiKey = apiKey;
     }

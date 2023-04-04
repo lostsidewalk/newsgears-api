@@ -165,10 +165,9 @@ public class FeedDefinitionController {
             List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
             if (isNotEmpty(rssAtomUrls)) {
                 try {
-                    // marshall up all RSS/ATOM subscription URLs
-
-                    // partition them into groups of 25 ea.
-                    List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 25);
+                    // partition all RSS/ATOM subscriptions into groups of 5 ea.
+                    // TODO: make the partition size configurable
+                    List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 5);
                     Iterator<List<RssAtomUrl>> iter = partitions.iterator();
                     List<RssAtomUrl> firstPartition = iter.next();
                     // perform synchronous resolution on the first partition
@@ -217,7 +216,7 @@ public class FeedDefinitionController {
             case FILE_NOT_FOUND_EXCEPTION -> "We weren't able to locate a feed at the URL you provided.";
             case SSL_HANDSHAKE_EXCEPTION -> "We're unable to reach this URL due to a problem with the remote SSL.  Try another protocol, or resolve the issue on the remote system.";
             case UNKNOWN_HOST_EXCEPTION -> "We're unable to resolve the hostname in the URL you provided.";
-            case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have times out; you might want to try to discover this feed later.";
+            case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have timed out; you might want to try to discover this feed later.";
             case SOCKET_EXCEPTION -> "We encountered a problem reading network data from the URL you provided.";
             case CONNECT_EXCEPTION -> "We were unable to connect to the remote system at the URL you provided.";
             case PARSING_FEED_EXCEPTION -> "The feed at the URL you provided has syntax issues that prevent us being able to read it properly.";

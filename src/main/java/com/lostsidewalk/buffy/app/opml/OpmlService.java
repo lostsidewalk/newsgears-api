@@ -134,7 +134,12 @@ public class OpmlService {
         for (Outline outline : outlines) {
             String ident = generateRandomFeedIdent();
             String title = outline.getTitle();
-            String description = outline.getText();
+            String description = null;
+            if (isBlank(title)) {
+                title = outline.getText();
+            } else {
+                description = outline.getText();
+            }
             List<Outline> children = outline.getChildren();
             List<RssAtomUrl> rssAtomUrls = new ArrayList<>();
             for (Outline child : children) {
@@ -146,7 +151,10 @@ public class OpmlService {
                     }
                     rssAtomUrls.add(rssAtomUrl);
                 } else {
-                    feedConfigRequests.addAll(buildFeedConfigRequests(outline.getChildren()));
+                    List<FeedConfigRequest> fromChildren = buildFeedConfigRequests(singletonList(child));
+                    if (isNotEmpty(fromChildren)) {
+                        feedConfigRequests.addAll(fromChildren);
+                    }
                 }
             }
             if (isNotBlank(title) || isNotEmpty(rssAtomUrls)) {

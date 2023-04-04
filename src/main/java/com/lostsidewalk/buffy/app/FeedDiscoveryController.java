@@ -22,16 +22,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType.PARSING_FEED_EXCEPTION;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
@@ -51,6 +49,22 @@ public class FeedDiscoveryController {
 
     @Autowired
     CatalogService catalogService;
+
+    @GetMapping("/discovery/collection/{collectionName}")
+    public ResponseEntity<?> discoverCollection(@PathVariable String collectionName, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails == null ? "(none)" : userDetails.getUsername();
+        log.debug("discoverCollection for user={}, collectionName={}", username, collectionName);
+        StopWatch stopWatch = StopWatch.createStarted();
+        List<FeedDiscoveryInfo> collectionDiscoveryResponse = feedDiscoveryService.getCollection(collectionName);
+        List<ThumbnailedFeedDiscovery> thumbnailedCollectionDiscoveryResponse = null;
+        if (isNotEmpty(collectionDiscoveryResponse)) {
+            thumbnailedCollectionDiscoveryResponse = collectionDiscoveryResponse.stream().map(this::addThumbnailToResponse).toList();
+        }
+        stopWatch.stop();
+        appLogService.logCollectionFetch(username, stopWatch, collectionName);
+        return ok(thumbnailedCollectionDiscoveryResponse);
+    }
 
     @PostMapping("/discovery")
     @Secured({UNVERIFIED_ROLE})
@@ -118,6 +132,41 @@ public class FeedDiscoveryController {
     private void secureFeedDiscoveryImageInfo(FeedDiscoveryImageInfo feedDiscoveryImageInfo) {
         if (feedDiscoveryImageInfo != null) {
             feedDiscoveryImageInfo.setUrl(proxyService.rewriteImageUrl(feedDiscoveryImageInfo.getUrl(), null));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
     }
 
@@ -126,7 +175,7 @@ public class FeedDiscoveryController {
             case FILE_NOT_FOUND_EXCEPTION -> "We weren't able to locate a feed at the URL you provided.";
             case SSL_HANDSHAKE_EXCEPTION -> "We're unable to reach this URL due to a problem with the remote SSL.  Try another protocol, or resolve the issue on the remote system.";
             case UNKNOWN_HOST_EXCEPTION -> "We're unable to resolve the hostname in the URL you provided.";
-            case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have times out; you might want to try to discover this feed later.";
+            case SOCKET_TIMEOUT_EXCEPTION -> "The remote system seems to have timed out; you might want to try to discover this feed later.";
             case SOCKET_EXCEPTION -> "We encountered a problem reading network data from the URL you provided.";
             case CONNECT_EXCEPTION -> "We were unable to connect to the remote system at the URL you provided.";
             case PARSING_FEED_EXCEPTION -> "The feed at the URL you provided has syntax issues that prevent us being able to read it properly.";

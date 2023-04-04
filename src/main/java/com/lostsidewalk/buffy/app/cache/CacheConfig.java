@@ -17,6 +17,12 @@ public class CacheConfig {
         log.trace("Feed discovery cache cleared");
     }
 
+    @CacheEvict(allEntries = true, value = {"feedCollectionDiscoveryCache"})
+    @Scheduled(fixedDelay=10_800_000, initialDelay=480_000)
+    public void clearFeedCollectionDiscoveryCache() {
+        log.trace("Feed collection discovery cache cleared");
+    }
+
     @CacheEvict(allEntries = true, value = {"proxyCache"})
     @Scheduled(fixedDelay=10_000, initialDelay=480_000)
     public void clearProxyCache() {

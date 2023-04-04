@@ -59,6 +59,10 @@ public class AppLogService {
         auditLog("feed-discovery", "url={}", username, stopWatch, url);
     }
 
+    public void logCollectionFetch(String username, StopWatch stopWatch, String collectionName) {
+        auditLog("collection-fetch", "collectionName={}", username, stopWatch, collectionName);
+    }
+
     public void logCatalogFetch(String username, StopWatch stopWatch) {
         auditLog("catalog-fetch", null, username, stopWatch);
     }
@@ -101,14 +105,6 @@ public class AppLogService {
 
     public void logStagingPostFetch(String username, StopWatch stopWatch, int feedIdCt, int stagingPostCt) {
         auditLog("staging-post-fetch", "feedIdCt={}, stagingPostCt={}, queryMetricsCt={}", username, stopWatch, feedIdCt, stagingPostCt);
-    }
-
-//    public void logStagingPostCreate(String username, StopWatch stopWatch, Long id) {
-//        auditLog("staging-post-create", "id={}", username, stopWatch, id);
-//    }
-
-    public void logStagingPostUpdate(String username, StopWatch stopWatch) {
-        auditLog("staging-post-update", null, username, stopWatch);
     }
 
     public void logStagingPostReadStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated) {
