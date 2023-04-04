@@ -165,9 +165,10 @@ public class FeedDefinitionController {
             List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
             if (isNotEmpty(rssAtomUrls)) {
                 try {
-                    // partition all RSS/ATOM subscriptions into groups of 5 ea.
+                    // partition all RSS/ATOM subscriptions
+                    // Note: partition size of 1 just grabs the first first sub in each queue; this is a special case for small hardware
                     // TODO: make the partition size configurable
-                    List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 5);
+                    List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 1);
                     Iterator<List<RssAtomUrl>> iter = partitions.iterator();
                     List<RssAtomUrl> firstPartition = iter.next();
                     // perform synchronous resolution on the first partition
