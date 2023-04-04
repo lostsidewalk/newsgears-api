@@ -178,15 +178,15 @@ public class FeedDiscoveryService {
 
     @PostConstruct
     public void postConstruct() {
-        if (isDevelopment) {
+        if (!isDevelopment) {
             try {
                 FEED_DISCOVERY_INFO_CACHE.put(TOP_NEWS, performCollectionDiscovery(TOP_NEWS));
-//                FEED_DISCOVERY_INFO_CACHE.put(INVESTING, performCollectionDiscovery(INVESTING));
-//                FEED_DISCOVERY_INFO_CACHE.put(BUSINESS, performCollectionDiscovery(BUSINESS));
-//                FEED_DISCOVERY_INFO_CACHE.put(TECHNOLOGY, performCollectionDiscovery(TECHNOLOGY));
-//                FEED_DISCOVERY_INFO_CACHE.put(SCIENCE, performCollectionDiscovery(SCIENCE));
-//                FEED_DISCOVERY_INFO_CACHE.put(CREATIVE, performCollectionDiscovery(CREATIVE));
-//                FEED_DISCOVERY_INFO_CACHE.put(LIFESTYLE, performCollectionDiscovery(LIFESTYLE));
+                FEED_DISCOVERY_INFO_CACHE.put(INVESTING, performCollectionDiscovery(INVESTING));
+                FEED_DISCOVERY_INFO_CACHE.put(BUSINESS, performCollectionDiscovery(BUSINESS));
+                FEED_DISCOVERY_INFO_CACHE.put(TECHNOLOGY, performCollectionDiscovery(TECHNOLOGY));
+                FEED_DISCOVERY_INFO_CACHE.put(SCIENCE, performCollectionDiscovery(SCIENCE));
+                FEED_DISCOVERY_INFO_CACHE.put(CREATIVE, performCollectionDiscovery(CREATIVE));
+                FEED_DISCOVERY_INFO_CACHE.put(LIFESTYLE, performCollectionDiscovery(LIFESTYLE));
                 log.info("Feed discovery service initialized");
             } catch (Exception e) {
                 log.warn("Unable to perform collection discovery due to: {}", e.getMessage());

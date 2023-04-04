@@ -131,42 +131,10 @@ public class FeedDiscoveryController {
 
     private void secureFeedDiscoveryImageInfo(FeedDiscoveryImageInfo feedDiscoveryImageInfo) {
         if (feedDiscoveryImageInfo != null) {
-            feedDiscoveryImageInfo.setUrl(proxyService.rewriteImageUrl(feedDiscoveryImageInfo.getUrl(), null));
+            String originalUrl = feedDiscoveryImageInfo.getUrl();
+            String newUrl = proxyService.rewriteImageUrl(originalUrl, null);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            feedDiscoveryImageInfo.setUrl(newUrl);
         }
     }
 
