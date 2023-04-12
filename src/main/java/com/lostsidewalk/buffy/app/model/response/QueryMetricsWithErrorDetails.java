@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.model;
+package com.lostsidewalk.buffy.app.model.response;
 
 import com.lostsidewalk.buffy.query.QueryMetrics;
 import lombok.Data;

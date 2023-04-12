@@ -6,7 +6,7 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
-import com.lostsidewalk.buffy.app.model.QueryMetricsWithErrorDetails;
+import com.lostsidewalk.buffy.app.model.response.QueryMetricsWithErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;

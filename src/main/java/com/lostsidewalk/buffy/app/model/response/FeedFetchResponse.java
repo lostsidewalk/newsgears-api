@@ -1,6 +1,5 @@
 package com.lostsidewalk.buffy.app.model.response;
 
-import com.lostsidewalk.buffy.app.model.QueryMetricsWithErrorDetails;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
 import lombok.Data;
 

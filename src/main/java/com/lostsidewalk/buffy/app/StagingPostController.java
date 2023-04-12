@@ -58,7 +58,10 @@ public class StagingPostController {
         String username = userDetails.getUsername();
             log.debug("getStagingPosts for user={}, feedIds={}", username, isEmpty(feedIds) ? "all" : feedIds);
         StopWatch stopWatch = StopWatch.createStarted();
-        List<ThumbnailedPostResponse> stagingPosts = addThumbnails(secureStagingPosts(stagingPostService.getStagingPosts(username, feedIds)));
+        List<ThumbnailedPostResponse> stagingPosts =
+                addThumbnails(
+                        proxyService.secureStagingPosts(
+                                stagingPostService.getStagingPosts(username, feedIds)));
         stopWatch.stop();
         appLogService.logStagingPostFetch(username, stopWatch, size(feedIds), size(stagingPosts));
         return ok(PostFetchResponse.from(stagingPosts));
@@ -119,133 +122,6 @@ public class StagingPostController {
         stopWatch.stop();
         appLogService.logStagingPostPubStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, 1, publicationResults);
         return ok().body(DeployResponse.from(publicationResults));
-    }
-
-    //
-
-    public List<StagingPost> secureStagingPosts(List<StagingPost> stagingPosts) {
-        if (isNotEmpty(stagingPosts)) {
-            for (StagingPost stagingPost : stagingPosts) {
-                String postUrl = stagingPost.getPostUrl();
-                // secure the post title HTML content
-                secureHtmlContent(stagingPost.getPostTitle(), postUrl);
-                // secure the post description HTML content
-                secureHtmlContent(stagingPost.getPostDesc(), postUrl);
-                // secure the post contents HTML content
-                List<ContentObject> postContents = stagingPost.getPostContents();
-                if (isNotEmpty(postContents)) {
-                    for (ContentObject c : postContents) {
-                        secureHtmlContent(c, postUrl);
-                    }
-                }
-                // secure the post iTunes contents
-                securePostITunes(stagingPost.getPostITunes(), postUrl);
-                // secure the post enclosures
-                List<PostEnclosure> postEnclosures = stagingPost.getEnclosures();
-                if (isNotEmpty(postEnclosures)) {
-                    for (PostEnclosure e : postEnclosures) {
-                        securePostEnclosure(e, postUrl);
-                    }
-                }
-                // secure the post media contents
-                securePostMedia(stagingPost.getPostMedia(), postUrl);
-            }
-        }
-        return stagingPosts;
-    }
-
-    private void secureHtmlContent(ContentObject obj, String baseUrl) {
-        if (isHtmlContent(obj)) {
-            String rawHtml = obj.getValue();
-            String cleanHtml = Jsoup.clean(rawHtml, relaxed()); // this must remove embed and object tags
-            Document document = Jsoup.parse(cleanHtml);
-            document.getElementsByTag("img").forEach(e -> {
-                String imgUrl = e.attr("src");
-                e.attr("src", proxyService.rewriteImageUrl(imgUrl, baseUrl));
-            });
-            document.getElementsByTag("a").forEach(e -> {
-                e.attr("target", "_blank");
-                e.attr("rel", "noopener");
-            });
-
-            //
-            obj.setValue(document.toString());
-        }
-    }
-
-    private static boolean isHtmlContent(ContentObject obj) {
-        return obj != null && containsIgnoreCase(obj.getType(), "html");
-    }
-
-    private void securePostITunes(PostITunes postITunes, String basesUrl) {
-        if (postITunes != null && postITunes.getImageUri() != null) {
-            postITunes.setImageUri(proxyService.rewriteImageUrl(postITunes.getImageUri(), basesUrl));
-        }
-    }
-
-    private void securePostEnclosure(PostEnclosure postEnclosure, String baseUrl) {
-        if (isImageEnclosure(postEnclosure)) {
-            postEnclosure.setUrl(proxyService.rewriteImageUrl(postEnclosure.getUrl(), baseUrl));
-        }
-    }
-
-    private static boolean isImageEnclosure(PostEnclosure enc) {
-        return enc != null && containsIgnoreCase(enc.getType(), "image");
-    }
-
-    private void securePostMedia(PostMedia postMedia, String baseUrl) {
-        if (postMedia != null) {
-            List<PostMediaContent> postMediaContents = postMedia.getPostMediaContents();
-            if (isNotEmpty(postMediaContents)) {
-                for (PostMediaContent c : postMediaContents) {
-                    securePostMediaContent(c, baseUrl);
-                }
-            }
-            PostMediaMetadata postMediaMetadata = postMedia.getPostMediaMetadata();
-            if (postMediaMetadata != null) {
-                securePostMediaMetadata(postMediaMetadata, baseUrl);
-            }
-            List<PostMediaGroup> postMediaGroups = postMedia.getPostMediaGroups();
-            for (PostMediaGroup g : postMediaGroups) {
-                securePostMediaMetadata(g.getPostMediaMetadata(), baseUrl);
-                for (PostMediaContent gc : g.getPostMediaContents()) {
-                    securePostMediaContent(gc, baseUrl);
-                }
-            }
-        }
-    }
-
-    private void securePostMediaContent(PostMediaContent content, String baseUrl) {
-        if (isImageContent(content)) {
-            securePostMediaReference(content.getReference(), baseUrl);
-        }
-    }
-
-    private static boolean isImageContent(PostMediaContent con) {
-        return con != null && containsIgnoreCase(con.getType(), "image");
-    }
-
-    private void securePostMediaReference(PostMediaReference reference, String baseUrl) {
-        if (reference != null) {
-            reference.setUri(create(proxyService.rewriteImageUrl(reference.getUri().toString(), baseUrl)));
-        }
-    }
-
-    private void securePostMediaMetadata(PostMediaMetadata metadata, String baseUrl) {
-        if (metadata != null) {
-            List<PostMediaThumbnail> postMediaThumbnails = metadata.getThumbnails();
-            if (isNotEmpty(postMediaThumbnails)) {
-                for (PostMediaThumbnail t : postMediaThumbnails) {
-                    securePostMediaThumbnail(t, baseUrl);
-                }
-            }
-        }
-    }
-
-    private void securePostMediaThumbnail(PostMediaThumbnail thumbnail, String baseUrl) {
-        if (thumbnail != null) {
-            thumbnail.setUrl(create(proxyService.rewriteImageUrl(thumbnail.getUrl().toString(), baseUrl)));
-        }
     }
 
     //

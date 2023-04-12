@@ -63,8 +63,8 @@ public class AppLogService {
         auditLog("collection-fetch", "collectionName={}", username, stopWatch, collectionName);
     }
 
-    public void logCatalogFetch(String username, StopWatch stopWatch) {
-        auditLog("catalog-fetch", null, username, stopWatch);
+    public void logFeedRecommendation(String username, StopWatch stopWatch, String url) {
+        auditLog("feed-recommendation", "url={}", username, stopWatch, url);
     }
 
     public void logCheckoutSessionCreate(String username, StopWatch stopWatch) {

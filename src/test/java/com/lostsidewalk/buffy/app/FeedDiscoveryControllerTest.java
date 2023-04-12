@@ -74,7 +74,8 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
     private static final FeedDiscoveryRequest TEST_FEED_DISCOVERY_REQUEST = new FeedDiscoveryRequest(
             "http://test.com/rss",
             "testUsername",
-            "testPassword"
+            "testPassword",
+            false
     );
 
     @Test
@@ -88,7 +89,7 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals(GSON.fromJson("{\"id\":1,\"feedUrl\":\"testUrl\",\"httpStatusCode\":200,\"httpStatusMessage\":\"OK\",\"redirectFeedUrl\":null,\"redirectHttpStatusCode\":null,\"redirectHttpStatusMessage\":null,\"title\":{\"type\":\"text\",\"value\":\"testPostTitle\"},\"description\":{\"type\":\"text\",\"value\":\"testPostDescription\"},\"feedType\":\"testFeedType\",\"author\":\"testAuthor\",\"copyright\":\"testCopyright\",\"docs\":\"testDocs\",\"encoding\":\"testEncoding\",\"generator\":\"testGenerator\",\"image\":null,\"icon\":null,\"language\":\"en-US\",\"link\":\"testLink\",\"managingEditor\":\"testManagingEditor\",\"publishedDate\":null,\"styleSheet\":\"testStyleSheet\",\"supportedTypes\":[\"testSupportedType\"],\"webMaster\":\"testWebMaster\",\"uri\":\"testUri\",\"categories\":[\"testCategory\"],\"sampleEntries\":null,\"urlUpgradable\":false}", JsonObject.class),
+                    assertEquals(GSON.fromJson("{\"id\":1,\"feedUrl\":\"testUrl\",\"httpStatusCode\":200,\"httpStatusMessage\":\"OK\",\"redirectFeedUrl\":null,\"redirectHttpStatusCode\":null,\"redirectHttpStatusMessage\":null,\"title\":{\"type\":\"text\",\"value\":\"testPostTitle\"},\"description\":{\"type\":\"text\",\"value\":\"testPostDescription\"},\"feedType\":\"testFeedType\",\"author\":\"testAuthor\",\"copyright\":\"testCopyright\",\"docs\":\"testDocs\",\"encoding\":\"testEncoding\",\"generator\":\"testGenerator\",\"image\":null,\"icon\":null,\"language\":\"en-US\",\"link\":\"testLink\",\"managingEditor\":\"testManagingEditor\",\"publishedDate\":null,\"styleSheet\":\"testStyleSheet\",\"supportedTypes\":[\"testSupportedType\"],\"webMaster\":\"testWebMaster\",\"uri\":\"testUri\",\"categories\":[\"testCategory\"],\"sampleEntries\":null,\"feedRecommendationInfo\":null,\"urlUpgradable\":false}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class)
                     );
                 })

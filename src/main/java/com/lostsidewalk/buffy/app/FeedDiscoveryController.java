@@ -1,18 +1,20 @@
 package com.lostsidewalk.buffy.app;
 
-import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
-import com.lostsidewalk.buffy.app.catalog.CatalogService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedDiscoveryRequest;
+import com.lostsidewalk.buffy.app.model.request.FeedRecommendationRequest;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
+import com.lostsidewalk.buffy.app.recommendation.RecommendationService;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType;
+import com.lostsidewalk.buffy.discovery.FeedRecommendationInfo;
 import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscovery;
+import com.lostsidewalk.buffy.post.StagingPost;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -48,8 +50,15 @@ public class FeedDiscoveryController {
     FeedResolutionService feedResolutionService;
 
     @Autowired
-    CatalogService catalogService;
+    RecommendationService recommendationService;
 
+    @Autowired
+    ProxyService proxyService;
+
+    /**
+     * Get a collection by name.  Collections are groups of featured feeds.
+     *
+     */
     @GetMapping("/discovery/collection/{collectionName}")
     public ResponseEntity<?> discoverCollection(@PathVariable String collectionName, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
@@ -66,6 +75,12 @@ public class FeedDiscoveryController {
         return ok(thumbnailedCollectionDiscoveryResponse);
     }
 
+    /**
+     * Perform feed discovery on behalf of a user.  The feed discovery request consists of a URL, username, and password.
+     * This method invokes the feed resolution and discovery services to gather information about the feed at the given URL.
+     * The supplied username and password are provided if the remote system requests authentication.
+     *
+     */
     @PostMapping("/discovery")
     @Secured({UNVERIFIED_ROLE})
     public ResponseEntity<?> discoverFeed(@Valid @RequestBody FeedDiscoveryRequest feedDiscoveryRequest, Authentication authentication) {
@@ -79,8 +94,10 @@ public class FeedDiscoveryController {
         try {
             // perform discovery
             FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(discoveryUrl, discoveryUsername, discoveryPassword);
-            //
-            ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo);
+            // query for recommendations (can be null if not requested or if recommendation service fails silently)
+            FeedRecommendationInfo feedRecommendationInfo = feedDiscoveryRequest.isIncludeRecommendations() ? recommendationService.recommendSimilarFeeds(discoveryUrl) : null;
+            // assemble the response
+            ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo, feedRecommendationInfo);
             stopWatch.stop();
             appLogService.logFeedDiscovery(username, stopWatch, discoveryUrl);
             return ok(thumbnailedFeedDiscoveryResponse);
@@ -90,7 +107,8 @@ public class FeedDiscoveryController {
                     String resolvedUrl = feedResolutionService.performResolution(discoveryUrl);
                     if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, discoveryUrl)) {
                         FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl, discoveryUsername, discoveryPassword);
-                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo);
+                        FeedRecommendationInfo feedRecommendationInfo = recommendationService.recommendSimilarFeeds(resolvedUrl);
+                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo, feedRecommendationInfo);
                         stopWatch.stop();
                         appLogService.logFeedDiscovery(username, stopWatch, resolvedUrl);
                         // (the resolved path is different from the original path, and has been discovered successfully)
@@ -111,33 +129,6 @@ public class FeedDiscoveryController {
         }
     }
 
-    public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo) {
-        //
-        FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
-        secureFeedDiscoveryImageInfo(imageInfo);
-        //
-        FeedDiscoveryImageInfo iconInfo = feedDiscoveryInfo.getIcon();
-        secureFeedDiscoveryImageInfo(iconInfo);
-        //
-        return ThumbnailedFeedDiscovery.from(
-                feedDiscoveryInfo,
-                imageInfo,
-                iconInfo
-        );
-    }
-
-    @Autowired
-    ProxyService proxyService;
-
-    private void secureFeedDiscoveryImageInfo(FeedDiscoveryImageInfo feedDiscoveryImageInfo) {
-        if (feedDiscoveryImageInfo != null) {
-            String originalUrl = feedDiscoveryImageInfo.getUrl();
-            String newUrl = proxyService.rewriteImageUrl(originalUrl, null);
-
-            feedDiscoveryImageInfo.setUrl(newUrl);
-        }
-    }
-
     private static String getFeedDiscoveryExceptionTypeMessage(FeedDiscoveryExceptionType exceptionType) {
         return switch (exceptionType) {
             case FILE_NOT_FOUND_EXCEPTION -> "We weren't able to locate a feed at the URL you provided.";
@@ -155,16 +146,46 @@ public class FeedDiscoveryController {
         };
     }
 
-    @GetMapping("/catalog")
+    /**
+     * Invokes the recommendation service to suggest feeds similar to the one at the URL provided.
+     *
+     */
+    @PostMapping("/recommend")
     @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<List<ThumbnailedFeedDiscovery>> getCatalog(Authentication authentication) throws DataAccessException {
+    public ResponseEntity<FeedRecommendationInfo> recommendFeeds(@Valid @RequestBody FeedRecommendationRequest feedRecommendationRequest, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails.getUsername();
-        log.debug("getCatalog for user={}", username);
+        String username = userDetails == null ? "(none)" : userDetails.getUsername();
+        log.debug("recommendFeeds for user={}, feedRecommendationRequest={}", username, feedRecommendationRequest);
+        String feedUrl = feedRecommendationRequest.getUrl();
         StopWatch stopWatch = StopWatch.createStarted();
-        List<ThumbnailedFeedDiscovery> catalog = catalogService.getCatalog();
+        FeedRecommendationInfo feedRecommendationInfo = recommendationService.recommendSimilarFeeds(feedUrl);
         stopWatch.stop();
-        appLogService.logCatalogFetch(username, stopWatch);
-        return ok(catalog);
+        appLogService.logFeedRecommendation(username, stopWatch, feedUrl);
+        return ok(feedRecommendationInfo);
+    }
+
+    // utility methods
+
+    public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo) {
+        return addThumbnailToResponse(feedDiscoveryInfo, null);
+    }
+
+    public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo, FeedRecommendationInfo feedRecommendationInfo) {
+        //
+        FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
+        proxyService.secureFeedDiscoveryImageInfo(imageInfo);
+        //
+        FeedDiscoveryImageInfo iconInfo = feedDiscoveryInfo.getIcon();
+        proxyService.secureFeedDiscoveryImageInfo(iconInfo);
+        //
+        List<StagingPost> sampleEntries = feedDiscoveryInfo.getSampleEntries();
+        proxyService.secureStagingPosts(sampleEntries);
+        //
+        return ThumbnailedFeedDiscovery.from(
+                feedDiscoveryInfo,
+                imageInfo,
+                iconInfo,
+                feedRecommendationInfo
+        );
     }
 }

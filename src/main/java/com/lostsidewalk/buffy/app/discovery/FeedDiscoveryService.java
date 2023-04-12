@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.lostsidewalk.buffy.rss.RssDiscovery.discoverUrl;
+import static java.util.List.copyOf;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
 
@@ -187,7 +188,14 @@ public class FeedDiscoveryService {
                 FEED_DISCOVERY_INFO_CACHE.put(SCIENCE, performCollectionDiscovery(SCIENCE));
                 FEED_DISCOVERY_INFO_CACHE.put(CREATIVE, performCollectionDiscovery(CREATIVE));
                 FEED_DISCOVERY_INFO_CACHE.put(LIFESTYLE, performCollectionDiscovery(LIFESTYLE));
-                log.info("Feed discovery service initialized");
+                log.info("Full feed discovery service initialized");
+            } catch (Exception e) {
+                log.warn("Unable to perform collection discovery due to: {}", e.getMessage());
+            }
+        } else {
+            try {
+                FEED_DISCOVERY_INFO_CACHE.put(TOP_NEWS, performCollectionDiscovery(TOP_NEWS));
+                log.info("Minimal feed discovery service initialized");
             } catch (Exception e) {
                 log.warn("Unable to perform collection discovery due to: {}", e.getMessage());
             }
@@ -216,6 +224,10 @@ public class FeedDiscoveryService {
     }
 
     public List<FeedDiscoveryInfo> getCollection(String collectionName) {
-        return FEED_DISCOVERY_INFO_CACHE.get(collectionName);
+        List<FeedDiscoveryInfo> collection = FEED_DISCOVERY_INFO_CACHE.get(collectionName);
+        if (collection != null) {
+            return copyOf(collection);
+        }
+        return null;
     }
 }
