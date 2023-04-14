@@ -30,14 +30,6 @@ public class FeedDefinitionService {
         return feedDefinitionDao.findByFeedId(username, id);
     }
 
-    public List<String> findIdentsByUser(String username) throws DataAccessException {
-        List<String> list = feedDefinitionDao.findIdentsByUser(username);
-        if (list != null) {
-            return list;
-        }
-        return emptyList();
-    }
-
     public List<FeedDefinition> findByUser(String username) throws DataAccessException {
         List<FeedDefinition> list = feedDefinitionDao.findByUser(username);
         if (list != null) {
@@ -86,7 +78,7 @@ public class FeedDefinitionService {
         return UUID.randomUUID().toString();
     }
 
-    public void update(String username, Long id, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
+    public void updateFeed(String username, Long id, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
         feedDefinitionDao.updateFeed(username, id,
                 feedConfigRequest.getIdent(),
                 feedConfigRequest.getDescription(),
@@ -100,7 +92,7 @@ public class FeedDefinitionService {
             );
     }
 
-    public void update(String username, Long id, FeedStatusUpdateRequest feedStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+    public void updateFeedStatus(String username, Long id, FeedStatusUpdateRequest feedStatusUpdateRequest) throws DataAccessException, DataUpdateException {
         FeedStatus newStatus = null;
         if (isNotBlank(feedStatusUpdateRequest.getNewStatus())) {
             newStatus = FeedStatus.valueOf(feedStatusUpdateRequest.getNewStatus());

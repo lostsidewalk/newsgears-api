@@ -3,7 +3,6 @@ package com.lostsidewalk.buffy.app.query;
 import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
 import com.lostsidewalk.buffy.query.QueryDefinition;
 import com.lostsidewalk.buffy.query.QueryDefinitionDao;
@@ -19,7 +18,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.lostsidewalk.buffy.rss.RssImporter.RSS;
-import static java.util.List.copyOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
@@ -32,6 +30,10 @@ public class QueryDefinitionService {
     @Autowired
     QueryDefinitionDao queryDefinitionDao;
 
+    public QueryDefinition findById(String username, Long id) throws DataAccessException {
+        return queryDefinitionDao.findById(username, id);
+    }
+
     public List<QueryDefinition> findByUsername(String username) throws DataAccessException {
         return queryDefinitionDao.findByUsername(username);
     }
@@ -39,19 +41,57 @@ public class QueryDefinitionService {
     public List<QueryDefinition> findByFeedId(String username, Long id) throws DataAccessException {
         return queryDefinitionDao.findByFeedId(username, id);
     }
-
-    public List<QueryDefinition> updateQueries(String username, Long feedId, FeedConfigRequest feedConfigRequest) throws DataAccessException, DataUpdateException {
+    //
+    // called by feed definition controller
+    //
+    public List<QueryDefinition> updateQueries(String username, Long feedId, List<RssAtomUrl> rssAtomFeedUrls) throws DataAccessException {
+        //
+        Map<Long, QueryDefinition> currentQueryDefinitionsById = queryDefinitionDao.findByFeedId(username, feedId, RSS)
+                .stream().collect(toMap(QueryDefinition::getId, v -> v));
+        //
         List<QueryDefinition> updatedQueries = new ArrayList<>();
-        // add/update the RSS/ATOM query URLs
-        List<QueryDefinition> rssAtomQueries = configureRssAtomQueries(username, feedId, feedConfigRequest.getRssAtomFeedUrls());
-        if (isNotEmpty(rssAtomQueries)) {
-            updatedQueries.addAll(rssAtomQueries);
+        //
+        if (isNotEmpty(rssAtomFeedUrls)) {
+            for (RssAtomUrl r : rssAtomFeedUrls) {
+                if (r.getId() != null) {
+                    QueryDefinition q = currentQueryDefinitionsById.get(r.getId());
+                    if (q != null) {
+                        if (needsUpdate(r, q)) {
+                            q.setQueryTitle(r.getFeedTitle());
+                            q.setQueryImageUrl(r.getFeedImageUrl());
+                            q.setQueryText(r.getFeedUrl());
+                            String feedUsername = r.getUsername();
+                            String feedPassword = r.getPassword();
+                            if (StringUtils.isNotBlank(feedUsername) || StringUtils.isNotBlank(feedPassword)) {
+                                q.setQueryConfig(serializeQueryConfig(r));
+                            } else {
+                                q.setQueryConfig(null);
+                            }
+                            updatedQueries.add(q);
+                        }
+                    }
+                } // r.getId() == null case is ignored
+            }
+            if (isNotEmpty(updatedQueries)) {
+                // apply updates
+                // query_text = ?, query_type = ?, query_config = ?::json where id = ?
+                queryDefinitionDao.updateQueries(updatedQueries.stream().map(u -> new Object[] {
+                        u.getQueryTitle(),
+                        u.getQueryImageUrl(),
+                        u.getQueryText(),
+                        u.getQueryType(),
+                        u.getQueryConfig(),
+                        u.getId()
+                }).collect(toList()));
+            }
         }
 
         return updatedQueries;
     }
-
-    public List<QueryDefinition> addQueries(String username, Long feedId, List<RssAtomUrl> rssAtomUrls) throws DataAccessException, DataUpdateException {
+    //
+    // called by query creation task processor
+    //
+    List<QueryDefinition> addQueries(String username, Long feedId, List<RssAtomUrl> rssAtomUrls) throws DataAccessException, DataUpdateException {
         List<QueryDefinition> createdQueries = new ArrayList<>();
         if (isNotEmpty(rssAtomUrls)) {
             createdQueries.addAll(addRssAtomQueries(username, feedId, rssAtomUrls));
@@ -77,92 +117,40 @@ public class QueryDefinitionService {
 
         return queryDefinitionDao.findByIds(username, queryIds);
     }
-
-    public List<QueryDefinition> createQueries(String username, Long feedId, List<RssAtomUrl> rssAtomUrls) throws DataAccessException, DataUpdateException {
+    //
+    // called by feed definition controller
+    //
+    public List<QueryDefinition> createQueries(String username, Long feedId, List<RssAtomUrl> rssAtomFeedUrls) throws DataAccessException, DataUpdateException {
         List<QueryDefinition> createdQueries = new ArrayList<>();
-        if (isNotEmpty(rssAtomUrls)) {
-            createdQueries.addAll(configureRssAtomQueries(username, feedId, rssAtomUrls));
+        if (isNotEmpty(rssAtomFeedUrls)) {
+            List<QueryDefinition> toImport = new ArrayList<>();
+            if (isNotEmpty(rssAtomFeedUrls)) {
+                List<QueryDefinition> adds = new ArrayList<>();
+                for (RssAtomUrl r : rssAtomFeedUrls) {
+                    QueryDefinition newQuery = QueryDefinition.from(feedId, username, r.getFeedTitle(), r.getFeedImageUrl(), r.getFeedUrl(), RSS, serializeQueryConfig(r));
+                    adds.add(newQuery);
+                }
+                if (isNotEmpty(adds)) {
+                    // apply additions
+                    List<Long> queryIds = queryDefinitionDao.add(adds);
+                    // re-select
+                    List<QueryDefinition> newQueries = queryDefinitionDao.findByIds(username, queryIds);
+                    // mark for import
+                    toImport.addAll(newQueries);
+                }
+            }
+
+            createdQueries.addAll(toImport);
         }
 
         return createdQueries;
     }
-
-    private List<QueryDefinition> configureRssAtomQueries(String username, Long feedId, List<RssAtomUrl> rssAtomFeedUrls) throws DataAccessException, DataUpdateException {
-        //
-        Map<Long, QueryDefinition> currentQueryDefinitionsById = queryDefinitionDao.findByFeedId(username, feedId, RSS)
-                .stream().collect(toMap(QueryDefinition::getId, v -> v));
-        //
-        List<QueryDefinition> toImport = new ArrayList<>();
-        //
-        boolean doDelete = false;
-        //
-        if (isNotEmpty(rssAtomFeedUrls)) {
-            List<QueryDefinition> updates = new ArrayList<>();
-            List<QueryDefinition> adds = new ArrayList<>();
-            for (RssAtomUrl r : rssAtomFeedUrls) {
-                if (r.getId() != null) {
-                    QueryDefinition q = currentQueryDefinitionsById.get(r.getId());
-                    if (q != null && needsUpdate(r, q)) {
-                        q.setQueryTitle(r.getFeedTitle());
-                        q.setQueryImageUrl(r.getFeedImageUrl());
-                        q.setQueryText(r.getFeedUrl());
-                        String feedUsername = r.getUsername();
-                        String feedPassword = r.getPassword();
-                        if (StringUtils.isNotBlank(feedUsername) || StringUtils.isNotBlank(feedPassword)) {
-                            q.setQueryConfig(serializeQueryConfig(r));
-                        } else {
-                            q.setQueryConfig(null);
-                        }
-                        updates.add(q);
-                    } else {
-                        String title = r.getFeedTitle();
-                        String imageUrl = r.getFeedImageUrl();
-                        QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, r.getFeedUrl(), RSS, serializeQueryConfig(r));
-                        adds.add(newQuery);
-                    }
-                } // r.getId() == null case is ignored
-            }
-            if (isNotEmpty(updates)) {
-                // apply updates
-                // query_text = ?, query_type = ?, query_config = ?::json where id = ?
-                queryDefinitionDao.updateQueries(updates.stream().map(u -> new Object[] {
-                        u.getQueryTitle(),
-                        u.getQueryImageUrl(),
-                        u.getQueryText(),
-                        u.getQueryType(),
-                        u.getQueryConfig(),
-                        u.getId()
-                }).collect(toList()));
-                // mark for import
-                toImport.addAll(updates);
-            }
-            if (isNotEmpty(adds)) {
-                // apply additions
-                List<Long> queryIds = queryDefinitionDao.add(adds);
-                // re-select
-                List<QueryDefinition> newQueries = queryDefinitionDao.findByIds(username, queryIds);
-                // mark for import
-                toImport.addAll(newQueries);
-            }
-            // remove already-updated items from currentQueryDefinitionsById
-            for (QueryDefinition q : updates) {
-                currentQueryDefinitionsById.remove(q.getId());
-            }
-            currentQueryDefinitionsById.values().removeIf(updates::contains);
-            // (the key set now contains Ids of queries that weren't posted back, i.e., deletions)
-            doDelete = true;
-        } else {
-            if (!currentQueryDefinitionsById.isEmpty()) {
-                // delete all queries
-                doDelete = true;
-            }
-        }
-
-        if (doDelete && !currentQueryDefinitionsById.keySet().isEmpty()) {
-            queryDefinitionDao.deleteQueries(copyOf(currentQueryDefinitionsById.keySet()));
-        }
-
-        return toImport;
+    //
+    // called by feed definition controller
+    //
+    public void deleteQueryById(String username, Long feedId, Long queryId) throws DataAccessException, DataUpdateException {
+        // delete this query
+        queryDefinitionDao.deleteById(username, feedId, queryId);
     }
 
     private boolean needsUpdate(RssAtomUrl rssAtomUrl, QueryDefinition q) {

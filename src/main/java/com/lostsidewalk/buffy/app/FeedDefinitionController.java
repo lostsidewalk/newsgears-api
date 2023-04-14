@@ -6,7 +6,6 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
-import com.lostsidewalk.buffy.app.model.response.QueryMetricsWithErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
@@ -50,8 +49,8 @@ import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessa
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
 import static com.lostsidewalk.buffy.post.StagingPost.PostPubStatus.DEPUB_PENDING;
+import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
@@ -98,21 +97,6 @@ public class FeedDefinitionController {
     @Value("${newsgears.thumbnail.size}")
     int thumbnailSize;
     //
-    // get feed names
-    //
-    @GetMapping("/feed_idents")
-    @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<List<String>> getFeedIdents(Authentication authentication) throws DataAccessException {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails.getUsername();
-        log.debug("getFeedIdents for user={}", username);
-        StopWatch stopWatch = StopWatch.createStarted();
-        List<String> feedIdents = feedDefinitionService.findIdentsByUser(username);
-        stopWatch.stop();
-        appLogService.logFeedIdentFetch(username, stopWatch, size(feedIdents));
-        return ok(feedIdents);
-    }
-    //
     // get feed definitions
     //
     @GetMapping("/feeds")
@@ -153,9 +137,6 @@ public class FeedDefinitionController {
         String username = userDetails.getUsername();
         log.debug("createFeed adding {} feeds for user={}", size(feedConfigRequests), username);
         StopWatch stopWatch = StopWatch.createStarted();
-        //
-        validateFeedConfigRequests(username, List.of(feedConfigRequests));
-        //
         List<FeedDefinition> createdFeeds = new ArrayList<>();
         List<FeedConfigResponse> feedConfigResponses = new ArrayList<>();
         // for ea. feed config request
@@ -204,6 +185,41 @@ public class FeedDefinitionController {
         return ok(feedConfigResponses);
     }
 
+    @PostMapping("/feeds/{feedId}/queries/")
+    @Secured({UNVERIFIED_ROLE})
+    public ResponseEntity<QueryConfigResponse> addQueries(@Valid @RequestBody List<RssAtomUrl> rssAtomUrls, @PathVariable Long feedId, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails.getUsername();
+        log.debug("addQueries adding {} queries for user={}, feedId={}", size(rssAtomUrls), username, feedId);
+        StopWatch stopWatch = StopWatch.createStarted();
+        QueryConfigResponse queryConfigResponse = null;
+        try {
+            // partition all RSS/ATOM subscriptions
+            // Note: partition size of 1 just grabs the first first sub in each queue; this is a special case for small hardware
+            // TODO: make the partition size configurable
+            List<List<RssAtomUrl>> partitions = Lists.partition(rssAtomUrls, 1);
+            Iterator<List<RssAtomUrl>> iter = partitions.iterator();
+            List<RssAtomUrl> firstPartition = iter.next();
+            // perform synchronous resolution on the first partition
+            ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
+            // create the queries (for the first partition)
+            List<QueryDefinition> createdQueries = queryDefinitionService.createQueries(username, feedId, firstPartition);
+            if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
+                // perform import-from-cache (first partition only)
+                postImporter.doImport(createdQueries, discoveryCache);
+            }
+            // queue up the remaining partitions
+            iter.forEachRemaining(p -> addToCreationQueue(p, username, feedId));
+            // produce the response
+            queryConfigResponse = QueryConfigResponse.from(addThumbnails(createdQueries));
+            stopWatch.stop();
+            appLogService.logAddQueries(username, stopWatch, size(createdQueries));
+        } catch (Exception e) {
+            log.warn("Query initial import failed due to: {}", e.getMessage());
+        }
+
+        return ok(queryConfigResponse);
+    }
 
     @Autowired
     private BlockingQueue<QueryCreationTask> creationTaskQueue;
@@ -232,30 +248,19 @@ public class FeedDefinitionController {
 
     @PutMapping("/feeds/{id}")
     @Secured({UNVERIFIED_ROLE})
-//    @Transactional
+    @Transactional
     public ResponseEntity<FeedConfigResponse> updateFeed(@PathVariable("id") Long id, @Valid @RequestBody FeedConfigRequest feedConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("updateFeed for user={}, feedId={}", username, id);
         StopWatch stopWatch = StopWatch.createStarted();
-        // resolve query URL, title, and image properties
-        List<RssAtomUrl> rssAtomUrls = feedConfigRequest.getRssAtomFeedUrls();
-        ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(rssAtomUrls);
-        // update the feed
-        feedDefinitionService.update(username, id, feedConfigRequest);
-        // update the queries
-        List<QueryDefinition> updatedQueries = queryDefinitionService.updateQueries(username, id, feedConfigRequest);
-        if (isNotEmpty(updatedQueries)) {
-            // perform the initial import of any updated queries (the discovery cache will be populated if the feed is reachable)
-            if (isNotEmpty(discoveryCache)) {
-                postImporter.doImport(updatedQueries, discoveryCache);
-            }
-        }
-        // re-fetch this feed definition and query definitions and return to front-end
+        // (1) update the feed
+        feedDefinitionService.updateFeed(username, id, feedConfigRequest);
+        // (2) re-fetch this feed definition and query definitions and return to front-end
         FeedDefinition feedDefinition = feedDefinitionService.findByFeedId(username, id);
-        // query definitions
+        // (3) thumbnail the query definitions
         List<ThumbnailedQueryDefinition> queryDefinitions = addThumbnails(queryDefinitionService.findByFeedId(username, id));
-        // thumbnail
+        // (4) thumbnail the feed
         byte[] thumbnail = buildThumbnail(feedDefinition);
         stopWatch.stop();
         appLogService.logFeedUpdate(username, stopWatch, id);
@@ -264,6 +269,39 @@ public class FeedDefinitionController {
                 queryDefinitions,
                 thumbnail)
         );
+    }
+
+    @PutMapping("/feeds/{feedId}/queries/{queryId}")
+    public ResponseEntity<QueryConfigResponse> updateQuery(@PathVariable("feedId") Long feedId, @PathVariable("queryId") Long queryId, @Valid @RequestBody RssAtomUrl rssAtomUrl, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails.getUsername();
+        log.debug("updateQuery updating feedId={}, queryId={} for user={}", feedId, queryId, username);
+        StopWatch stopWatch = StopWatch.createStarted();
+        QueryConfigResponse queryConfigResponse = null;
+        try {
+            // partition all RSS/ATOM subscriptions
+            // Note: partition size of 1 just grabs the first first sub in each queue; this is a special case for small hardware
+            // TODO: make the partition size configurable
+            List<RssAtomUrl> firstPartition = singletonList(rssAtomUrl);
+            // perform synchronous resolution on the first partition
+            ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
+            // create the queries (for the first partition)
+            List<QueryDefinition> toImport = queryDefinitionService.updateQueries(username, feedId, firstPartition);
+            if (isNotEmpty(toImport) && isNotEmpty(discoveryCache)) {
+                // perform import-from-cache (first partition only)
+                postImporter.doImport(toImport, discoveryCache);
+            }
+            QueryDefinition queryDefinition = queryDefinitionService.findById(username, queryId);
+            List<QueryDefinition> updatedQueries = singletonList(queryDefinition);
+            // produce the response
+            queryConfigResponse = QueryConfigResponse.from(addThumbnails(updatedQueries));
+            stopWatch.stop();
+            appLogService.logUpdateQueries(username, stopWatch, size(updatedQueries));
+        } catch (Exception e) {
+            log.warn("Query initial import failed due to: {}", e.getMessage());
+        }
+
+        return ok(queryConfigResponse);
     }
 
     /**
@@ -278,7 +316,7 @@ public class FeedDefinitionController {
         String username = userDetails.getUsername();
         log.debug("updateFeedStatus for user={}, postId={}, feedStatusUpdateRequest={}", username, id, feedStatusUpdateRequest);
         StopWatch stopWatch = StopWatch.createStarted();
-        feedDefinitionService.update(username, id, feedStatusUpdateRequest);
+        feedDefinitionService.updateFeedStatus(username, id, feedStatusUpdateRequest);
         stopWatch.stop();
         appLogService.logFeedStatusUpdate(username, stopWatch, id, feedStatusUpdateRequest, 1);
         return ok().body(buildResponseMessage("Successfully updated feed Id " + id));
@@ -287,7 +325,7 @@ public class FeedDefinitionController {
     @PostMapping("/feeds/opml")
     @Secured({UNVERIFIED_ROLE})
     @Transactional
-    public ResponseEntity<OpmlConfigResponse> previewOpmlConfig(@RequestParam("files") MultipartFile[] opmlFiles, Authentication authentication) throws DataAccessException {
+    public ResponseEntity<OpmlConfigResponse> previewOpmlConfig(@RequestParam("files") MultipartFile[] opmlFiles, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("previewOpmlConfig for user={}", username);
@@ -304,34 +342,10 @@ public class FeedDefinitionController {
                 errors.add(opmlFile.getOriginalFilename() + ": Unable to parse OPML, please select another file or correct these errors in order to continue.");
             }
         }
-        try {
-            validateFeedConfigRequests(username, feedConfigRequests);
-        } catch (ValidationException e) {
-            errors.add(e.getMessage());
-        }
         stopWatch.stop();
         appLogService.logOpmlPreview(username, stopWatch, getLength(opmlFiles), size(feedConfigRequests), size(errors));
 
         return ok(OpmlConfigResponse.from(feedConfigRequests, errors));
-    }
-
-    private void validateFeedConfigRequests(String username, List<FeedConfigRequest> feedConfigRequests) throws DataAccessException {
-        // check for feed-ident uniqueness across all parsed
-        Set<String> uniqueFeedIdents = feedConfigRequests.stream().map(FeedConfigRequest::getIdent).collect(toSet());
-        if (size(uniqueFeedIdents) != size(feedConfigRequests)) {
-            throw new ValidationException("Feed identifiers must be unique.");
-        }
-        List<String> existingFeedIdents = feedDefinitionService.findIdentsByUser(username);
-        // validate ea. individual feed-ident request
-        feedConfigRequests.forEach(f -> this.validateFeedConfigRequest(existingFeedIdents, f));
-    }
-
-    private void validateFeedConfigRequest(List<String> existingFeedIdents, FeedConfigRequest feedConfigRequest) {
-        // ensure that the feed ident isn't already defined
-        if (existingFeedIdents.contains(feedConfigRequest.getIdent())) {
-            // feed ident is already defined
-            throw new ValidationException("The feed identifier '" + feedConfigRequest.getIdent() + "' is already defined.");
-        }
     }
 
     @PostMapping("/feeds/thumbnail")
@@ -394,6 +408,20 @@ public class FeedDefinitionController {
         stopWatch.stop();
         appLogService.logFeedDelete(username, stopWatch, 1);
         return ok().body(buildResponseMessage("Deleted feed Id " + id));
+    }
+
+    @DeleteMapping("/feeds/{feedId}/queries/{queryId}")
+    @Secured({UNVERIFIED_ROLE})
+    @Transactional
+    public ResponseEntity<?> deleteQueryById(@PathVariable Long feedId, @PathVariable Long queryId, Authentication authentication) throws DataAccessException, DataUpdateException {
+        UserDetails userDetails = (UserDetails) authentication.getDetails();
+        String username = userDetails.getUsername();
+        log.debug("deleteQueryById for user={}, feedId={}, queryId={}", username, feedId, queryId);
+        StopWatch stopWatch = StopWatch.createStarted();
+        queryDefinitionService.deleteQueryById(username, feedId, queryId);
+        stopWatch.stop();
+        appLogService.logQueryDelete(username, stopWatch, 1);
+        return ok().body(buildResponseMessage("Deleted query Id " + queryId + ", feed Id " + feedId));
     }
 
     //

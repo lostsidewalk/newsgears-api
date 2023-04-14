@@ -1,7 +1,6 @@
 package com.lostsidewalk.buffy.app;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
 import com.lostsidewalk.buffy.feed.FeedDefinition;
@@ -69,20 +68,6 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
         when(this.tokenService.instanceFor(APP_AUTH, "testToken")).thenReturn(TEST_JWT_UTIL);
         when(this.authService.requireAuthClaim("me")).thenReturn("testAuthClaim");
         when(this.userService.loadUserByUsername("me")).thenReturn(TEST_USER_DETAILS);
-    }
-
-    @Test
-    void test_getFeedIdents() throws Exception {
-        when(this.feedDefinitionService.findIdentsByUser("me")).thenReturn(List.of("feed1", "feed2"));
-        mockMvc.perform(MockMvcRequestBuilders
-                        .get("/feed_idents")
-                        .header("Authorization", "Bearer testToken")
-                        .accept(APPLICATION_JSON))
-                .andExpect(result -> {
-                    String responseContent = result.getResponse().getContentAsString();
-                    assertEquals(GSON.fromJson("[\"feed1\",\"feed2\"]", JsonArray.class), GSON.fromJson(responseContent, JsonArray.class));
-                })
-                .andExpect(status().isOk());
     }
 
     @Test

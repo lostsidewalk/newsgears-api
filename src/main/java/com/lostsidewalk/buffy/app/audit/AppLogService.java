@@ -38,6 +38,14 @@ public class AppLogService {
         auditLog("feed-create", "length={}, size={}", username, stopWatch, length, size);
     }
 
+    public void logAddQueries(String username, StopWatch stopWatch, int size) {
+        auditLog("add-queries", "size={}", username, stopWatch, size);
+    }
+
+    public void logUpdateQueries(String username, StopWatch stopWatch, int size) {
+        auditLog("updates-queries", "size={}", username, stopWatch, size);
+    }
+
     public void logOpmlPreview(String username, StopWatch stopWatch, int opmlFileCt, int feedConfigRequestCt, int errorCt) {
         auditLog("opml-preview", "opmlFileCt={}, feedConfigRequestCt={}, errorCt={}",
                 username, stopWatch, opmlFileCt, feedConfigRequestCt, errorCt);
@@ -53,6 +61,10 @@ public class AppLogService {
 
     public void logFeedDelete(String username, StopWatch stopWatch, int deleteCt) {
         auditLog("feed-delete", "deleteCt={}", username, stopWatch, deleteCt);
+    }
+
+    public void logQueryDelete(String username, StopWatch stopWatch, int deleteCt) {
+        auditLog("query-delete", "deleteCt={}", username, stopWatch, deleteCt);
     }
 
     public void logFeedDiscovery(String username, StopWatch stopWatch, String url) {
