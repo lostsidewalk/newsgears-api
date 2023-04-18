@@ -172,7 +172,7 @@ public class FeedDiscoveryService {
         }
     };
 
-    static volatile Map<String, List<FeedDiscoveryInfo>> FEED_DISCOVERY_INFO_CACHE = new HashMap<>();
+    static final Map<String, List<FeedDiscoveryInfo>> FEED_DISCOVERY_INFO_CACHE = new HashMap<>();
 
     @Value("${newsgears.development:false}")
     boolean isDevelopment;

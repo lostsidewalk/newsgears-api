@@ -15,8 +15,6 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -29,11 +27,8 @@ import java.util.List;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
-import static java.net.URI.create;
 import static org.apache.commons.collections4.CollectionUtils.*;
-import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.jsoup.safety.Safelist.relaxed;
 import static org.springframework.http.ResponseEntity.ok;
 
 @Slf4j
