@@ -16,17 +16,17 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
 @JsonInclude(NON_ABSENT)
 public class FeedConfigRequest {
 
-    @NotBlank
-    @Size(max=256)
+    @NotBlank(message = "{feed.config.error.ident-is-blank}")
+    @Size(max = 256, message = "{feed.config.error.ident-too-long}")
     String ident;
 
-    @Size(max=512)
+    @Size(max = 512, message = "{feed.config.error.title-too-long}")
     String title; // optional
 
-    @Size(max=1024)
+    @Size(max = 1024, message = "{feed.config.error.description-too-long}")
     String description; // optional
 
-    @Size(max=512)
+    @Size(max = 512, message = "{feed.config.error.generator-too-long}")
     String generator;
 
     @Valid
@@ -35,13 +35,13 @@ public class FeedConfigRequest {
     @Valid
     ExportConfigRequest exportConfig;
 
-    @Size(max=1024)
+    @Size(max = 1024, message = "{feed.config.error.copyright-too-long}")
     String copyright;
 
-    @Size(max=16)
+    @Size(max = 16, message = "{feed.config.error.language-too-long}")
     String language;
 
-    @Size(max=16384)
+    @Size(max = 16384, message = "{feed.config.error.img-src-too-long}")
     String imgSrc;
 
     public FeedConfigRequest(String ident, String title, String description, String generator,

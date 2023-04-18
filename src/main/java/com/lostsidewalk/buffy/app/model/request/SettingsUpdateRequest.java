@@ -13,8 +13,8 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 @JsonInclude(NON_EMPTY)
 public class SettingsUpdateRequest {
 
-    @Email
-    @Size(max=512)
+    @Email(message = "{settings.update.error.email-invalid}")
+    @Size(max = 512, message = "{settings.update.error.email-too-long}")
     String emailAddress;
 
     FrameworkConfig frameworkConfig;

@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size;
 
 @Data
 public class FeedStatusUpdateRequest {
-    @NotNull
-    @Size(max=64)
+
+    @NotNull(message = "{feed.status.update.error.new-status-is-blank}")
+    @Size(max = 64, message = "{feed.status.update.error.new-status-too-long}")
     String newStatus;
 }

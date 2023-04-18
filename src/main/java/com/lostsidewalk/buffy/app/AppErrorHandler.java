@@ -11,6 +11,7 @@ import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -149,9 +150,6 @@ public class AppErrorHandler {
         updateErrorCount(e);
         return invalidCredentialsResponse();
     }
-
-    private static final String FIELD_ERROR_TEMPLATE = "Field: %s, rejected value: %s, due to: %s";
-
     //
     // bad request conditions:
     //
@@ -167,14 +165,15 @@ public class AppErrorHandler {
     protected ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, Authentication authentication) {
         errorLogService.logMethodArgumentNotValidException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
         updateErrorCount(e);
-        String fieldErrors = e.getBindingResult().getFieldErrors().stream().map(fe -> String.format(FIELD_ERROR_TEMPLATE, fe.getField(), fe.getRejectedValue(), fe.getDefaultMessage())).collect(Collectors.joining(","));
-        return badRequestResponse("Validation Failed", fieldErrors);
+        String responseMessage = e.getBindingResult().getFieldErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.joining(","));
+        return badRequestResponse("Validation Failed", responseMessage);
     }
 
     @ExceptionHandler(ValidationException.class) // runtime exception
     protected ResponseEntity<?> handleValidationException(ValidationException e, Authentication authentication) {
         errorLogService.logValidationException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
         updateErrorCount(e);
+
         return badRequestResponse("Validation Failed", e.getMessage());
     }
 

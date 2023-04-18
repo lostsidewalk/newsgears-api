@@ -179,7 +179,8 @@ public class ProxyService {
     }
 
     private static boolean isImageContent(PostMediaContent con) {
-        return con != null && containsIgnoreCase(con.getType(), "image");
+        return con != null &&
+                (containsIgnoreCase(con.getType(), "image") || containsIgnoreCase(con.getMedium(), "image"));
     }
 
     private void securePostMediaReference(PostMediaReference reference, String baseUrl) {

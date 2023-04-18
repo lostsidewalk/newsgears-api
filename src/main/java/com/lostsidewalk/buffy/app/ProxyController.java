@@ -5,7 +5,6 @@ import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,9 +30,9 @@ public class ProxyController {
     ProxyService proxyService;
 
     @GetMapping("/proxy/unsecured/{hash}/")
-    public ResponseEntity<byte[]> proxy(@Valid @Size(max = 1024) @PathVariable String hash, @Valid @Size(max = 1024) @RequestParam String url) throws IOException, ProxyUrlHashException {
+    public ResponseEntity<byte[]> proxy(@Valid @Size(max = 1024, message = "{proxy.error.hash-too-long}") @PathVariable String hash, @Valid @Size(max = 1024) @RequestParam String url) throws IOException, ProxyUrlHashException {
         log.debug("proxy for hash={}, url={}", hash, url);
-        StopWatch stopWatch = StopWatch.createStarted();
+//        StopWatch stopWatch = StopWatch.createStarted();
         proxyService.validateImageUrl(url, hash);
         byte[] image = proxyService.fetch(url);
 //        appLogService.logProxyFetch(hash, stopWatch, url);

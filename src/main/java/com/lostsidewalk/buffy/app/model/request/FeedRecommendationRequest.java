@@ -8,8 +8,8 @@ import lombok.Data;
 @Data
 public class FeedRecommendationRequest {
 
-    @NotBlank
-    @Size(max=2048)
+    @NotBlank(message = "{feed.recommendation.error.url-is-blank}")
+    @Size(max = 2048, message = "{feed.recommendation.error.url-too-long}")
     String url;
 
     public FeedRecommendationRequest(String url) {

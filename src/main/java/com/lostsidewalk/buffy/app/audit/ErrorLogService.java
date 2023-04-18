@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 import static java.lang.System.arraycopy;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -67,9 +68,11 @@ public class ErrorLogService {
         auditError("authentication-exception", "message={}", username, timestamp, e.getMessage());
     }
 
+    private static final String FIELD_ERROR_TEMPLATE = "Field: %s, rejected value: %s, due to: %s";
+
     public void logMethodArgumentNotValidException(String username, Date timestamp, MethodArgumentNotValidException e) {
-        // TODO: build out the format string
-        auditError("method-argument-not-valid-exception", "message={}", username, timestamp, e.getMessage());
+        String fieldErrors = e.getBindingResult().getFieldErrors().stream().map(fe -> String.format(FIELD_ERROR_TEMPLATE, fe.getField(), fe.getRejectedValue(), fe.getDefaultMessage())).collect(Collectors.joining(","));
+        auditError("method-argument-not-valid-exception", "message={}", username, timestamp, fieldErrors);
     }
 
     public void logValidationException(String username, Date timestamp, ValidationException e) {

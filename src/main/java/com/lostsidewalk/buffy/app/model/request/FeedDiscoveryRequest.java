@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FeedDiscoveryRequest {
 
-    @NotBlank
-    @Size(max=2048)
+    @NotBlank(message = "{feed.discovery.error.url-is-blank}")
+    @Size(max = 2048, message = "{feed.discovery.error.url-too-long}")
     String url;
 
     String username;

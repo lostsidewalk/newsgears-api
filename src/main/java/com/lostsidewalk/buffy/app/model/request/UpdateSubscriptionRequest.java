@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 @Data
 public class UpdateSubscriptionRequest {
-    @NotNull
+
+    @NotNull(message = "{update.subscription.error.status-is-null}")
     SubscriptionStatus subscriptionStatus;
 }

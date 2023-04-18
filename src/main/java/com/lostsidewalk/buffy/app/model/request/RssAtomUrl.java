@@ -10,12 +10,13 @@ import org.hibernate.validator.constraints.URL;
 @Data
 @AllArgsConstructor
 public class RssAtomUrl {
-    @NotNull
+
+    @NotNull(message = "{rss.atom.url.error.id-is-null}")
     Long id;
 
-    @NotBlank
-    @URL
-    @Size(max=2048)
+    @NotBlank(message = "{rss.atom.url.error.feed-url-is-blank}")
+    @URL(message = "{rss.atom.url.error.feed-url-invalid}")
+    @Size(max = 2048, message = "{rss.atom.url.error.feed-url-too-long}")
     String feedUrl;
 
     String feedTitle;
