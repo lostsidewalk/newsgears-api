@@ -3,7 +3,7 @@ package com.lostsidewalk.buffy.app.post;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.PostPublisher;
-import com.lostsidewalk.buffy.Publisher.PubResult;
+import com.lostsidewalk.buffy.publisher.Publisher.PubResult;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.post.StagingPost;
 import com.lostsidewalk.buffy.post.StagingPost.PostPubStatus;

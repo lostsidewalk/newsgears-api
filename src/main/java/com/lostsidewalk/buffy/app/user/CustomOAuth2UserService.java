@@ -5,6 +5,9 @@ import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
 import com.lostsidewalk.buffy.app.audit.RegistrationException;
 import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
+import com.lostsidewalk.buffy.auth.AuthProvider;
+import com.lostsidewalk.buffy.auth.User;
+import com.lostsidewalk.buffy.auth.UserDao;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -22,7 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import static com.lostsidewalk.buffy.AuthProvider.byRegistrationId;
+import static com.lostsidewalk.buffy.auth.AuthProvider.byRegistrationId;
 import static com.lostsidewalk.buffy.app.user.CustomOAuth2UserService.CustomOAuth2ErrorCodes.*;
 import static com.lostsidewalk.buffy.app.user.OAuth2UserInfoFactory.getOAuth2UserInfo;
 import static com.lostsidewalk.buffy.app.user.UserPrincipal.create;

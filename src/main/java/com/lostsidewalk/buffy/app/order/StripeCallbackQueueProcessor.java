@@ -2,7 +2,7 @@ package com.lostsidewalk.buffy.app.order;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.lostsidewalk.buffy.CustomerEvent;
+import com.lostsidewalk.buffy.customer.CustomerEvent;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
-import static com.lostsidewalk.buffy.AuthProvider.LOCAL;
+import static com.lostsidewalk.buffy.auth.AuthProvider.LOCAL;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH_REFRESH;
 import static com.lostsidewalk.buffy.app.user.UserRoles.SUBSCRIBER_AUTHORITY;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;

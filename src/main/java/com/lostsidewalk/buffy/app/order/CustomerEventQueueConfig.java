@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.order;
 
-import com.lostsidewalk.buffy.CustomerEvent;
+import com.lostsidewalk.buffy.customer.CustomerEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

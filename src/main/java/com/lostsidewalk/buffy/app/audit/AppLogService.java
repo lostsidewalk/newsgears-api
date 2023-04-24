@@ -1,7 +1,7 @@
 package com.lostsidewalk.buffy.app.audit;
 
-import com.lostsidewalk.buffy.Publisher.PubResult;
-import com.lostsidewalk.buffy.User;
+import com.lostsidewalk.buffy.publisher.Publisher.PubResult;
+import com.lostsidewalk.buffy.auth.User;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;

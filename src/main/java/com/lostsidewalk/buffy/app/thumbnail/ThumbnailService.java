@@ -1,7 +1,7 @@
 package com.lostsidewalk.buffy.app.thumbnail;
 
 import com.lostsidewalk.buffy.DataAccessException;
-import com.lostsidewalk.buffy.RenderedThumbnailDao;
+import com.lostsidewalk.buffy.model.RenderedThumbnailDao;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
 import com.lostsidewalk.buffy.thumbnail.ThumbnailDao;

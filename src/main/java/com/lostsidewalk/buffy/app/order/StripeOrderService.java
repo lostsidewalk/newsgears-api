@@ -1,8 +1,8 @@
 package com.lostsidewalk.buffy.app.order;
 
 import com.lostsidewalk.buffy.DataAccessException;
-import com.lostsidewalk.buffy.User;
-import com.lostsidewalk.buffy.UserDao;
+import com.lostsidewalk.buffy.auth.User;
+import com.lostsidewalk.buffy.auth.UserDao;
 import com.lostsidewalk.buffy.app.model.response.InvoiceResponse;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
 import com.lostsidewalk.buffy.app.model.response.SubscriptionResponse;

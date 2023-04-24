@@ -12,7 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static com.lostsidewalk.buffy.AuthProvider.LOCAL;
+import static com.lostsidewalk.buffy.auth.AuthProvider.LOCAL;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;

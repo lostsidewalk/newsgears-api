@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.order;
 
-import com.lostsidewalk.buffy.CustomerEvent;
+import com.lostsidewalk.buffy.customer.CustomerEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;

@@ -6,6 +6,8 @@ import com.lostsidewalk.buffy.app.model.request.DisplaySettingsUpdateRequest;
 import com.lostsidewalk.buffy.app.model.response.DisplaySettingsResponse;
 import com.lostsidewalk.buffy.app.model.response.SettingsResponse;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;
+import com.lostsidewalk.buffy.auth.User;
+import com.lostsidewalk.buffy.auth.UserDao;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

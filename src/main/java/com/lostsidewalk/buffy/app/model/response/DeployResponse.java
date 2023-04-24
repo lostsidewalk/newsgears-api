@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.model.response;
 
-import com.lostsidewalk.buffy.Publisher.PubResult;
+import com.lostsidewalk.buffy.publisher.Publisher.PubResult;
 import lombok.Data;
 
 import java.util.Comparator;

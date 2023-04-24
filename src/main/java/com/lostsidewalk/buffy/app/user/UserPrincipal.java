@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.user;
 
-import com.lostsidewalk.buffy.User;
+import com.lostsidewalk.buffy.auth.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;

@@ -2,8 +2,8 @@ package com.lostsidewalk.buffy.app.user;
 
 import java.util.Map;
 
-import static com.lostsidewalk.buffy.AuthProvider.GITHUB;
-import static com.lostsidewalk.buffy.AuthProvider.GOOGLE;
+import static com.lostsidewalk.buffy.auth.AuthProvider.GITHUB;
+import static com.lostsidewalk.buffy.auth.AuthProvider.GOOGLE;
 
 class OAuth2UserInfoFactory {
 

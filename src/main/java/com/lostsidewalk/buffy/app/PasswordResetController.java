@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
 
-import static com.lostsidewalk.buffy.AuthProvider.LOCAL;
+import static com.lostsidewalk.buffy.auth.AuthProvider.LOCAL;
 import static com.lostsidewalk.buffy.app.model.TokenType.PW_RESET;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;

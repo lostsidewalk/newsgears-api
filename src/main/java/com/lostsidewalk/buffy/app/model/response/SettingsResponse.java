@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.model.response;
 
-import com.lostsidewalk.buffy.AuthProvider;
+import com.lostsidewalk.buffy.auth.AuthProvider;
 import com.lostsidewalk.buffy.FrameworkConfig;
 import lombok.Data;
 

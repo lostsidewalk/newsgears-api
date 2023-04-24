@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.audit;
 
-import com.lostsidewalk.buffy.AuthProvider;
+import com.lostsidewalk.buffy.auth.AuthProvider;
 
 public class AuthProviderException extends Exception {
 
