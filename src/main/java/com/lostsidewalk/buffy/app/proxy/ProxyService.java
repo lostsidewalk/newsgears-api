@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -40,10 +40,37 @@ public class ProxyService {
 
     @Cacheable(value="proxyCache", key="#url")
     public byte[] fetch(String url) throws IOException {
-        URL u = new URL(url.replace(" ", "+"));
-        URLConnection urlConnection = u.openConnection();
-        urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
-        urlConnection.setRequestProperty("Accept-Encoding", "gzip");
+        return fetch(url, 0);
+    }
+
+    @Cacheable(value="proxyCache", key="#url")
+    public byte[] fetch(String url, int depth) throws IOException {
+        //
+        HttpURLConnection urlConnection = openConnection(url.replace(" ", "+"));
+        //
+        int statusCode = urlConnection.getResponseCode();
+        //
+        String statusMessage = urlConnection.getResponseMessage();
+        //
+        // (check to broken redirect setups, e.g. http://www.virtualr.net/feed)
+        if (isRedirect(statusCode)) {
+            if (depth > 2) {
+                log.warn("Image proxy fetch exceeded recursion depth (2), url={}, statusCode={}, statusMessage={}", url, statusCode, statusMessage);
+                return null;
+            }
+            // get the redirect location URL
+            String redirectUrl = urlConnection.getHeaderField("Location");
+            if (isNotBlank(redirectUrl)) {
+                return fetch(redirectUrl, depth + 1);
+            } else {
+                log.warn("Image proxy fetch redirect location is blank, url={}, statusCode={}, statusMessage={}", url, statusCode, statusMessage);
+                return null;
+            }
+        } else if (!isSuccess(statusCode)) {
+            log.error("Image proxy fetch failed, url={}, statusCode={}, statusMessage={}", url, statusCode, statusMessage);
+            return null;
+        }
+
         try (InputStream is = urlConnection.getInputStream()) {
             InputStream toRead;
             if (containsIgnoreCase(urlConnection.getContentEncoding(), "gzip")) {
@@ -53,6 +80,33 @@ public class ProxyService {
             }
             return toRead.readAllBytes();
         }
+    }
+
+    private HttpURLConnection openConnection(String url) throws IOException {
+        URL recommenderUrl = new URL(url);
+        HttpURLConnection urlConnection = (HttpURLConnection) recommenderUrl.openConnection();
+        urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
+        urlConnection.setRequestProperty("Accept-Encoding", "gzip");
+        urlConnection.setDoOutput(true);
+        urlConnection.setReadTimeout(5 * 1_000);
+        return urlConnection;
+    }
+
+    private static boolean isRedirect(int statusCode) {
+        return (isTermporaryRedirect(statusCode) || isPermanentRedirect(statusCode)
+                || statusCode == HttpURLConnection.HTTP_SEE_OTHER);
+    }
+
+    private static boolean isTermporaryRedirect(int statusCode) {
+        return statusCode == HttpURLConnection.HTTP_MOVED_TEMP;
+    }
+
+    private static boolean isPermanentRedirect(int statusCode) {
+        return statusCode == HttpURLConnection.HTTP_MOVED_PERM;
+    }
+
+    private static boolean isSuccess(int statusCode) {
+        return statusCode == HttpURLConnection.HTTP_OK;
     }
 
     public String rewriteImageUrl(String imgUrl, String baseUrl) {
