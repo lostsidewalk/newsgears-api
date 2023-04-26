@@ -25,8 +25,10 @@ import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.query.QueryDefinition;
 import com.lostsidewalk.buffy.query.QueryMetrics;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
+import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -51,6 +53,7 @@ import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
 import static com.lostsidewalk.buffy.post.StagingPost.PostPubStatus.DEPUB_PENDING;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
@@ -93,6 +96,9 @@ public class FeedDefinitionController {
 
     @Autowired
     PostImporter postImporter;
+
+    @Autowired
+    Validator validator;
 
     @Value("${newsgears.thumbnail.size}")
     int thumbnailSize;
@@ -187,11 +193,17 @@ public class FeedDefinitionController {
 
     @PostMapping("/feeds/{feedId}/queries/")
     @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<QueryConfigResponse> addQueries(@Valid @RequestBody List<RssAtomUrl> rssAtomUrls, @PathVariable Long feedId, Authentication authentication) {
+    public ResponseEntity<QueryConfigResponse> addQueries(@RequestBody List<@Valid RssAtomUrl> rssAtomUrls, @PathVariable Long feedId, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("addQueries adding {} queries for user={}, feedId={}", size(rssAtomUrls), username, feedId);
         StopWatch stopWatch = StopWatch.createStarted();
+        for (RssAtomUrl rssAtomUrl : rssAtomUrls) {
+            Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
+            if (isNotEmpty(constraintViolations)) {
+                throw new RssAtomUrlValidationException(constraintViolations);
+            }
+        }
         QueryConfigResponse queryConfigResponse = null;
         try {
             // partition all RSS/ATOM subscriptions
@@ -461,5 +473,13 @@ public class FeedDefinitionController {
         }
 
         return null;
+    }
+
+    //
+
+    public static class RssAtomUrlValidationException extends ValidationException {
+        RssAtomUrlValidationException(Set<ConstraintViolation<RssAtomUrl>> constraintViolations) {
+            super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
+        }
     }
 }

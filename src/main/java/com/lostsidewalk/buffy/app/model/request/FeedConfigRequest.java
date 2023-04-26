@@ -29,8 +29,7 @@ public class FeedConfigRequest {
     @Size(max = 512, message = "{feed.config.error.generator-too-long}")
     String generator;
 
-    @Valid
-    List<RssAtomUrl> rssAtomFeedUrls; // optional
+    List<@Valid RssAtomUrl> rssAtomFeedUrls; // optional
 
     @Valid
     ExportConfigRequest exportConfig;
