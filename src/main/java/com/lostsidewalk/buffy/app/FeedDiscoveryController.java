@@ -86,16 +86,20 @@ public class FeedDiscoveryController {
     public ResponseEntity<?> discoverFeed(@Valid @RequestBody FeedDiscoveryRequest feedDiscoveryRequest, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
-        log.debug("discoverFeed for user={}, feedDiscoveryRequest={}", username, feedDiscoveryRequest);
+        log.info("discoverFeed for user={}, feedDiscoveryRequest={}", username, feedDiscoveryRequest);
         StopWatch stopWatch = StopWatch.createStarted();
         String discoveryUrl = feedDiscoveryRequest.getUrl();
         String discoveryUsername = feedDiscoveryRequest.getUsername();
         String discoveryPassword = feedDiscoveryRequest.getPassword();
+        boolean isIncludeRecommendations = feedDiscoveryRequest.isIncludeRecommendations();
         try {
             // perform discovery
             FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(discoveryUrl, discoveryUsername, discoveryPassword);
             // query for recommendations (can be null if not requested or if recommendation service fails silently)
-            FeedRecommendationInfo feedRecommendationInfo = feedDiscoveryRequest.isIncludeRecommendations() ? recommendationService.recommendSimilarFeeds(discoveryUrl) : null;
+            FeedRecommendationInfo feedRecommendationInfo = null;
+            if (isIncludeRecommendations) {
+                feedRecommendationInfo = recommendationService.recommendSimilarFeeds(discoveryUrl);
+            }
             // assemble the response
             ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo, feedRecommendationInfo);
             stopWatch.stop();
@@ -107,7 +111,10 @@ public class FeedDiscoveryController {
                     String resolvedUrl = feedResolutionService.performResolution(discoveryUrl);
                     if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, discoveryUrl)) {
                         FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl, discoveryUsername, discoveryPassword);
-                        FeedRecommendationInfo feedRecommendationInfo = recommendationService.recommendSimilarFeeds(resolvedUrl);
+                        FeedRecommendationInfo feedRecommendationInfo = null;
+                        if (isIncludeRecommendations) {
+                            feedRecommendationInfo = recommendationService.recommendSimilarFeeds(resolvedUrl);
+                        }
                         ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo, feedRecommendationInfo);
                         stopWatch.stop();
                         appLogService.logFeedDiscovery(username, stopWatch, resolvedUrl);
