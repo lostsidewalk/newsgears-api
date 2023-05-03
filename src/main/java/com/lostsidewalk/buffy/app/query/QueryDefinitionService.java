@@ -80,6 +80,7 @@ public class QueryDefinitionService {
                         u.getQueryImageUrl(),
                         u.getQueryText(),
                         u.getQueryType(),
+                        u.getImportSchedule(),
                         u.getQueryConfig(),
                         u.getId()
                 }).collect(toList()));
@@ -110,7 +111,16 @@ public class QueryDefinitionService {
             }
             String title = r.getFeedTitle();
             String imageUrl = r.getFeedImageUrl();
-            QueryDefinition newQuery = QueryDefinition.from(feedId, username, title, imageUrl, url, RSS, serializeQueryConfig(r));
+            QueryDefinition newQuery = QueryDefinition.from(
+                    feedId,
+                    username,
+                    title,
+                    imageUrl,
+                    url,
+                    RSS,
+                    "A",
+                    serializeQueryConfig(r)
+            );
             adds.add(newQuery);
         }
         List<Long> queryIds = queryDefinitionDao.add(adds);
@@ -127,7 +137,16 @@ public class QueryDefinitionService {
             if (isNotEmpty(rssAtomFeedUrls)) {
                 List<QueryDefinition> adds = new ArrayList<>();
                 for (RssAtomUrl r : rssAtomFeedUrls) {
-                    QueryDefinition newQuery = QueryDefinition.from(feedId, username, r.getFeedTitle(), r.getFeedImageUrl(), r.getFeedUrl(), RSS, serializeQueryConfig(r));
+                    QueryDefinition newQuery = QueryDefinition.from(
+                            feedId,
+                            username,
+                            r.getFeedTitle(),
+                            r.getFeedImageUrl(),
+                            r.getFeedUrl(),
+                            RSS,
+                            "A",
+                            serializeQueryConfig(r)
+                    );
                     adds.add(newQuery);
                 }
                 if (isNotEmpty(adds)) {

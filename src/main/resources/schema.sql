@@ -119,6 +119,7 @@ create table query_definitions (
     query_image_url varchar(1024),
     query_text varchar(2048) not null,
     query_type varchar(64) not null,
+    import_schedule varchar(32),
     query_config json,
 
     primary key(id)
@@ -137,6 +138,7 @@ create table query_metrics (
     redirect_http_status_code integer,
     redirect_http_status_message varchar(512),
     import_timestamp timestamp with time zone,
+    import_schedule varchar(32),
     import_ct integer,
     persist_ct integer,
     skip_ct integer,

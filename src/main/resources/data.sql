@@ -28,22 +28,24 @@ values ('1', 'me', 'me');
 --
 -- query_definitions
 --
-insert into query_definitions(feed_id, username, query_title, query_text, query_type)
+insert into query_definitions(feed_id, username, query_title, query_text, query_type, import_schedule)
 values(
     (select id from feed_definitions where feed_ident = 'sci_tech'),
     'me',
     'SCI-TECH CNN Top Stories',
     'http://rss.cnn.com/rss/cnn_topstories.rss',
-    'RSS'
+    'RSS',
+    'A'
 );
 
-insert into query_definitions(feed_id, username, query_title, query_text, query_type)
+insert into query_definitions(feed_id, username, query_title, query_text, query_type, import_schedule)
 values(
     (select id from feed_definitions where feed_ident = 'cnn_inbound'),
     'me',
     'CNN-INBOUND CNN Top Stories',
     'http://rss.cnn.com/rss/cnn_topstories.rss',
-    'RSS'
+    'RSS',
+    'A'
 );
 --
 -- feed_discovery_info
