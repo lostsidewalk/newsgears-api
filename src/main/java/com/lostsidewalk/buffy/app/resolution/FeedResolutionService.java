@@ -3,7 +3,7 @@ package com.lostsidewalk.buffy.app.resolution;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
-import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
+import com.lostsidewalk.buffy.app.model.request.Subscription;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
@@ -77,12 +77,12 @@ public class FeedResolutionService {
         return null;
     }
 
-    public ImmutableMap<String, FeedDiscoveryInfo> resolveIfNecessary(List<RssAtomUrl> rssAtomUrls) {
-        CountDownLatch latch = new CountDownLatch(size(rssAtomUrls));
+    public ImmutableMap<String, FeedDiscoveryInfo> resolveIfNecessary(List<Subscription> subscriptions) {
+        CountDownLatch latch = new CountDownLatch(size(subscriptions));
         Map<String, FeedDiscoveryInfo> discoveryCache = new HashMap<>();
-        if (isNotEmpty(rssAtomUrls)) {
-            for (RssAtomUrl r : rssAtomUrls) {
-                if (isBlank(r.getFeedUrl())) {
+        if (isNotEmpty(subscriptions)) {
+            for (Subscription r : subscriptions) {
+                if (isBlank(r.getUrl())) {
                     log.warn("Unable to perform feed URL due to missing URL, skipping...");
                     latch.countDown();
                     continue;
@@ -92,7 +92,7 @@ public class FeedResolutionService {
                     try {
                         discoveryInfo = resolveIfNecessary(r);
                         if (discoveryInfo != null) {
-                            discoveryCache.put(r.getFeedUrl(), discoveryInfo);
+                            discoveryCache.put(r.getUrl(), discoveryInfo);
                         }
                     } catch (IOException e) {
                         log.warn("Feed resolution failed due to: {}", e.getMessage());
@@ -110,30 +110,30 @@ public class FeedResolutionService {
         return copyOf(discoveryCache);
     }
 
-    private FeedDiscoveryInfo resolveIfNecessary(RssAtomUrl rssAtomUrl) throws IOException {
-        log.info("Performing feed resolution on URL={}", rssAtomUrl.getFeedUrl());
+    private FeedDiscoveryInfo resolveIfNecessary(Subscription subscription) throws IOException {
+        log.info("Performing feed resolution on URL={}", subscription.getUrl());
         FeedDiscoveryInfo discoveryInfo = null;
-        String feedUrl = rssAtomUrl.getFeedUrl();
+        String feedUrl = subscription.getUrl();
         try {
-            discoveryInfo = discoverUrl(feedUrl, rssAtomUrl.getUsername(), rssAtomUrl.getPassword(), feedGearsUserAgent);
+            discoveryInfo = discoverUrl(feedUrl, subscription.getUsername(), subscription.getPassword(), feedGearsUserAgent);
         } catch (FeedDiscoveryException e) {
             if (e.exceptionType == PARSING_FEED_EXCEPTION) {
                 String resolvedUrl = resolveUrl(feedUrl);
                 if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, feedUrl)) {
-                    rssAtomUrl.setFeedUrl(resolvedUrl);
+                    subscription.setUrl(resolvedUrl);
                     try {
-                        discoveryInfo = discoverUrl(resolvedUrl, rssAtomUrl.getUsername(), rssAtomUrl.getPassword(), feedGearsUserAgent);
+                        discoveryInfo = discoverUrl(resolvedUrl, subscription.getUsername(), subscription.getPassword(), feedGearsUserAgent);
                     } catch (Exception e1) {
                         log.warn("Unable to perform feed discovery due to: {}", e1.getMessage());
                     }
                 }
             } else {
-                log.warn("Feed resolution failed for URL={} due to: {}", rssAtomUrl.getFeedUrl(), e.getMessage());
+                log.warn("Feed resolution failed for URL={} due to: {}", subscription.getUrl(), e.getMessage());
             }
         }
         if (discoveryInfo != null) {
-            rssAtomUrl.setFeedTitle(getFeedTitle(discoveryInfo));
-            rssAtomUrl.setFeedImageUrl(getFeedImageUrl(discoveryInfo));
+            subscription.setTitle(getFeedTitle(discoveryInfo));
+            subscription.setImgUrl(getFeedImageUrl(discoveryInfo));
         }
 
         return discoveryInfo;

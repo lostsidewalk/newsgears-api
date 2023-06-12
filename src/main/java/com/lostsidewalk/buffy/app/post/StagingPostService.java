@@ -27,12 +27,12 @@ public class StagingPostService {
     @Autowired
     PostPublisher postPublisher;
 
-    public List<StagingPost> getStagingPosts(String username, List<Long> feedIds) throws DataAccessException {
+    public List<StagingPost> getStagingPosts(String username, List<Long> queueIds) throws DataAccessException {
         List<StagingPost> list;
-        if (isEmpty(feedIds)) {
+        if (isEmpty(queueIds)) {
             list = stagingPostDao.findByUser(username);
         } else {
-            list = stagingPostDao.findByUserAndFeedIds(username, feedIds);
+            list = stagingPostDao.findByUserAndQueueIds(username, queueIds);
         }
         if (list != null) {
             return list;
@@ -51,7 +51,7 @@ public class StagingPostService {
         stagingPostDao.updatePostReadStatus(username, id, newStatus);
     }
 
-    public void updateFeedReadStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+    public void updateQueueReadStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
         PostReadStatus newStatus = null;
         if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
             newStatus = PostReadStatus.valueOf(postStatusUpdateRequest.getNewStatus());
@@ -59,7 +59,7 @@ public class StagingPostService {
         //
         // perform the update
         //
-        stagingPostDao.updateFeedReadStatus(username, id, newStatus);
+        stagingPostDao.updateQueueReadStatus(username, id, newStatus);
     }
 
     public List<PubResult> updatePostPubStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
@@ -74,16 +74,16 @@ public class StagingPostService {
         //
         // deploy the feed
         //
-        Long feedId = stagingPostDao.findFeedIdByStagingPostId(username, id);
-        return postPublisher.publishFeed(username, feedId);
+        Long queueId = stagingPostDao.findQueueIdByStagingPostId(username, id);
+        return postPublisher.publishFeed(username, queueId);
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public List<PubResult> updateFeedPubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
+    public List<PubResult> updateQueuePubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
         //
         // perform the update
         //
-        stagingPostDao.updateFeedPubStatus(username, id, newStatus);
+        stagingPostDao.updateQueuePubStatus(username, id, newStatus);
         //
         // deploy the feed
         //

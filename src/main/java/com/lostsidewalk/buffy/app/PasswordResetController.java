@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +43,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
  */
 @Slf4j
 @Controller
+@Validated
 public class PasswordResetController {
 
     private static final String INIT_PASSWORD_RESET_DEFAULT_RESPONSE_TEXT = "Ok";

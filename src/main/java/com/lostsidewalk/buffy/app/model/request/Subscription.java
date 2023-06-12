@@ -8,18 +8,18 @@ import org.hibernate.validator.constraints.URL;
 
 @Data
 @AllArgsConstructor
-public class RssAtomUrl {
+public class Subscription {
 
     Long id;
 
     @NotBlank(message = "{rss.atom.url.error.feed-url-is-blank}")
     @URL(message = "{rss.atom.url.error.feed-url-invalid}")
     @Size(max = 2048, message = "{rss.atom.url.error.feed-url-too-long}")
-    String feedUrl;
+    String url;
 
-    String feedTitle;
+    String title;
 
-    String feedImageUrl;
+    String imgUrl;
 
     String username;
 

@@ -35,7 +35,7 @@ public class ExportController {
     //
     // export feeds
     //
-    @GetMapping("/feeds/opml")
+    @GetMapping("/queues/opml")
     @Secured({UNVERIFIED_ROLE})
     @Transactional
     public ResponseEntity<Resource> exportOpml(Authentication authentication) throws OpmlException, DataAccessException {

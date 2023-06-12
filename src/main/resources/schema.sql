@@ -25,24 +25,24 @@ create table users
   primary key (id)
 );
 --
--- feed_definitions table
+-- queue_definitions table
 --
-drop table if exists feed_definitions cascade;
+drop table if exists queue_definitions cascade;
 
-create table feed_definitions (
+create table queue_definitions (
     id bigserial not null,
-    feed_ident varchar(256) not null,
-    feed_title varchar(512),
-    feed_desc varchar(1024),
-    feed_generator varchar(512),
+    queue_ident varchar(256) not null,
+    queue_title varchar(512),
+    queue_desc varchar(1024),
+    queue_feed_generator varchar(512),
     transport_ident varchar(256) unique not null,
     username varchar(100) not null references users(name) on delete cascade,
-    feed_status varchar(64) not null,
+    queue_status varchar(64) not null,
     export_config json,
     copyright varchar(1024),
     language varchar(16) not null,
-    feed_img_src varchar(10240),
-    feed_img_transport_ident varchar(256),
+    queue_img_src varchar(10240),
+    queue_img_transport_ident varchar(256),
     category_term varchar(256),
     category_label varchar(256),
     category_scheme varchar(256),
@@ -61,7 +61,7 @@ drop table if exists feed_credentials cascade;
 
 create table feed_credentials (
     id bigserial not null,
-    transport_ident varchar(256) not null references feed_definitions(transport_ident) on delete cascade,
+    transport_ident varchar(256) not null references queue_definitions(transport_ident) on delete cascade,
     username varchar(100) not null,
     password varchar(256) not null,
 
@@ -86,8 +86,8 @@ create table staging_posts (
     post_img_transport_ident varchar(256),
     importer_id varchar(256) not null,
     importer_desc varchar(512),
-    query_id bigserial not null,
-    feed_id bigserial not null references feed_definitions(id) on delete cascade,
+    subscription_id bigserial not null,
+    queue_id bigserial not null references queue_definitions(id) on delete cascade,
     import_timestamp timestamp with time zone,
     is_published boolean not null default false,
     post_read_status varchar(64),
@@ -107,17 +107,17 @@ create table staging_posts (
     primary key(id)
 );
 --
--- query_definitions table
+-- subscription_definitions table
 --
-drop table if exists query_definitions cascade;
+drop table if exists subscription_definitions cascade;
 
-create table query_definitions (
+create table subscription_definitions (
     id bigserial not null,
-    feed_id bigserial not null references feed_definitions(id) on delete cascade,
+    queue_id bigserial not null references queue_definitions(id) on delete cascade,
     username varchar(100) not null references users(name) on delete cascade,
-    query_title varchar(512),
-    query_image_url varchar(1024),
-    query_text varchar(2048) not null,
+    title varchar(512),
+    img_url varchar(1024),
+    url varchar(2048) not null,
     query_type varchar(64) not null,
     import_schedule varchar(32),
     query_config json,
@@ -125,13 +125,13 @@ create table query_definitions (
     primary key(id)
 );
 --
--- query_metrics table
+-- subscription_metrics table
 --
-drop table if exists query_metrics cascade;
+drop table if exists subscription_metrics cascade;
 
-create table query_metrics (
+create table subscription_metrics (
     id bigserial not null,
-    query_id bigserial not null,
+    subscription_id bigserial not null,
     http_status_code integer,
     http_status_message varchar(512),
     redirect_feed_url varchar(1024),
@@ -271,14 +271,14 @@ create table theme_config
 --
 drop index if exists idx_staging_posts_post_pub_status;
 drop index if exists idx_staging_posts_post_hash;
-drop index if exists idx_staging_posts_feed_id;
+drop index if exists idx_staging_posts_queue_id;
 drop index if exists idx_staging_posts_username;
-drop index if exists idx_feed_definitions_username;
-drop index if exists idx_feed_definitions_transport_ident;
+drop index if exists idx_queue_definitions_username;
+drop index if exists idx_queue_definitions_transport_ident;
 drop index if exists idx_feed_credentials_transport_ident;
-drop index if exists idx_query_definitions_feed_id;
-drop index if exists idx_query_definitions_username;
-drop index if exists idx_query_metrics_query_id;
+drop index if exists idx_subscription_definitions_queue_id;
+drop index if exists idx_subscription_definitions_username;
+drop index if exists idx_subscription_metrics_subscription_id;
 drop index if exists idx_roles_name;
 drop index if exists idx_features_in_roles_role;
 drop index if exists idx_users_email_address;
@@ -290,14 +290,14 @@ drop index if exists idx_theme_config_user_id;
 
 create index idx_staging_posts_post_pub_status on staging_posts(post_pub_status);
 create index idx_staging_posts_post_hash on staging_posts(post_hash);
-create index idx_staging_posts_feed_id on staging_posts(feed_id);
+create index idx_staging_posts_queue_id on staging_posts(queue_id);
 create index idx_staging_posts_username on staging_posts(username);
-create index idx_feed_definitions_username on feed_definitions(username);
-create index idx_feed_definitions_transport_ident on feed_definitions(transport_ident);
+create index idx_queue_definitions_username on queue_definitions(username);
+create index idx_queue_definitions_transport_ident on queue_definitions(transport_ident);
 create index idx_feed_credentials_transport_ident on feed_credentials(transport_ident);
-create index idx_query_definitions_feed_id on query_definitions(feed_id);
-create index idx_query_definitions_username on query_definitions(username);
-create index idx_query_metrics_query_id on query_metrics(query_id);
+create index idx_subscription_definitions_queue_id on subscription_definitions(queue_id);
+create index idx_subscription_definitions_username on subscription_definitions(username);
+create index idx_subscription_metrics_subscription_id on subscription_metrics(subscription_id);
 create index idx_roles_name on roles(name);
 create index idx_features_in_roles_role on features_in_roles(role);
 create index idx_users_email_address on users(email_address);

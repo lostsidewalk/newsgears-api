@@ -14,31 +14,31 @@ java {
 }
 
 repositories {
-    mavenCentral()
     mavenLocal()
+    mavenCentral()
     maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     // NewsGears importer
-    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.0'
+    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.1'
     // NewsGears publisher
-    implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.5.1'
+    implementation 'com.lostsidewalk.newsgears:newsgears-publisher:0.5.2'
     // adds RSS/ATOM to the import path
-    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.1'
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.2'
     // adds RSS/ATOM to the publishing path
-    implementation 'com.lostsidewalk.newsgears:newsgears-rss-publisher:0.5.0'
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss-publisher:0.5.1'
     // add JSON to the publishing path
-    implementation 'com.lostsidewalk.newsgears:newsgears-json-publisher:0.5.0'
+    implementation 'com.lostsidewalk.newsgears:newsgears-json-publisher:0.5.1'
 
     // spring-boot-starter-actuator
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.0.4'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.0'
     // sprig-boot-starter-web
-    implementation 'org.springframework.boot:spring-boot-starter-web:3.0.4'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.1.0'
     // spring-boot-starter-security
     implementation 'org.springframework.boot:spring-boot-starter-security:3.0.4'
     // spring-boot-starter-cache
-    implementation 'org.springframework.boot:spring-boot-starter-cache:3.0.4'
+    implementation 'org.springframework.boot:spring-boot-starter-cache:3.1.0'
     // spring-boot-starter-mail
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.0.4'
     // spring-boot-starter-validation
@@ -46,7 +46,7 @@ dependencies {
     // spring-security-oauth2
     implementation 'org.springframework.security.oauth:spring-security-oauth2:2.5.2.RELEASE'
     // spring-security-oauth2-core
-    implementation 'org.springframework.security:spring-security-oauth2-core:6.0.2'
+    implementation 'org.springframework.security:spring-security-oauth2-core:6.1.0'
     // spring-security-oauth2-client
     implementation 'org.springframework.security:spring-security-oauth2-client:6.0.2'
     // stripe
@@ -81,7 +81,7 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql:42.5.4'
 
     // test
-    testImplementation('org.springframework.boot:spring-boot-starter-test:3.0.4') {
+    testImplementation('org.springframework.boot:spring-boot-starter-test:3.1.0') {
         exclude group: 'com.vaadin.external.google', module: 'android-json'
     }
     // junit-jupiter

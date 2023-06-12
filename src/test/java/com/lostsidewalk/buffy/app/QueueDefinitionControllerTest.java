@@ -2,9 +2,9 @@ package com.lostsidewalk.buffy.app;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
-import com.lostsidewalk.buffy.feed.FeedDefinition;
-import com.lostsidewalk.buffy.query.QueryDefinition;
+import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
+import com.lostsidewalk.buffy.queue.QueueDefinition;
+import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,12 +24,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(controllers = FeedDefinitionController.class)
-public class FeedDefinitionControllerTest extends BaseWebControllerTest {
+@WebMvcTest(controllers = QueueDefinitionController.class)
+public class QueueDefinitionControllerTest extends BaseWebControllerTest {
 
     private static final Gson GSON = new Gson();
 
-    private static final FeedDefinition TEST_FEED_DEFINITION = FeedDefinition.from(
+    private static final QueueDefinition TEST_FEED_DEFINITION = QueueDefinition.from(
             "testFeed",
             "Test Feed Title",
             "Test Feed Description",
@@ -45,14 +45,14 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
         TEST_FEED_DEFINITION.setId(1L);
     }
 
-    private static final List<QueryDefinition> TEST_QUERY_DEFINITIONS = List.of(
-            QueryDefinition.from(1L, "me", "testQueryTitle", "testQueryText", RSS, "A", null)
+    private static final List<SubscriptionDefinition> TEST_QUERY_DEFINITIONS = List.of(
+            SubscriptionDefinition.from(1L, "me", "testQueryTitle", "testQueryText", RSS, "A", null)
     );
     static {
         TEST_QUERY_DEFINITIONS.get(0).setId(1L);
     }
 
-    private static final FeedConfigRequest TEST_FEED_CONFIG_REQUEST = FeedConfigRequest.from(
+    private static final QueueConfigRequest TEST_FEED_CONFIG_REQUEST = QueueConfigRequest.from(
             "testIdent",
             "testTitle",
             "testDescription",
@@ -82,20 +82,20 @@ public class FeedDefinitionControllerTest extends BaseWebControllerTest {
 
     @Test
     void test_updateFeed() throws Exception {
-        when(feedDefinitionService.findByFeedId(matches("me"), eq(1L)))
+        when(queueDefinitionService.findByQueueId(matches("me"), eq(1L)))
                 .thenReturn(TEST_FEED_DEFINITION);
-        when(queryDefinitionService.findByFeedId(matches("me"), eq(1L)))
+        when(subscriptionDefinitionService.findByQueueId(matches("me"), eq(1L)))
                 .thenReturn(TEST_QUERY_DEFINITIONS);
         mockMvc.perform(MockMvcRequestBuilders
-                .put("/feeds/1")
-                .servletPath("/feeds/1")
+                .put("/queues/1")
+                .servletPath("/queues/1")
                 .contentType(APPLICATION_JSON)
                 .content(GSON.toJson(TEST_FEED_CONFIG_REQUEST))
                 .header("Authorization", "Bearer testToken"))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            GSON.fromJson("{\"feedDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"feedStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false},\"queryDefinitions\":[{\"queryDefinition\":{\"id\":1,\"feedId\":1,\"username\":\"me\",\"queryTitle\":\"testQueryTitle\",\"queryText\":\"testQueryText\",\"queryType\":\"RSS\",\"importSchedule\":\"A\"}}],\"feedImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson("{\"queueDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"queueStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false},\"subscriptionDefinitions\":[{\"subscriptionDefinition\":{\"id\":1,\"queueId\":1,\"username\":\"me\",\"title\":\"testQueryTitle\",\"url\":\"testQueryText\",\"queryType\":\"RSS\",\"importSchedule\":\"A\"}}],\"queueImgSrc\":null}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());

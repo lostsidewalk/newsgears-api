@@ -2,12 +2,12 @@ package com.lostsidewalk.buffy.app.opml;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.app.audit.OpmlException;
-import com.lostsidewalk.buffy.app.model.request.FeedConfigRequest;
-import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
-import com.lostsidewalk.buffy.feed.FeedDefinition;
-import com.lostsidewalk.buffy.feed.FeedDefinitionDao;
-import com.lostsidewalk.buffy.query.QueryDefinition;
-import com.lostsidewalk.buffy.query.QueryDefinitionDao;
+import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
+import com.lostsidewalk.buffy.app.model.request.Subscription;
+import com.lostsidewalk.buffy.queue.QueueDefinition;
+import com.lostsidewalk.buffy.queue.QueueDefinitionDao;
+import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
+import com.lostsidewalk.buffy.subscription.SubscriptionDefinitionDao;
 import com.rometools.opml.feed.opml.Opml;
 import com.rometools.opml.feed.opml.Outline;
 import com.rometools.opml.io.impl.OPML20Generator;
@@ -47,12 +47,12 @@ public class OpmlService {
     Validator validator;
 
     @Autowired
-    FeedDefinitionDao feedDefinitionDao;
+    QueueDefinitionDao queueDefinitionDao;
 
     @Autowired
-    QueryDefinitionDao queryDefinitionDao;
+    SubscriptionDefinitionDao subscriptionDefinitionDao;
 
-    public List<FeedConfigRequest> parseOpmlFile(InputStream inputStream) throws OpmlException, IOException {
+    public List<QueueConfigRequest> parseOpmlFile(InputStream inputStream) throws OpmlException, IOException {
         //
         // extract the OPML text from the input stream for logging
         //
@@ -73,66 +73,66 @@ public class OpmlService {
             WireFeedInput input = new WireFeedInput();
             InputStreamReader isr = new InputStreamReader(textStream);
             Opml feed = (Opml) input.build(isr);
-            List<FeedConfigRequest> feedConfigRequests = importOpml(feed);
-            for (FeedConfigRequest feedConfigRequest : feedConfigRequests) {
-                Set<ConstraintViolation<FeedConfigRequest>> constraintViolations = validator.validate(feedConfigRequest);
+            List<QueueConfigRequest> queueConfigRequests = importOpml(feed);
+            for (QueueConfigRequest queueConfigRequest : queueConfigRequests) {
+                Set<ConstraintViolation<QueueConfigRequest>> constraintViolations = validator.validate(queueConfigRequest);
                 if (isNotEmpty(constraintViolations)) {
-                    throw new FeedConfigRequestValidationException(constraintViolations);
+                    throw new QueueConfigRequestValidationException(constraintViolations);
                 }
             }
-            return feedConfigRequests;
+            return queueConfigRequests;
         } catch (Exception e) {
             throw new OpmlException(e.getMessage());
         }
     }
 
-    private List<FeedConfigRequest> importOpml(Opml opml) {
+    private List<QueueConfigRequest> importOpml(Opml opml) {
 
-        List<FeedConfigRequest> feedConfigRequests = new ArrayList<>();
+        List<QueueConfigRequest> queueConfigRequests = new ArrayList<>();
 
-        String ident = generateRandomFeedIdent();
+        String ident = generateRandomQueueIdent();
         String title = opml.getTitle();
         String description = getDescription(getOwner(opml));
         List<Outline> outlines = opml.getOutlines();
-        List<RssAtomUrl> rssAtomUrls = new ArrayList<>();
+        List<Subscription> subscriptions = new ArrayList<>();
         for (Outline outline : outlines) {
             if (equalsIgnoreCase(outline.getType(), "rss")) {
-                RssAtomUrl rssAtomUrl = new RssAtomUrl(generateRandomId(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
-                Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
+                Subscription subscription = new Subscription(generateRandomId(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
+                Set<ConstraintViolation<Subscription>> constraintViolations = validator.validate(subscription);
                 if (isNotEmpty(constraintViolations)) {
-                    throw new RssAtomUrlValidationException(constraintViolations);
+                    throw new SubscriptionValidationException(constraintViolations);
                 } else {
-                    rssAtomUrls.add(rssAtomUrl);
+                    subscriptions.add(subscription);
                 }
             } else {
-                feedConfigRequests.addAll(buildFeedConfigRequests(singletonList(outline)));
+                queueConfigRequests.addAll(buildQueueConfigRequests(singletonList(outline)));
             }
         }
-        FeedConfigRequest topLevelFeedConfigRequest = null;
-        if (!rssAtomUrls.isEmpty()) {
-            topLevelFeedConfigRequest = FeedConfigRequest.from(
+        QueueConfigRequest topLevelQueueConfigRequest = null;
+        if (!subscriptions.isEmpty()) {
+            topLevelQueueConfigRequest = QueueConfigRequest.from(
                     ident,
                     title,
                     description,
                     "FeedGears 0.4",
-                    rssAtomUrls,
+                    subscriptions,
                     null,
                     null,
                     null,
                     null);
         }
-        if (topLevelFeedConfigRequest != null) {
-            feedConfigRequests.add(topLevelFeedConfigRequest);
+        if (topLevelQueueConfigRequest != null) {
+            queueConfigRequests.add(topLevelQueueConfigRequest);
         }
 
-        return feedConfigRequests;
+        return queueConfigRequests;
     }
 
-    private List<FeedConfigRequest> buildFeedConfigRequests(List<Outline> outlines) {
+    private List<QueueConfigRequest> buildQueueConfigRequests(List<Outline> outlines) {
 
-        List<FeedConfigRequest> feedConfigRequests = new ArrayList<>();
+        List<QueueConfigRequest> queueConfigRequests = new ArrayList<>();
         for (Outline outline : outlines) {
-            String ident = generateRandomFeedIdent();
+            String ident = generateRandomQueueIdent();
             String title = outline.getTitle();
             String description = null;
             if (isBlank(title)) {
@@ -141,29 +141,29 @@ public class OpmlService {
                 description = outline.getText();
             }
             List<Outline> children = outline.getChildren();
-            List<RssAtomUrl> rssAtomUrls = new ArrayList<>();
+            List<Subscription> subscriptions = new ArrayList<>();
             for (Outline child : children) {
                 if (equalsIgnoreCase(child.getType(), "rss")) {
-                    RssAtomUrl rssAtomUrl = new RssAtomUrl(generateRandomId(), child.getXmlUrl(), child.getTitle(), null, null, null);
-                    Set<ConstraintViolation<RssAtomUrl>> constraintViolations = validator.validate(rssAtomUrl);
+                    Subscription subscription = new Subscription(generateRandomId(), child.getXmlUrl(), child.getTitle(), null, null, null);
+                    Set<ConstraintViolation<Subscription>> constraintViolations = validator.validate(subscription);
                     if (isNotEmpty(constraintViolations)) {
-                        throw new RssAtomUrlValidationException(constraintViolations);
+                        throw new SubscriptionValidationException(constraintViolations);
                     }
-                    rssAtomUrls.add(rssAtomUrl);
+                    subscriptions.add(subscription);
                 } else {
-                    List<FeedConfigRequest> fromChildren = buildFeedConfigRequests(singletonList(child));
+                    List<QueueConfigRequest> fromChildren = buildQueueConfigRequests(singletonList(child));
                     if (isNotEmpty(fromChildren)) {
-                        feedConfigRequests.addAll(fromChildren);
+                        queueConfigRequests.addAll(fromChildren);
                     }
                 }
             }
-            if (isNotBlank(title) || isNotEmpty(rssAtomUrls)) {
-                feedConfigRequests.add(FeedConfigRequest.from(
+            if (isNotBlank(title) || isNotEmpty(subscriptions)) {
+                queueConfigRequests.add(QueueConfigRequest.from(
                         ident,
                         title,
                         description,
                         "FeedGears 0.4",
-                        rssAtomUrls,
+                        subscriptions,
                         null,
                         null,
                         null,
@@ -172,14 +172,14 @@ public class OpmlService {
             }
         }
 
-        return feedConfigRequests;
+        return queueConfigRequests;
     }
 
     //
     //
     //
 
-    private static String generateRandomFeedIdent() {
+    private static String generateRandomQueueIdent() {
         return randomWords();
     }
 
@@ -217,12 +217,12 @@ public class OpmlService {
     //
 
     public String generateOpml(String username) throws DataAccessException, OpmlException {
-        List<FeedDefinition> feedDefinitions = feedDefinitionDao.findByUser(username);
+        List<QueueDefinition> feedDefinitions = queueDefinitionDao.findByUser(username);
         Opml opml = new Opml();
         opml.setTitle("FeedGears OPML Export for " + username);
         if (isNotEmpty(feedDefinitions)) {
-            for (FeedDefinition f : feedDefinitions) {
-                List<QueryDefinition> q = queryDefinitionDao.findByFeedId(username, f.getId());
+            for (QueueDefinition f : feedDefinitions) {
+                List<SubscriptionDefinition> q = subscriptionDefinitionDao.findByQueueId(username, f.getId());
                 opml.getOutlines().add(convertFeedDefinitionToOutline(f, q));
             }
         }
@@ -236,24 +236,24 @@ public class OpmlService {
         }
     }
 
-    private Outline convertFeedDefinitionToOutline(FeedDefinition feedDefinition, List<QueryDefinition> queryDefinitions) {
+    private Outline convertFeedDefinitionToOutline(QueueDefinition feedDefinition, List<SubscriptionDefinition> subscriptionDefinitions) {
         Outline outline = new Outline();
         outline.setTitle(feedDefinition.getTitle());
         outline.setText(feedDefinition.getDescription());
-        for (QueryDefinition q : queryDefinitions) {
+        for (SubscriptionDefinition q : subscriptionDefinitions) {
             String queryType = q.getQueryType();
             if (queryType.equals("RSS") || queryType.equals("ATOM")) {
-                outline.getChildren().add(convertQueryDefinitionToOutline(q));
+                outline.getChildren().add(convertSubscriptionDefinitionToOutline(q));
             }
         }
 
         return outline;
     }
 
-    private Outline convertQueryDefinitionToOutline(QueryDefinition queryDefinition) {
+    private Outline convertSubscriptionDefinitionToOutline(SubscriptionDefinition subscriptionDefinition) {
         URL xmlUrl = null;
         try {
-            xmlUrl = new URL(queryDefinition.getQueryText());
+            xmlUrl = new URL(subscriptionDefinition.getUrl());
         } catch (MalformedURLException ignored) {}
 
         return new Outline(null, xmlUrl, null);
@@ -263,14 +263,14 @@ public class OpmlService {
     //
     //
 
-    public static class RssAtomUrlValidationException extends ValidationException {
-        RssAtomUrlValidationException(Set<ConstraintViolation<RssAtomUrl>> constraintViolations) {
+    public static class SubscriptionValidationException extends ValidationException {
+        SubscriptionValidationException(Set<ConstraintViolation<Subscription>> constraintViolations) {
             super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
         }
     }
 
-    public static class FeedConfigRequestValidationException extends ValidationException {
-        FeedConfigRequestValidationException(Set<ConstraintViolation<FeedConfigRequest>> constraintViolations) {
+    public static class QueueConfigRequestValidationException extends ValidationException {
+        QueueConfigRequestValidationException(Set<ConstraintViolation<QueueConfigRequest>> constraintViolations) {
             super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
         }
     }

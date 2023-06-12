@@ -24,20 +24,4 @@ public class ExportControllerTest extends BaseWebControllerTest {
     void test_exportFeed() throws Exception {
         ;
     }
-
-//    @Test
-//    void test_previewFeed() throws Exception {
-//        when(this.postPublisher.doPreview("me", "testFeedIdent", PubFormat.JSON)).thenReturn(List.of(FeedPreview.from("testFeedIdent", "{}")));
-//        mockMvc.perform(MockMvcRequestBuilders
-//                        .get("/feeds/preview")
-//                        .queryParam("feedIdent", "testFeedIdent")
-//                        .queryParam("format", PubFormat.JSON.name())
-//                        .header("Authorization", "Bearer testToken")
-//                        .accept(APPLICATION_JSON))
-//                .andExpect(result -> {
-//                    String responseContent = result.getResponse().getContentAsString();
-//                    assertEquals("[{\"feedIdent\":\"testFeedIdent\",\"previewArtifact\":\"{}\"}]", responseContent);
-//                })
-//                .andExpect(status().isOk());
-//    }
 }

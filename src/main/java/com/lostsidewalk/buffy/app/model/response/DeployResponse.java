@@ -9,7 +9,6 @@ import java.util.List;
 
 @Data
 public class DeployResponse {
-    String feedIdent;
     Date timestamp;
 
     private DeployResponse(Date timestamp) {

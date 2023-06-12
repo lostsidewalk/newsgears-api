@@ -4,12 +4,12 @@ package com.lostsidewalk.buffy.app;
 import com.lostsidewalk.buffy.*;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
-import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
+import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
 import com.lostsidewalk.buffy.app.mail.MailService;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
 import com.lostsidewalk.buffy.app.order.*;
 import com.lostsidewalk.buffy.app.post.StagingPostService;
-import com.lostsidewalk.buffy.app.query.QueryDefinitionService;
+import com.lostsidewalk.buffy.app.query.SubscriptionDefinitionService;
 import com.lostsidewalk.buffy.app.recommendation.RecommendationService;
 import com.lostsidewalk.buffy.app.settings.SettingsService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
@@ -21,16 +21,16 @@ import com.lostsidewalk.buffy.auth.FeatureDao;
 import com.lostsidewalk.buffy.auth.RoleDao;
 import com.lostsidewalk.buffy.auth.UserDao;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfoDao;
-import com.lostsidewalk.buffy.feed.FeedCredentialsDao;
-import com.lostsidewalk.buffy.feed.FeedDefinitionDao;
 import com.lostsidewalk.buffy.json.JSONPublisher;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.post.PostPurger;
 import com.lostsidewalk.buffy.post.StagingPostDao;
-import com.lostsidewalk.buffy.query.QueryDefinitionDao;
-import com.lostsidewalk.buffy.query.QueryMetricsDao;
+import com.lostsidewalk.buffy.queue.FeedCredentialsDao;
+import com.lostsidewalk.buffy.queue.QueueDefinitionDao;
 import com.lostsidewalk.buffy.rss.RSSPublisher;
 import com.lostsidewalk.buffy.rss.RssImporter;
+import com.lostsidewalk.buffy.subscription.SubscriptionDefinitionDao;
+import com.lostsidewalk.buffy.subscription.SubscriptionMetricsDao;
 import com.lostsidewalk.buffy.thumbnail.ThumbnailDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -62,13 +62,13 @@ class BaseWebControllerTest {
 //    AuditService auditService;
 
     @MockBean
-    FeedDefinitionService feedDefinitionService;
+    QueueDefinitionService queueDefinitionService;
 
     @MockBean
     FeedDiscoveryService feedDiscoveryService;
 
     @MockBean
-    QueryDefinitionService queryDefinitionService;
+    SubscriptionDefinitionService subscriptionDefinitionService;
 
     @MockBean
     StripeOrderService stripeOrderService;
@@ -137,7 +137,7 @@ class BaseWebControllerTest {
     FeatureDao featureDao;
 
     @MockBean
-    FeedDefinitionDao feedDefinitionDao;
+    QueueDefinitionDao queueDefinitionDao;
 
     @MockBean
     FeedCredentialsDao feedCredentialsDao;
@@ -155,10 +155,10 @@ class BaseWebControllerTest {
     StagingPostDao stagingPostDao;
 
     @MockBean
-    QueryDefinitionDao queryDefinitionDao;
+    SubscriptionDefinitionDao subscriptionDefinitionDao;
 
     @MockBean
-    QueryMetricsDao queryMetricsDao;
+    SubscriptionMetricsDao subscriptionMetricsDao;
 
     @MockBean
     ThumbnailDao thumbnailDao;

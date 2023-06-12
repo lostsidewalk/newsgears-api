@@ -14,7 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
 @Data
 @NoArgsConstructor
 @JsonInclude(NON_ABSENT)
-public class FeedConfigRequest {
+public class QueueConfigRequest {
 
     @NotBlank(message = "{feed.config.error.ident-is-blank}")
     @Size(max = 256, message = "{feed.config.error.ident-too-long}")
@@ -29,7 +29,7 @@ public class FeedConfigRequest {
     @Size(max = 512, message = "{feed.config.error.generator-too-long}")
     String generator;
 
-    List<@Valid RssAtomUrl> rssAtomFeedUrls; // optional
+    List<@Valid Subscription> subscriptions; // optional
 
     @Valid
     ExportConfigRequest exportConfig;
@@ -43,33 +43,33 @@ public class FeedConfigRequest {
     @Size(max = 16384, message = "{feed.config.error.img-src-too-long}")
     String imgSrc;
 
-    public FeedConfigRequest(String ident, String title, String description, String generator,
-                             List<RssAtomUrl> rssAtomFeedUrls,
-                             ExportConfigRequest exportConfig,
-                             String copyright, String language, String imgSrc)
+    public QueueConfigRequest(String ident, String title, String description, String generator,
+                              List<Subscription> subscriptions,
+                              ExportConfigRequest exportConfig,
+                              String copyright, String language, String imgSrc)
     {
         this.ident = ident;
         this.title = title;
         this.description = description;
         this.generator = generator;
-        this.rssAtomFeedUrls = rssAtomFeedUrls;
+        this.subscriptions = subscriptions;
         this.exportConfig = exportConfig;
         this.copyright = copyright;
         this.language = language;
         this.imgSrc = imgSrc;
     }
 
-    public static FeedConfigRequest from(String ident, String title, String description, String generator,
-                                         List<RssAtomUrl> rssAtomFeedUrls,
-                                         ExportConfigRequest exportConfig,
-                                         String copyright, String language, String imgSrc)
+    public static QueueConfigRequest from(String ident, String title, String description, String generator,
+                                          List<Subscription> subscriptions,
+                                          ExportConfigRequest exportConfig,
+                                          String copyright, String language, String imgSrc)
     {
-        return new FeedConfigRequest(
+        return new QueueConfigRequest(
                 ident,
                 title,
                 description,
                 generator,
-                rssAtomFeedUrls,
+                subscriptions,
                 exportConfig,
                 copyright,
                 language,

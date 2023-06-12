@@ -1,6 +1,6 @@
 package com.lostsidewalk.buffy.app.query;
 
-import com.lostsidewalk.buffy.app.model.request.RssAtomUrl;
+import com.lostsidewalk.buffy.app.model.request.Subscription;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,11 +8,11 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class QueryCreationTask {
+public class SubscriptionCreationTask {
 
-    List<RssAtomUrl> rssAtomUrls;
+    List<Subscription> subscriptions;
 
     String username;
 
-    Long feedId;
+    Long queueId;
 }

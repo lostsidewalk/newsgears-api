@@ -22,7 +22,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(controllers = FeedDefinitionController.class)
+@WebMvcTest(controllers = QueueDefinitionController.class)
 public class AuthenticationControllerTest extends BaseWebControllerTest {
 
     @Test

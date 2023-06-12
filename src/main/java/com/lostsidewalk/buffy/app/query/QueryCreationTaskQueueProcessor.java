@@ -6,7 +6,7 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.post.PostImporter;
-import com.lostsidewalk.buffy.query.QueryDefinition;
+import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
@@ -25,13 +25,13 @@ import static org.apache.commons.collections4.CollectionUtils.size;
 public class QueryCreationTaskQueueProcessor implements DisposableBean, Runnable {
 
     @Autowired
-    BlockingQueue<QueryCreationTask> creationTaskQueue;
+    BlockingQueue<SubscriptionCreationTask> creationTaskQueue;
 
     @Autowired
     FeedResolutionService feedResolutionService;
 
     @Autowired
-    QueryDefinitionService queryDefinitionService;
+    SubscriptionDefinitionService subscriptionDefinitionService;
 
     @Autowired
     PostImporter postImporter;
@@ -51,18 +51,18 @@ public class QueryCreationTaskQueueProcessor implements DisposableBean, Runnable
     public void run() {
         while (isEnabled) {
             try {
-                QueryCreationTask creationTask = creationTaskQueue.take();
-                log.info("Processing query creation task for username={}, feedId={}, partitionCt={}",
-                        creationTask.getUsername(), creationTask.getFeedId(), size(creationTask.getRssAtomUrls()));
-                ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(creationTask.rssAtomUrls);
+                SubscriptionCreationTask creationTask = creationTaskQueue.take();
+                log.info("Processing query creation task for username={}, queueId={}, partitionCt={}",
+                        creationTask.getUsername(), creationTask.getQueueId(), size(creationTask.getSubscriptions()));
+                ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(creationTask.subscriptions);
                 // create the queries (for this partition)
-                List<QueryDefinition> createdQueries = queryDefinitionService.addQueries(
+                List<SubscriptionDefinition> createdSubscriptions = subscriptionDefinitionService.addSubscriptions(
                         creationTask.username,
-                        creationTask.feedId,
-                        creationTask.rssAtomUrls);
-                if (isNotEmpty(createdQueries)) {
+                        creationTask.queueId,
+                        creationTask.subscriptions);
+                if (isNotEmpty(createdSubscriptions)) {
                     // perform import-from-cache (again, first partition only)
-                    postImporter.doImport(createdQueries, ImmutableMap.copyOf(discoveryCache));
+                    postImporter.doImport(createdSubscriptions, ImmutableMap.copyOf(discoveryCache));
                 }
             } catch (DataAccessException | DataUpdateException e) {
                 log.error("Unable to create query due to: {}", e.getMessage());

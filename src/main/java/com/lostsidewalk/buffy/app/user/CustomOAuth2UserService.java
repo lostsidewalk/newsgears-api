@@ -4,7 +4,7 @@ import com.lostsidewalk.buffy.*;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.audit.ErrorLogService;
 import com.lostsidewalk.buffy.app.audit.RegistrationException;
-import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
+import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
 import com.lostsidewalk.buffy.auth.AuthProvider;
 import com.lostsidewalk.buffy.auth.User;
 import com.lostsidewalk.buffy.auth.UserDao;
@@ -48,7 +48,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     ErrorLogService errorLogService;
 
     @Autowired
-    FeedDefinitionService feedDefinitionService;
+    QueueDefinitionService queueDefinitionService;
 
     @Autowired
     private UserDao userDao;
@@ -131,7 +131,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             //
             // (3) generate default queue
             //
-            feedDefinitionService.createDefaultFeed(username);
+            queueDefinitionService.createDefaultFeed(username);
             //
             //
             //

@@ -7,12 +7,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Configuration
-public class QueryDefinitionQueueConfig {
+public class SubscriptionDefinitionQueueConfig {
 
-    private final BlockingQueue<QueryCreationTask> creationTaskQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<SubscriptionCreationTask> creationTaskQueue = new LinkedBlockingQueue<>();
 
     @Bean(name="creationTaskQueue")
-    BlockingQueue<QueryCreationTask> creationTaskQueue() {
+    BlockingQueue<SubscriptionCreationTask> creationTaskQueue() {
         return creationTaskQueue;
     }
 }

@@ -5,7 +5,7 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.app.audit.*;
 import com.lostsidewalk.buffy.app.auth.AuthService;
-import com.lostsidewalk.buffy.app.feed.FeedDefinitionService;
+import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
 import com.lostsidewalk.buffy.app.mail.MailService;
 import com.lostsidewalk.buffy.app.model.AppToken;
 import com.lostsidewalk.buffy.app.model.request.RegistrationRequest;
@@ -13,7 +13,7 @@ import com.lostsidewalk.buffy.app.model.response.RegistartionResponse;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
-import com.lostsidewalk.buffy.feed.FeedDefinition;
+import com.lostsidewalk.buffy.queue.QueueDefinition;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -26,6 +26,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +42,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @Slf4j
 @Controller
+@Validated
 public class RegistrationController {
 
     @Autowired
@@ -59,7 +61,7 @@ public class RegistrationController {
     TokenService tokenService;
 
     @Autowired
-    FeedDefinitionService feedDefinitionService;
+    QueueDefinitionService queueDefinitionService;
 
     @Autowired
     PostPublisher postPublisher;
@@ -95,7 +97,7 @@ public class RegistrationController {
         //
         // (3) generate default queue
         //
-        feedDefinitionService.createDefaultFeed(username);
+        queueDefinitionService.createDefaultFeed(username);
         //
         // (3) generate and send the verification token
         //
@@ -156,10 +158,10 @@ public class RegistrationController {
         log.info("De-registering username={}", username);
         //
         StopWatch stopWatch = StopWatch.createStarted();
-        List<Long> feedIds = feedDefinitionService.findByUser(username).stream().map(FeedDefinition::getId).toList();
-        if (isNotEmpty(feedIds)) {
-            for (Long feedId : feedIds) {
-                postPublisher.unpublishFeed(username, feedId);
+        List<Long> queueIds = queueDefinitionService.findByUser(username).stream().map(QueueDefinition::getId).toList();
+        if (isNotEmpty(queueIds)) {
+            for (Long queueId : queueIds) {
+                postPublisher.unpublishFeed(username, queueId);
             }
         }
         //

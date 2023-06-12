@@ -20,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -52,6 +53,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
  */
 @Slf4j
 @Controller
+@Validated
 class AuthenticationController {
 
     @Autowired
