@@ -16,7 +16,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import static com.lostsidewalk.buffy.app.auth.HashingUtils.sha256;
@@ -173,15 +175,46 @@ public class ProxyService {
             document.getElementsByTag("img").forEach(e -> {
                 String imgUrl = e.attr("src");
                 e.attr("src", this.rewriteImageUrl(imgUrl, baseUrl));
+                e.addClass("post-html-frame-img");
+                // get the existing style property value
+                String existingStyle = e.attr("style");
+                Map<String, String> styleMap = parseStyleAttribute(existingStyle);
+                // update or add the new style properties
+                styleMap.put("max-width", "650px");
+                styleMap.put("height", "auto");
+                styleMap.put("object-fit", "contain");
+                // reconstruct the style attribute
+                StringBuilder updatedStyle = new StringBuilder();
+                for (Map.Entry<String, String> entry : styleMap.entrySet()) {
+                    updatedStyle.append(entry.getKey()).append(":").append(entry.getValue()).append(";");
+                }
+                e.attr("style", updatedStyle.toString());
             });
             document.getElementsByTag("a").forEach(e -> {
                 e.attr("target", "_blank");
                 e.attr("rel", "noopener");
             });
-
             //
             obj.setValue(document.toString());
         }
+    }
+
+    private static Map<String, String> parseStyleAttribute(String styleAttribute) {
+        Map<String, String> styleMap = new HashMap<>();
+
+        if (!styleAttribute.isEmpty()) {
+            String[] stylePairs = styleAttribute.split(";");
+            for (String stylePair : stylePairs) {
+                String[] propertyValue = stylePair.split(":");
+                if (propertyValue.length == 2) {
+                    String property = propertyValue[0].trim();
+                    String value = propertyValue[1].trim();
+                    styleMap.put(property, value);
+                }
+            }
+        }
+
+        return styleMap;
     }
 
     private static boolean isHtmlContent(ContentObject obj) {
