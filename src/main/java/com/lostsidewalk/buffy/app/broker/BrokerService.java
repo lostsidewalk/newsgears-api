@@ -83,6 +83,7 @@ public class BrokerService {
             handshakeHeaders.add("X-FeedGears", "api");
             CompletableFuture<StompSession> sessionFuture = stompClient.connectAsync(brokerUrl, handshakeHeaders, sessionHandler);
             stompSession = sessionFuture.get();
+            log.info("Established connection to broker, brokerUrl={}, stompSession?={}", brokerUrl, (stompSession != null));
             subscribeToFeedgearsTopic();
         } catch (Throwable e) {
             log.error("Error connecting to broker due to: {}, brokerUrl={}", e.getMessage(), brokerUrl);
