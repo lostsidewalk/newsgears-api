@@ -20,9 +20,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 
-import java.util.List;
-
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
+import static java.util.Collections.singletonList;
 import static org.springframework.http.HttpMethod.OPTIONS;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
@@ -80,9 +79,9 @@ class WebSecurityConfig {
 //				.headers(httpSecurityHeadersConfigurer -> httpSecurityHeadersConfigurer.contentSecurityPolicy(CONTENT_SECURITY_POLICY_DIRECTIVES))
 				.cors().configurationSource(request -> {
 					CorsConfiguration configuration = new CorsConfiguration();
-					configuration.setAllowedOrigins(List.of(this.feedGearsOriginUrl));
-					configuration.setAllowedMethods(List.of("*"));
-					configuration.setAllowedHeaders(List.of("*"));
+					configuration.setAllowedOriginPatterns(singletonList(this.feedGearsOriginUrl));
+					configuration.setAllowedMethods(singletonList("*"));
+					configuration.setAllowedHeaders(singletonList("*"));
 					configuration.setAllowCredentials(true);
 					return configuration;
 				})

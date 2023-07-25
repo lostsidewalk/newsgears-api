@@ -10,7 +10,7 @@ import com.lostsidewalk.buffy.app.opml.OpmlService;
 import com.lostsidewalk.buffy.app.order.*;
 import com.lostsidewalk.buffy.app.post.StagingPostService;
 import com.lostsidewalk.buffy.app.query.SubscriptionDefinitionService;
-import com.lostsidewalk.buffy.app.recommendation.RecommendationService;
+import com.lostsidewalk.buffy.app.recommendation.FeedRecommendationService;
 import com.lostsidewalk.buffy.app.settings.SettingsService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.app.token.TokenService;
@@ -98,7 +98,7 @@ class BaseWebControllerTest {
     ThumbnailService thumbnailService;
 
     @MockBean
-    RecommendationService recommendationService;
+    FeedRecommendationService recommendationService;
     //
     // stripe callback queue processors
     //

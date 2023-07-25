@@ -21,7 +21,7 @@ public class ExportControllerTest extends BaseWebControllerTest {
     }
 
     @Test
-    void test_exportFeed() throws Exception {
+    void test_exportFeed() {
         ;
     }
 }

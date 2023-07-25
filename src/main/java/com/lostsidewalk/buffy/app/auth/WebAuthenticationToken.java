@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.webauthtoken;
+package com.lostsidewalk.buffy.app.auth;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;

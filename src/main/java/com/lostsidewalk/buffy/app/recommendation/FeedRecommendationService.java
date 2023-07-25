@@ -29,7 +29,7 @@ import static org.apache.commons.lang3.StringUtils.trim;
 
 @Slf4j
 @Service
-public class RecommendationService {
+public class FeedRecommendationService {
 
     private static final Gson GSON = new Gson();
 

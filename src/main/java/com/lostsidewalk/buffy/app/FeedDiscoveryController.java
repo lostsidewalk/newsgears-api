@@ -6,7 +6,7 @@ import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedDiscoveryRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedRecommendationRequest;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
-import com.lostsidewalk.buffy.app.recommendation.RecommendationService;
+import com.lostsidewalk.buffy.app.recommendation.FeedRecommendationService;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
@@ -52,7 +52,7 @@ public class FeedDiscoveryController {
     FeedResolutionService feedResolutionService;
 
     @Autowired
-    RecommendationService recommendationService;
+    FeedRecommendationService recommendationService;
 
     @Autowired
     ProxyService proxyService;

@@ -62,7 +62,7 @@ import static org.apache.commons.collections4.MapUtils.size;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.http.ResponseEntity.*;
 
 @Slf4j
 @RestController
@@ -207,6 +207,7 @@ public class QueueDefinitionController {
         for (Subscription subscription : subscriptions) {
             Set<ConstraintViolation<Subscription>> constraintViolations = validator.validate(subscription);
             if (isNotEmpty(constraintViolations)) {
+                // TODO: need to enforce one subscription per feed per user
                 throw new SubscriptionValidationException(constraintViolations);
             }
         }

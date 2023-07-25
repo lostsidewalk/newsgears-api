@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.lostsidewalk.buffy.app.auth.HashingUtils.sha256;
 import static com.lostsidewalk.buffy.app.model.TokenType.*;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.Optional.of;
@@ -241,7 +242,7 @@ public class AuthService {
 
     AppToken generateAppToken(TokenType tokenType, String username, String validationClaim) {
         Map<String, Object> claimsMap = new HashMap<>();
-        String validationClaimHash = HashingUtils.sha256(validationClaim, defaultCharset());
+        String validationClaimHash = sha256(validationClaim, defaultCharset());
         claimsMap.put(tokenType.tokenName, validationClaimHash);
         String authToken = tokenService.generateToken(claimsMap, username, tokenType);
         int maxAgeInSeconds = tokenType.maxAgeInSeconds;
