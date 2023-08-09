@@ -1,7 +1,9 @@
 package com.lostsidewalk.buffy.app;
 
 
-import com.lostsidewalk.buffy.*;
+import com.lostsidewalk.buffy.FrameworkConfigDao;
+import com.lostsidewalk.buffy.PostPublisher;
+import com.lostsidewalk.buffy.ThemeConfigDao;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
@@ -36,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -224,7 +227,7 @@ class BaseWebControllerTest {
 
         @Override
         public String getPassword() {
-            return "testPassword";
+            return new BCryptPasswordEncoder().encode("testPassword");
         }
 
         @Override

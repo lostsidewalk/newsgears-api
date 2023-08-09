@@ -5,15 +5,19 @@ import com.lostsidewalk.buffy.app.auth.HttpCookieOAuth2AuthorizationRequestRepos
 import com.lostsidewalk.buffy.app.auth.OAuth2AuthenticationFailureHandler;
 import com.lostsidewalk.buffy.app.auth.OAuth2AuthenticationSuccessHandler;
 import com.lostsidewalk.buffy.app.user.CustomOAuth2UserService;
+import com.lostsidewalk.buffy.app.user.LocalUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -27,17 +31,31 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(
-		securedEnabled = true,
-		jsr250Enabled = true)
+@EnableMethodSecurity
 class WebSecurityConfig {
+
+	@Autowired
+	LocalUserService userDetailsService;
 
 	@Autowired
 	AuthTokenFilter authTokenFilter;
 
+	@Autowired
+	PasswordEncoder passwordEncoder;
+
 	@Bean
-	public AuthenticationManager authenticationManager() {
-		return authentication -> new UsernamePasswordAuthenticationToken(authentication.getPrincipal(), authentication.getCredentials());
+	public DaoAuthenticationProvider authenticationProvider() {
+		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+
+		authProvider.setUserDetailsService(userDetailsService);
+		authProvider.setPasswordEncoder(passwordEncoder);
+
+		return authProvider;
+	}
+
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfiguration) throws Exception {
+		return authConfiguration.getAuthenticationManager();
 	}
 
 	@Bean
@@ -72,47 +90,47 @@ class WebSecurityConfig {
 	protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 		http
-				.logout().disable()
-				.csrf().disable()
-				.formLogin().disable()
-				.httpBasic().disable()
+				.logout(AbstractHttpConfigurer::disable)
+				.csrf(AbstractHttpConfigurer::disable)
+				.formLogin(AbstractHttpConfigurer::disable)
+				.httpBasic(AbstractHttpConfigurer::disable)
 //				.headers(httpSecurityHeadersConfigurer -> httpSecurityHeadersConfigurer.contentSecurityPolicy(CONTENT_SECURITY_POLICY_DIRECTIVES))
-				.cors().configurationSource(request -> {
+				.cors(c -> c.configurationSource(request -> {
 					CorsConfiguration configuration = new CorsConfiguration();
 					configuration.setAllowedOriginPatterns(singletonList(this.feedGearsOriginUrl));
 					configuration.setAllowedMethods(singletonList("*"));
 					configuration.setAllowedHeaders(singletonList("*"));
 					configuration.setAllowCredentials(true);
 					return configuration;
-				})
-				.and().authorizeHttpRequests()
-					// permit pre-auth
-					.requestMatchers("/").permitAll() // index
-					.requestMatchers("/authenticate").permitAll() // user authentication (login)
-					.requestMatchers("/oauth2/**").authenticated() // oauth2
-					.requestMatchers("/pw_reset").permitAll() // password reset (init)
-					.requestMatchers("/pw_reset/**").permitAll() // password reset w/token (get-back)
-					.requestMatchers("/deauthenticate").permitAll() // user de-authentication (logout)
-					.requestMatchers("/register").permitAll() // user registration (init)
-					.requestMatchers("/verify/**").permitAll() // verification (i.e., user registration get-back)
-					.requestMatchers("/stripe").permitAll() // stripe callback (payment)
-					// permit actuators
-					.requestMatchers("/actuator").permitAll()
-					.requestMatchers("/actuator/**").permitAll()
-					// permit options calls
-					.requestMatchers(OPTIONS, "/**").permitAll() // OPTIONS calls are validated downstream by checking for the presence of required headers
-					// permit image proxy calls
-					.requestMatchers("/proxy/unsecured/**").permitAll()
-					// (all others require authentication)
-					.anyRequest().authenticated()
-				.and().sessionManagement().sessionCreationPolicy(STATELESS)
-				.and().exceptionHandling().defaultAuthenticationEntryPointFor(currentUserEntryPoint(), new AntPathRequestMatcher("/**"))
-				.and().oauth2Login()
-					.authorizationEndpoint().baseUri("/oauth2/authorize")
-					.authorizationRequestRepository(cookieAuthorizationRequestRepository())
-				.and().redirectionEndpoint().baseUri("/oauth2/callback/*")
-				.and().userInfoEndpoint().userService(customOAuth2UserService)
-				.and().successHandler(oAuth2AuthenticationSuccessHandler).failureHandler(oAuth2AuthenticationFailureHandler);
+				}))
+				.authorizeHttpRequests(a ->
+						a.requestMatchers("/").permitAll() // index
+						.requestMatchers("/authenticate").permitAll() // user authentication (login)
+						.requestMatchers("/oauth2/**").authenticated() // oauth2
+						.requestMatchers("/pw_reset").permitAll() // password reset (init)
+						.requestMatchers("/pw_reset/**").permitAll() // password reset w/token (get-back)
+						.requestMatchers("/deauthenticate").permitAll() // user de-authentication (logout)
+						.requestMatchers("/register").permitAll() // user registration (init)
+						.requestMatchers("/verify/**").permitAll() // verification (i.e., user registration get-back)
+						.requestMatchers("/stripe").permitAll() // stripe callback (payment)
+						// permit actuators
+						.requestMatchers("/actuator").permitAll()
+						.requestMatchers("/actuator/**").permitAll()
+						// permit options calls
+						.requestMatchers(OPTIONS, "/**").permitAll() // OPTIONS calls are validated downstream by checking for the presence of required headers
+						// permit image proxy calls
+						.requestMatchers("/proxy/unsecured/**").permitAll()
+						// (all others require authentication)
+						.anyRequest().authenticated()
+				).sessionManagement(s -> s.sessionCreationPolicy(STATELESS))
+				.exceptionHandling(e -> e.defaultAuthenticationEntryPointFor(currentUserEntryPoint(), new AntPathRequestMatcher("/**")))
+				.oauth2Login(o ->
+						o.authorizationEndpoint(e -> e.baseUri("/oauth2/authorize")
+								.authorizationRequestRepository(cookieAuthorizationRequestRepository()))
+							.redirectionEndpoint(e -> e.baseUri("/oauth2/callback/*"))
+							.userInfoEndpoint(e -> e.userService(customOAuth2UserService))
+							.successHandler(oAuth2AuthenticationSuccessHandler)
+							.failureHandler(oAuth2AuthenticationFailureHandler));
 		http.addFilterBefore(this.authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
