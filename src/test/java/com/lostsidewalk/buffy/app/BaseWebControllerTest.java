@@ -6,15 +6,9 @@ import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.ThemeConfigDao;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
-import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
 import com.lostsidewalk.buffy.app.mail.MailService;
-import com.lostsidewalk.buffy.app.opml.OpmlService;
 import com.lostsidewalk.buffy.app.order.*;
-import com.lostsidewalk.buffy.app.post.StagingPostService;
-import com.lostsidewalk.buffy.app.query.SubscriptionDefinitionService;
 import com.lostsidewalk.buffy.app.recommendation.FeedRecommendationService;
-import com.lostsidewalk.buffy.app.settings.SettingsService;
-import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
@@ -65,22 +59,10 @@ class BaseWebControllerTest {
 //    AuditService auditService;
 
     @MockBean
-    QueueDefinitionService queueDefinitionService;
-
-    @MockBean
     FeedDiscoveryService feedDiscoveryService;
 
     @MockBean
-    SubscriptionDefinitionService subscriptionDefinitionService;
-
-    @MockBean
     StripeOrderService stripeOrderService;
-
-    @MockBean
-    SettingsService settingsService;
-
-    @MockBean
-    StagingPostService stagingPostService;
 
     @MockBean
     AuthService authService;
@@ -93,12 +75,6 @@ class BaseWebControllerTest {
 
     @MockBean
     MailService mailService;
-
-    @MockBean
-    OpmlService opmlService;
-
-    @MockBean
-    ThumbnailService thumbnailService;
 
     @MockBean
     FeedRecommendationService recommendationService;

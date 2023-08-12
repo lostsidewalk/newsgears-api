@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.FrameworkConfig;
 import com.lostsidewalk.buffy.app.model.response.SettingsResponse;
 import com.lostsidewalk.buffy.app.model.response.StripeResponse;
+import com.lostsidewalk.buffy.auth.AuthProvider;
+import com.lostsidewalk.buffy.auth.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,8 +14,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static com.lostsidewalk.buffy.auth.AuthProvider.LOCAL;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
+import static com.lostsidewalk.buffy.auth.AuthProvider.LOCAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -39,11 +41,19 @@ public class SettingsControllerTest extends BaseWebControllerTest {
             new FrameworkConfig()
     );
 
+    private static final FrameworkConfig TEST_FRAMEWORK_CONFIG = new FrameworkConfig();
+
     private static final Gson GSON = new Gson();
+
+    private static final User TEST_USER = new User("me", "testEmailAddress", AuthProvider.LOCAL, "testAuthProviderId", "testAuthProviderProfileImgUrl", "testAuthProviderUsername");
+    static {
+        TEST_USER.setId(1L);
+    }
 
     @Test
     void test_getSettings() throws Exception {
-        when(this.settingsService.getFrameworkConfig("me")).thenReturn(TEST_SETTINGS_RESPONSE);
+        when(this.frameworkConfigDao.findByUserId(1L)).thenReturn(TEST_FRAMEWORK_CONFIG);
+        when(this.userDao.findByName("me")).thenReturn(TEST_USER);
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/settings")
                         .header("Authorization", "Bearer testToken")

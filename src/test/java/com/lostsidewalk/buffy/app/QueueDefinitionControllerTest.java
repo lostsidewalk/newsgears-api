@@ -82,10 +82,8 @@ public class QueueDefinitionControllerTest extends BaseWebControllerTest {
 
     @Test
     void test_updateFeed() throws Exception {
-        when(queueDefinitionService.findByQueueId(matches("me"), eq(1L)))
+        when(queueDefinitionDao.findByQueueId(matches("me"), eq(1L)))
                 .thenReturn(TEST_FEED_DEFINITION);
-        when(subscriptionDefinitionService.findByQueueId(matches("me"), eq(1L)))
-                .thenReturn(TEST_QUERY_DEFINITIONS);
         mockMvc.perform(MockMvcRequestBuilders
                 .put("/queues/1")
                 .servletPath("/queues/1")
@@ -95,7 +93,7 @@ public class QueueDefinitionControllerTest extends BaseWebControllerTest {
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            GSON.fromJson("{\"queueDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"queueStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false},\"subscriptionDefinitions\":[{\"subscriptionDefinition\":{\"id\":1,\"queueId\":1,\"username\":\"me\",\"title\":\"testQueryTitle\",\"url\":\"testQueryText\",\"queryType\":\"RSS\",\"importSchedule\":\"A\"}}],\"queueImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson("{\"queueDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"queueStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false},\"subscriptionDefinitions\":[],\"queueImgSrc\":null}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());

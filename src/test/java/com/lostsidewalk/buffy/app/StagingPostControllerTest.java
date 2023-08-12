@@ -116,7 +116,7 @@ public class StagingPostControllerTest extends BaseWebControllerTest {
 
     @Test
     void test_getStagingPosts() throws Exception {
-        when(this.stagingPostService.getStagingPosts("me", List.of(1L))).thenReturn(TEST_STAGING_POSTS);
+        when(this.stagingPostDao.findByUserAndQueueIds("me", List.of(1L))).thenReturn(TEST_STAGING_POSTS);
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/staging")
                         .queryParam("queueIds", "1")
