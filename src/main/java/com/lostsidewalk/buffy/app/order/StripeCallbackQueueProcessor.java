@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app.order;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.customer.CustomerEvent;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
@@ -75,6 +76,9 @@ public class StripeCallbackQueueProcessor implements DisposableBean, Runnable {
             } catch (DataUpdateException e) {
                 log.error("Something horrible happened on the Stripe callback queue processing thread: {}", e.getMessage(), e);
                 errorLogService.logDataUpdateException("sys", new Date(), e);
+            } catch (DataConflictException e) {
+                log.error("Something horrible happened on the Stripe callback queue processing thread: {}", e.getMessage(), e);
+                errorLogService.logDataConflictException("sys", new Date(), e);
             } catch (StripeEventException e) {
                 errorLogService.logStripeEventException("sys", new Date(), e);
             }
@@ -124,7 +128,7 @@ public class StripeCallbackQueueProcessor implements DisposableBean, Runnable {
 
     }
 
-    private void processEvent(Event event) throws DataAccessException, DataUpdateException, StripeEventException {
+    private void processEvent(Event event) throws DataAccessException, DataUpdateException, StripeEventException, DataConflictException {
         // Deserialize the nested object inside the event
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
         StripeObject stripeObject;

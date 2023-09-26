@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.Date;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
@@ -29,6 +30,8 @@ public class QueueDefinitionControllerTest extends BaseWebControllerTest {
 
     private static final Gson GSON = new Gson();
 
+    private static final Date NOW = new Date(10_000_000L);
+
     private static final QueueDefinition TEST_FEED_DEFINITION = QueueDefinition.from(
             "testFeed",
             "Test Feed Title",
@@ -43,6 +46,7 @@ public class QueueDefinitionControllerTest extends BaseWebControllerTest {
             false);
     static {
         TEST_FEED_DEFINITION.setId(1L);
+        TEST_FEED_DEFINITION.setCreated(NOW);
     }
 
     private static final List<SubscriptionDefinition> TEST_QUERY_DEFINITIONS = List.of(
@@ -93,7 +97,7 @@ public class QueueDefinitionControllerTest extends BaseWebControllerTest {
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
                     assertEquals(
-                            GSON.fromJson("{\"queueDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"queueStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false},\"subscriptionDefinitions\":[],\"queueImgSrc\":null}", JsonObject.class),
+                            GSON.fromJson("{\"queueDefinition\":{\"id\":1,\"ident\":\"testFeed\",\"title\":\"Test Feed Title\",\"description\":\"Test Feed Description\",\"generator\":\"Test Feed Generator\",\"transportIdent\":\"Test Feed Transport Identifier\",\"username\":\"me\",\"queueStatus\":\"ENABLED\",\"copyright\":\"Test Feed Copyright\",\"language\":\"en-US\",\"isAuthenticated\":false,\"created\":\"1970-01-01T02:46:40.000+00:00\"},\"subscriptionDefinitions\":[],\"queueImgSrc\":null}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class));
                 })
                 .andExpect(status().isOk());

@@ -10,6 +10,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 import static java.lang.System.arraycopy;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -127,8 +128,8 @@ public class AppLogService {
         auditLog("feed-read-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated);
     }
 
-    public void logStagingPostPubStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated, List<PubResult> publicationResults) {
-        auditLog("staging-post-pub-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}, publicationResults={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated, publicationResults);
+    public void logStagingPostPubStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, Map<String, PubResult> pubResults) {
+        auditLog("staging-post-pub-status-update", "id={}, postStatusUpdateRequest={}, pubResults={}", username, stopWatch, id, postStatusUpdateRequest, pubResults);
     }
 
     public void logPasswordResetInit(String username, StopWatch stopWatch) {

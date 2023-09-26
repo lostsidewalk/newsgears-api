@@ -1,6 +1,7 @@
 package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.model.request.DisplaySettingsUpdateRequest;
@@ -100,7 +101,7 @@ public class SettingsController {
     @Secured({UNVERIFIED_ROLE})
     @Transactional
     @PutMapping("/settings")
-    public ResponseEntity<?> updateSettings(@Valid @RequestBody SettingsUpdateRequest settingsUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
+    public ResponseEntity<?> updateSettings(@Valid @RequestBody SettingsUpdateRequest settingsUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException, DataConflictException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         StopWatch stopWatch = StopWatch.createStarted();

@@ -32,9 +32,19 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
         when(this.userService.loadUserByUsername("me")).thenReturn(TEST_USER_DETAILS);
     }
 
-    protected static final ContentObject TEST_POST_TITLE = ContentObject.from("text", "testPostTitle");
+    protected static final ContentObject TEST_POST_TITLE = new ContentObject();
+    static {
+        TEST_POST_TITLE.setType("text");
+        TEST_POST_TITLE.setValue("testPostTitle");
+        TEST_POST_TITLE.setIdent("testPostTitleIdent");
+    }
 
-    protected static final ContentObject TEST_POST_DESCRIPTION = ContentObject.from("text", "testPostDescription");
+    protected static final ContentObject TEST_POST_DESCRIPTION = new ContentObject();
+    static {
+        TEST_POST_TITLE.setType("text");
+        TEST_POST_TITLE.setValue("testPostDescription");
+        TEST_POST_TITLE.setIdent("testPostDescriptionIdent");
+    }
 
     private static final FeedDiscoveryInfo TEST_FEED_DISCOVERY_INFO = FeedDiscoveryInfo.from(
             "testUrl",
@@ -89,7 +99,7 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
                         .accept(APPLICATION_JSON))
                 .andExpect(result -> {
                     String responseContent = result.getResponse().getContentAsString();
-                    assertEquals(GSON.fromJson("{\"id\":1,\"feedUrl\":\"testUrl\",\"httpStatusCode\":200,\"httpStatusMessage\":\"OK\",\"redirectFeedUrl\":null,\"redirectHttpStatusCode\":null,\"redirectHttpStatusMessage\":null,\"title\":{\"type\":\"text\",\"value\":\"testPostTitle\"},\"description\":{\"type\":\"text\",\"value\":\"testPostDescription\"},\"feedType\":\"testFeedType\",\"author\":\"testAuthor\",\"copyright\":\"testCopyright\",\"docs\":\"testDocs\",\"encoding\":\"testEncoding\",\"generator\":\"testGenerator\",\"image\":null,\"icon\":null,\"language\":\"en-US\",\"link\":\"testLink\",\"managingEditor\":\"testManagingEditor\",\"publishedDate\":null,\"styleSheet\":\"testStyleSheet\",\"supportedTypes\":[\"testSupportedType\"],\"webMaster\":\"testWebMaster\",\"uri\":\"testUri\",\"categories\":[\"testCategory\"],\"sampleEntries\":null,\"feedRecommendationInfo\":null,\"urlUpgradable\":false}", JsonObject.class),
+                    assertEquals(GSON.fromJson("{\"id\":1,\"feedUrl\":\"testUrl\",\"httpStatusCode\":200,\"httpStatusMessage\":\"OK\",\"redirectFeedUrl\":null,\"redirectHttpStatusCode\":null,\"redirectHttpStatusMessage\":null,\"title\":{\"ident\":\"testPostDescriptionIdent\",\"type\":\"text\",\"value\":\"testPostDescription\"},\"description\":{},\"feedType\":\"testFeedType\",\"author\":\"testAuthor\",\"copyright\":\"testCopyright\",\"docs\":\"testDocs\",\"encoding\":\"testEncoding\",\"generator\":\"testGenerator\",\"image\":null,\"icon\":null,\"language\":\"en-US\",\"link\":\"testLink\",\"managingEditor\":\"testManagingEditor\",\"publishedDate\":null,\"styleSheet\":\"testStyleSheet\",\"supportedTypes\":[\"testSupportedType\"],\"webMaster\":\"testWebMaster\",\"uri\":\"testUri\",\"categories\":[\"testCategory\"],\"sampleEntries\":null,\"feedRecommendationInfo\":null,\"urlUpgradable\":false}", JsonObject.class),
                             GSON.fromJson(responseContent, JsonObject.class)
                     );
                 })

@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app.feed;
 
 import com.google.gson.Gson;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.model.request.ExportConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
@@ -38,7 +39,7 @@ public class QueueDefinitionService {
         return emptyList();
     }
 
-    public Long createFeed(String username, QueueConfigRequest queueConfigRequest) throws DataAccessException, DataUpdateException {
+    public Long createFeed(String username, QueueConfigRequest queueConfigRequest) throws DataAccessException, DataUpdateException, DataConflictException {
         QueueDefinition newQueueDefinition = QueueDefinition.from(
                 queueConfigRequest.getIdent(),
                 queueConfigRequest.getTitle(),
@@ -56,7 +57,7 @@ public class QueueDefinitionService {
     }
 
     @SuppressWarnings("UnusedReturnValue") // there are no subsidiary entities to fetch using this Id, thus ignored
-    public Long createDefaultFeed(String username) throws DataAccessException, DataUpdateException {
+    public Long createDefaultFeed(String username) throws DataAccessException, DataUpdateException, DataConflictException {
         return createFeed(username, QueueConfigRequest.from(
                 generateRandomQueueIdent(),
                 "My Queue",
@@ -78,8 +79,8 @@ public class QueueDefinitionService {
         return UUID.randomUUID().toString();
     }
 
-    public void updateFeed(String username, Long id, QueueConfigRequest queueConfigRequest) throws DataAccessException, DataUpdateException {
-        queueDefinitionDao.updateFeed(username, id,
+    public void updateFeed(String username, Long id, QueueConfigRequest queueConfigRequest) throws DataAccessException, DataUpdateException, DataConflictException {
+        queueDefinitionDao.updateQueue(username, id,
                 queueConfigRequest.getIdent(),
                 queueConfigRequest.getDescription(),
                 queueConfigRequest.getTitle(),

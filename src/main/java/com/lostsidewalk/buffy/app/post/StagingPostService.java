@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -62,7 +63,7 @@ public class StagingPostService {
         stagingPostDao.updateQueueReadStatus(username, id, newStatus);
     }
 
-    public List<PubResult> updatePostPubStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
+    public Map<String, PubResult> updatePostPubStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
         PostPubStatus newStatus = null;
         if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
             newStatus = PostPubStatus.valueOf(postStatusUpdateRequest.getNewStatus());
@@ -79,7 +80,7 @@ public class StagingPostService {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public List<PubResult> updateQueuePubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
+    public Map<String, PubResult> updateQueuePubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
         //
         // perform the update
         //

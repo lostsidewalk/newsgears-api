@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app.query;
 
 import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.model.request.Subscription;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
@@ -46,7 +47,7 @@ public class SubscriptionDefinitionService {
         Map<Long, SubscriptionDefinition> currentSubscriptionDefinitionsById = subscriptionDefinitionDao.findByQueueId(username, queueId, RSS)
                 .stream().collect(toMap(SubscriptionDefinition::getId, v -> v));
         //
-        List<SubscriptionDefinition> updatedQueries = new ArrayList<>();
+        List<SubscriptionDefinition> updatedSubscriptions = new ArrayList<>();
         //
         if (isNotEmpty(subscriptions)) {
             for (Subscription r : subscriptions) {
@@ -64,13 +65,13 @@ public class SubscriptionDefinitionService {
                             } else {
                                 q.setQueryConfig(null);
                             }
-                            updatedQueries.add(q);
+                            updatedSubscriptions.add(q);
                         }
                     }
                 } // r.getId() == null case is ignored
             }
-            if (isNotEmpty(updatedQueries)) {
-                subscriptionDefinitionDao.updateQueries(updatedQueries.stream().map(u -> new Object[] {
+            if (isNotEmpty(updatedSubscriptions)) {
+                subscriptionDefinitionDao.updateSubscriptions(updatedSubscriptions.stream().map(u -> new Object[] {
                         u.getTitle(),
                         u.getImgUrl(),
                         u.getUrl(),
@@ -82,12 +83,12 @@ public class SubscriptionDefinitionService {
             }
         }
 
-        return updatedQueries;
+        return updatedSubscriptions;
     }
     //
     // called by query creation task processor
     //
-    List<SubscriptionDefinition> addSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException {
+    List<SubscriptionDefinition> addSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
         List<SubscriptionDefinition> createdQueries = new ArrayList<>();
         if (isNotEmpty(subscriptions)) {
             createdQueries.addAll(doAddSubscriptions(username, queueId, subscriptions));
@@ -96,7 +97,7 @@ public class SubscriptionDefinitionService {
         return createdQueries;
     }
 
-    private List<SubscriptionDefinition> doAddSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException {
+    private List<SubscriptionDefinition> doAddSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
         List<SubscriptionDefinition> adds = new ArrayList<>();
         for (Subscription r : subscriptions) {
             String url = r.getUrl();
@@ -132,7 +133,7 @@ public class SubscriptionDefinitionService {
     //
     // called by queue definition controller
     //
-    public List<SubscriptionDefinition> createQueries(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException {
+    public List<SubscriptionDefinition> createQueries(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
         List<SubscriptionDefinition> createdSubscriptions = new ArrayList<>();
         if (isNotEmpty(subscriptions)) {
             List<SubscriptionDefinition> toImport = new ArrayList<>();

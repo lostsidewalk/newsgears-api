@@ -3,6 +3,7 @@ package com.lostsidewalk.buffy.app;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
@@ -142,7 +143,7 @@ public class QueueDefinitionController {
     @PostMapping("/queues/")
     @Secured({UNVERIFIED_ROLE})
 //    @Transactional
-    public ResponseEntity<List<QueueConfigResponse>> createQueue(@RequestBody List<@Valid QueueConfigRequest> queueConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException {
+    public ResponseEntity<List<QueueConfigResponse>> createQueue(@RequestBody List<@Valid QueueConfigRequest> queueConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException, DataConflictException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("createFeed adding {} feeds for user={}", size(queueConfigRequests), username);
@@ -270,7 +271,7 @@ public class QueueDefinitionController {
     @PutMapping("/queues/{id}")
     @Secured({UNVERIFIED_ROLE})
     @Transactional
-    public ResponseEntity<QueueConfigResponse> updateQueue(@PathVariable("id") Long id, @Valid @RequestBody QueueConfigRequest queueConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
+    public ResponseEntity<QueueConfigResponse> updateQueue(@PathVariable("id") Long id, @Valid @RequestBody QueueConfigRequest queueConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException, DataConflictException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("updateFeed for user={}, queueId={}", username, id);

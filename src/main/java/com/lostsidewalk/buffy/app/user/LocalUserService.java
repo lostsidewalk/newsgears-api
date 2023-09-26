@@ -118,7 +118,7 @@ public class LocalUserService implements UserDetailsService {
     //
     // registration
     //
-    public void registerUser(String username, String email, String password) throws RegistrationException, DataAccessException, DataUpdateException {
+    public void registerUser(String username, String email, String password) throws RegistrationException, DataAccessException, DataUpdateException, DataConflictException {
 
         List<String> errors = new ArrayList<>();
         errors.addAll(validateUsername(username));

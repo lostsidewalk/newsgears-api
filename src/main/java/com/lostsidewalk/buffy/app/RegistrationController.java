@@ -1,6 +1,7 @@
 package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.app.audit.*;
@@ -78,7 +79,7 @@ public class RegistrationController {
     //
     @RequestMapping(path = "/register", method = POST)
     @Transactional
-    public ResponseEntity<RegistartionResponse> register(@Valid @RequestBody RegistrationRequest registrationRequest) throws RegistrationException, AuthClaimException, DataAccessException, DataUpdateException {
+    public ResponseEntity<RegistartionResponse> register(@Valid @RequestBody RegistrationRequest registrationRequest) throws RegistrationException, AuthClaimException, DataAccessException, DataUpdateException, DataConflictException {
         //
         // (1) validate the incoming params and create the new user entity
         //

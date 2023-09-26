@@ -1,6 +1,7 @@
 package com.lostsidewalk.buffy.app.audit;
 
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.stripe.exception.SignatureVerificationException;
@@ -29,6 +30,10 @@ public class ErrorLogService {
 
     public void logDataUpdateException(String username, Date timestamp, DataUpdateException e) {
         auditError("data-not-found-exception", "message={}", username, timestamp, e.getMessage());
+    }
+
+    public void logDataConflictException(String username, Date timestamp, DataConflictException e) {
+        auditError("data-conflict-exception", "message={}", username, timestamp, e.getMessage());
     }
 
     public void logFeedDiscoveryException(String username, Date timestamp, FeedDiscoveryException e) {

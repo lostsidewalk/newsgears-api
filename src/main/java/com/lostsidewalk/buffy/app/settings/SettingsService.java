@@ -74,7 +74,7 @@ public class SettingsService {
         );
     }
 
-    public void updateFrameworkConfig(String username, SettingsUpdateRequest updateRequest) throws DataAccessException, DataUpdateException {
+    public void updateFrameworkConfig(String username, SettingsUpdateRequest updateRequest) throws DataAccessException, DataUpdateException, DataConflictException {
         User user = userDao.findByName(username);
         if (user == null) {
             throw new UsernameNotFoundException(username);

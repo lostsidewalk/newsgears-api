@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app.service;
 
 import com.lostsidewalk.buffy.AbstractDao;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +25,7 @@ public abstract class EntityService<T> {
         return getDao().findByName(name);
     }
 
-    public final T add(T entity) throws DataAccessException, DataUpdateException {
+    public final T add(T entity) throws DataAccessException, DataUpdateException, DataConflictException {
         if (entity != null) {
             return getDao().add(entity);
         }
@@ -32,7 +33,7 @@ public abstract class EntityService<T> {
         return null;
     }
 
-    public final T update(T entity) throws DataAccessException {
+    public final T update(T entity) throws DataAccessException, DataConflictException {
         return getDao().update(entity);
     }
 

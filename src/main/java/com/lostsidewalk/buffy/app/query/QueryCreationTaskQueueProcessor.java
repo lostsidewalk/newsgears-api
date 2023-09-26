@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app.query;
 
 import com.google.common.collect.ImmutableMap;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
@@ -64,7 +65,7 @@ public class QueryCreationTaskQueueProcessor implements DisposableBean, Runnable
                     // perform import-from-cache (again, first partition only)
                     postImporter.doImport(createdSubscriptions, ImmutableMap.copyOf(discoveryCache));
                 }
-            } catch (DataAccessException | DataUpdateException e) {
+            } catch (DataAccessException | DataUpdateException | DataConflictException e) {
                 log.error("Unable to create query due to: {}", e.getMessage());
             } catch (InterruptedException e) {
                 log.warn("Query creation task queue processor thread interrupted, exiting..");

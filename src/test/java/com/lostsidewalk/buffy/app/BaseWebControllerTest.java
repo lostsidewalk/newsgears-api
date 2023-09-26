@@ -13,6 +13,7 @@ import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
 import com.lostsidewalk.buffy.app.user.UserRoles;
+import com.lostsidewalk.buffy.auth.ApiKeyDao;
 import com.lostsidewalk.buffy.auth.FeatureDao;
 import com.lostsidewalk.buffy.auth.RoleDao;
 import com.lostsidewalk.buffy.auth.UserDao;
@@ -21,7 +22,7 @@ import com.lostsidewalk.buffy.json.JSONPublisher;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.post.PostPurger;
 import com.lostsidewalk.buffy.post.StagingPostDao;
-import com.lostsidewalk.buffy.queue.FeedCredentialsDao;
+import com.lostsidewalk.buffy.queue.QueueCredentialDao;
 import com.lostsidewalk.buffy.queue.QueueDefinitionDao;
 import com.lostsidewalk.buffy.rss.RSSPublisher;
 import com.lostsidewalk.buffy.rss.RssImporter;
@@ -119,7 +120,7 @@ class BaseWebControllerTest {
     QueueDefinitionDao queueDefinitionDao;
 
     @MockBean
-    FeedCredentialsDao feedCredentialsDao;
+    QueueCredentialDao queueCredentialDao;
 
     @MockBean
     FeedDiscoveryInfoDao feedDiscoveryInfoDao;
@@ -147,6 +148,9 @@ class BaseWebControllerTest {
 
     @MockBean
     UserDao userDao;
+
+    @MockBean
+    ApiKeyDao apiKeyDao;
 
     @MockBean
     RssImporter rssImporter;

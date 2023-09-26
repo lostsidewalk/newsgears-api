@@ -24,6 +24,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
@@ -115,9 +116,9 @@ public class StagingPostController {
         String username = userDetails.getUsername();
         log.debug("updatePostStatus for user={}, postId={}, postStatusUpdateRequest={}", username, id, postStatusUpdateRequest);
         StopWatch stopWatch = StopWatch.createStarted();
-        List<PubResult> publicationResults = stagingPostService.updatePostPubStatus(username, id, postStatusUpdateRequest);
+        Map<String, PubResult> publicationResults = stagingPostService.updatePostPubStatus(username, id, postStatusUpdateRequest);
         stopWatch.stop();
-        appLogService.logStagingPostPubStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, 1, publicationResults);
+        appLogService.logStagingPostPubStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, publicationResults);
         return ok().body(DeployResponse.from(publicationResults));
     }
 

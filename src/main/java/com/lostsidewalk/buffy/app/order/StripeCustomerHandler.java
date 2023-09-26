@@ -3,6 +3,7 @@ package com.lostsidewalk.buffy.app.order;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.auth.User;
 import com.lostsidewalk.buffy.auth.UserDao;
@@ -61,7 +62,7 @@ public class StripeCustomerHandler {
         log.debug("Customer subscription created, payload={}", payload);
     }
 
-    void customerSubscriptionDeleted(JsonObject payload) throws DataAccessException, StripeEventException {
+    void customerSubscriptionDeleted(JsonObject payload) throws DataAccessException, StripeEventException, DataConflictException {
         log.debug("Customer subscription deleted, payload={}", payload);
         if (payload.has(PAYLOAD_CUSTOMER)) {
             String customerId = payload.get(PAYLOAD_CUSTOMER).getAsString();
