@@ -3,7 +3,6 @@ package com.lostsidewalk.buffy.app;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.app.audit.*;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
@@ -14,7 +13,6 @@ import com.lostsidewalk.buffy.app.model.response.RegistartionResponse;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
-import com.lostsidewalk.buffy.queue.QueueDefinition;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -33,10 +31,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.IOException;
-import java.util.List;
 
 import static com.lostsidewalk.buffy.app.model.TokenType.VERIFICATION;
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -63,9 +59,6 @@ public class RegistrationController {
 
     @Autowired
     QueueDefinitionService queueDefinitionService;
-
-    @Autowired
-    PostPublisher postPublisher;
 
     @Value("${verification.error.redirect.url}")
     String verificationErrorRedirectUrl;
@@ -159,12 +152,6 @@ public class RegistrationController {
         log.info("De-registering username={}", username);
         //
         StopWatch stopWatch = StopWatch.createStarted();
-        List<Long> queueIds = queueDefinitionService.findByUser(username).stream().map(QueueDefinition::getId).toList();
-        if (isNotEmpty(queueIds)) {
-            for (Long queueId : queueIds) {
-                postPublisher.unpublishFeed(username, queueId);
-            }
-        }
         //
         userService.deregisterUser(username);
         //

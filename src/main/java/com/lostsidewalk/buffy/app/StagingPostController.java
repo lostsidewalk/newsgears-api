@@ -2,15 +2,13 @@ package com.lostsidewalk.buffy.app;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.publisher.Publisher.PubResult;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
-import com.lostsidewalk.buffy.app.model.response.DeployResponse;
 import com.lostsidewalk.buffy.app.model.response.PostFetchResponse;
 import com.lostsidewalk.buffy.app.model.response.ThumbnailedPostResponse;
 import com.lostsidewalk.buffy.app.post.StagingPostService;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
-import com.lostsidewalk.buffy.post.*;
+import com.lostsidewalk.buffy.post.StagingPost;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +22,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
-import static org.apache.commons.collections4.CollectionUtils.*;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -101,25 +99,6 @@ public class StagingPostController {
         stopWatch.stop();
         appLogService.logFeedReadStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, 1);
         return ok().body(buildResponseMessage("Successfully updated feed Id " + id));
-    }
-
-    /**
-     * PUB_PENDING -- mark the post for publication, will be deployed with the feed
-     * DEPUB_PENDING -- mark the post for de-publication, will be unpublished and excluded from future deployments
-     * null -- clear the current post-pub status
-     */
-    @PutMapping("/staging/pub-status/{id}")
-    @Secured({UNVERIFIED_ROLE})
-    @Transactional
-    public ResponseEntity<?> updatePostPubStatus(@PathVariable Long id, @Valid @RequestBody PostStatusUpdateRequest postStatusUpdateRequest, Authentication authentication) throws DataAccessException, DataUpdateException {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails.getUsername();
-        log.debug("updatePostStatus for user={}, postId={}, postStatusUpdateRequest={}", username, id, postStatusUpdateRequest);
-        StopWatch stopWatch = StopWatch.createStarted();
-        Map<String, PubResult> publicationResults = stagingPostService.updatePostPubStatus(username, id, postStatusUpdateRequest);
-        stopWatch.stop();
-        appLogService.logStagingPostPubStatusUpdate(username, stopWatch, id, postStatusUpdateRequest, publicationResults);
-        return ok().body(DeployResponse.from(publicationResults));
     }
 
     //

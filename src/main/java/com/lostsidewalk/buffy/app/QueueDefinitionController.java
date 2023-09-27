@@ -7,8 +7,8 @@ import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
-import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
+import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.Subscription;
 import com.lostsidewalk.buffy.app.model.response.*;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
@@ -51,7 +51,6 @@ import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.app.utils.ThumbnailUtils.getImage;
-import static com.lostsidewalk.buffy.post.StagingPost.PostPubStatus.DEPUB_PENDING;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -63,7 +62,7 @@ import static org.apache.commons.collections4.MapUtils.size;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.springframework.http.ResponseEntity.*;
+import static org.springframework.http.ResponseEntity.ok;
 
 @Slf4j
 @RestController
@@ -435,7 +434,6 @@ public class QueueDefinitionController {
         String username = userDetails.getUsername();
         log.debug("deleteFeedById for user={}", username);
         StopWatch stopWatch = StopWatch.createStarted();
-        stagingPostService.updateQueuePubStatus(username, id, DEPUB_PENDING);
         queueDefinitionService.deleteById(username, id);
         stopWatch.stop();
         appLogService.logFeedDelete(username, stopWatch, 1);

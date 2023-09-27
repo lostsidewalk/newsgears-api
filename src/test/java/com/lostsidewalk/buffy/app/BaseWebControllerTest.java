@@ -2,7 +2,6 @@ package com.lostsidewalk.buffy.app;
 
 
 import com.lostsidewalk.buffy.FrameworkConfigDao;
-import com.lostsidewalk.buffy.PostPublisher;
 import com.lostsidewalk.buffy.ThemeConfigDao;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
@@ -18,13 +17,11 @@ import com.lostsidewalk.buffy.auth.FeatureDao;
 import com.lostsidewalk.buffy.auth.RoleDao;
 import com.lostsidewalk.buffy.auth.UserDao;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfoDao;
-import com.lostsidewalk.buffy.json.JSONPublisher;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.post.PostPurger;
 import com.lostsidewalk.buffy.post.StagingPostDao;
 import com.lostsidewalk.buffy.queue.QueueCredentialDao;
 import com.lostsidewalk.buffy.queue.QueueDefinitionDao;
-import com.lostsidewalk.buffy.rss.RSSPublisher;
 import com.lostsidewalk.buffy.rss.RssImporter;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinitionDao;
 import com.lostsidewalk.buffy.subscription.SubscriptionMetricsDao;
@@ -94,17 +91,8 @@ class BaseWebControllerTest {
     @MockBean
     StripeInvoiceHandler stripeInvoiceHandler;
     //
-    // post publisher/importer
+    // post importer/purger
     //
-    @MockBean
-    PostPublisher postPublisher;
-
-    @MockBean
-    RSSPublisher rssPublisher;
-
-    @MockBean
-    JSONPublisher jsonPublisher;
-
     @MockBean
     PostImporter postImporter;
 

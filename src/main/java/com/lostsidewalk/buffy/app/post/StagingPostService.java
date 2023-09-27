@@ -2,18 +2,14 @@ package com.lostsidewalk.buffy.app.post;
 
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.PostPublisher;
-import com.lostsidewalk.buffy.publisher.Publisher.PubResult;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.post.StagingPost;
-import com.lostsidewalk.buffy.post.StagingPost.PostPubStatus;
 import com.lostsidewalk.buffy.post.StagingPost.PostReadStatus;
 import com.lostsidewalk.buffy.post.StagingPostDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -24,9 +20,6 @@ public class StagingPostService {
 
     @Autowired
     StagingPostDao stagingPostDao;
-
-    @Autowired
-    PostPublisher postPublisher;
 
     public List<StagingPost> getStagingPosts(String username, List<Long> queueIds) throws DataAccessException {
         List<StagingPost> list;
@@ -61,33 +54,5 @@ public class StagingPostService {
         // perform the update
         //
         stagingPostDao.updateQueueReadStatus(username, id, newStatus);
-    }
-
-    public Map<String, PubResult> updatePostPubStatus(String username, Long id, PostStatusUpdateRequest postStatusUpdateRequest) throws DataAccessException, DataUpdateException {
-        PostPubStatus newStatus = null;
-        if (isNotBlank(postStatusUpdateRequest.getNewStatus())) {
-            newStatus = PostPubStatus.valueOf(postStatusUpdateRequest.getNewStatus());
-        }
-        //
-        // perform the update
-        //
-        stagingPostDao.updatePostPubStatus(username, id, newStatus);
-        //
-        // deploy the feed
-        //
-        Long queueId = stagingPostDao.findQueueIdByStagingPostId(username, id);
-        return postPublisher.publishFeed(username, queueId);
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    public Map<String, PubResult> updateQueuePubStatus(String username, Long id, PostPubStatus newStatus) throws DataAccessException, DataUpdateException {
-        //
-        // perform the update
-        //
-        stagingPostDao.updateQueuePubStatus(username, id, newStatus);
-        //
-        // deploy the feed
-        //
-        return postPublisher.publishFeed(username, id);
     }
 }
