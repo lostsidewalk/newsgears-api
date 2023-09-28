@@ -4,8 +4,6 @@ import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.exception.StripeException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
@@ -54,17 +52,6 @@ public class ErrorLogService {
         auditError("illegal-argument-exception", "message={}", username, timestamp, e.getMessage());
     }
 
-    // Note: this is an exception from the Stripe SDK
-    public void logStripeException(String username, Date timestamp, StripeException e) {
-        // TODO: build out the format string
-        auditError("stripe-exception", "message={}", username, timestamp, e.getMessage());
-    }
-
-    // Note: this is an exception that is thrown when one of the Stripe callback handlers blows a gasket
-    public void logStripeEventException(String username, Date timestamp, StripeEventException e) {
-        auditError("stripe-event-exception", "message={}, payload={}", username, timestamp, e.getMessage(), e.eventPayload);
-    }
-
     public void logTokenValidationException(String username, Date timestamp, TokenValidationException e) {
         auditError("token-validation-exception", "message={}", username, timestamp, e.getMessage());
     }
@@ -82,10 +69,6 @@ public class ErrorLogService {
 
     public void logValidationException(String username, Date timestamp, ValidationException e) {
         auditError("validation-exception", "message={}", username, timestamp, e.getMessage());
-    }
-
-    public void logSignatureVerificationException(String username, Date timestamp, SignatureVerificationException e) {
-        auditError("signature-verification-exception", "header={}, message={}", username, timestamp, e.getSigHeader(), e.getMessage());
     }
 
     public void logAuthClaimException(String username, Date timestamp, AuthClaimException e) {

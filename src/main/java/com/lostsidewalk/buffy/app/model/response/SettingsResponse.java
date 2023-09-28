@@ -12,7 +12,6 @@ public class SettingsResponse {
     String authProviderProfileImgUrl;
     String authProviderUsername;
     FrameworkConfig frameworkConfig;
-    SubscriptionResponse subscription;
 
     private SettingsResponse(String username, String emailAddress, AuthProvider authProvider, String authProviderProfileImgUrl, String authProviderUsername, FrameworkConfig frameworkConfig) {
         this.username = username;

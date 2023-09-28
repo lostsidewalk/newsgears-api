@@ -6,8 +6,6 @@ import com.lostsidewalk.buffy.ThemeConfigDao;
 import com.lostsidewalk.buffy.app.auth.AuthService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.mail.MailService;
-import com.lostsidewalk.buffy.app.order.*;
-import com.lostsidewalk.buffy.app.recommendation.FeedRecommendationService;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import com.lostsidewalk.buffy.app.token.TokenService.JwtUtil;
 import com.lostsidewalk.buffy.app.user.LocalUserService;
@@ -60,9 +58,6 @@ class BaseWebControllerTest {
     FeedDiscoveryService feedDiscoveryService;
 
     @MockBean
-    StripeOrderService stripeOrderService;
-
-    @MockBean
     AuthService authService;
 
     @MockBean
@@ -73,23 +68,6 @@ class BaseWebControllerTest {
 
     @MockBean
     MailService mailService;
-
-    @MockBean
-    FeedRecommendationService recommendationService;
-    //
-    // stripe callback queue processors
-    //
-    @MockBean
-    StripeCallbackQueueProcessor stripeCallbackQueueProcessor;
-
-    @MockBean
-    CustomerEventQueueProcessor customerEventQueueProcessor;
-
-    @MockBean
-    StripeCustomerHandler stripeCustomerHandler;
-
-    @MockBean
-    StripeInvoiceHandler stripeInvoiceHandler;
     //
     // post importer/purger
     //

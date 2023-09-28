@@ -112,7 +112,6 @@ class WebSecurityConfig {
 						.requestMatchers("/deauthenticate").permitAll() // user de-authentication (logout)
 						.requestMatchers("/register").permitAll() // user registration (init)
 						.requestMatchers("/verify/**").permitAll() // verification (i.e., user registration get-back)
-						.requestMatchers("/stripe").permitAll() // stripe callback (payment)
 						// permit actuators
 						.requestMatchers("/actuator").permitAll()
 						.requestMatchers("/actuator/**").permitAll()

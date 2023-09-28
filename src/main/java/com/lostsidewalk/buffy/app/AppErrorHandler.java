@@ -5,8 +5,6 @@ import com.lostsidewalk.buffy.DataUpdateException;
 import com.lostsidewalk.buffy.app.audit.*;
 import com.lostsidewalk.buffy.app.model.error.ErrorDetails;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.exception.StripeException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
@@ -56,7 +54,6 @@ public class AppErrorHandler {
     // OPML (export) exception
     // IO exception/client abort exception
     // illegal argument exception (runtime)
-    // stripe exception
     // mail exception
     //
     @ExceptionHandler(DataAccessException.class)
@@ -106,13 +103,6 @@ public class AppErrorHandler {
         return internalServerErrorResponse();
     }
 
-    @ExceptionHandler(StripeException.class)
-    public ResponseEntity<?> handleStripeException(StripeException e, Authentication authentication) {
-        errorLogService.logStripeException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
-        updateErrorCount(e);
-        return internalServerErrorResponse();
-    }
-
     @ExceptionHandler(MailException.class)
     public ResponseEntity<?> hanldeMailException(MailException e, Authentication authentication) {
         errorLogService.logMailException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
@@ -154,11 +144,9 @@ public class AppErrorHandler {
     // bad request conditions:
     //
     // invalid method arguments
-    // invalid callback from Stripe (signature verification failed)
     // missing/empty authentication claim during login/pw reset/verification
     // incorrect auth provider for user
     // invalid registration request
-    // stripe customer exception
     // proxy URL hash validation failure
     //
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -175,13 +163,6 @@ public class AppErrorHandler {
         updateErrorCount(e);
 
         return badRequestResponse("Validation Failed", e.getMessage());
-    }
-
-    @ExceptionHandler
-    public ResponseEntity<?> handleSignatureError(SignatureVerificationException e, Authentication authentication) {
-        errorLogService.logSignatureVerificationException(ofNullable(authentication).map(Authentication::getName).orElse(null), new Date(), e);
-        updateErrorCount(e);
-        return badRequestResponse("Signature verification failed", e.getSigHeader());
     }
 
     @ExceptionHandler(AuthClaimException.class)

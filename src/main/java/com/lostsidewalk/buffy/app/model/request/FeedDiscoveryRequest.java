@@ -18,6 +18,4 @@ public class FeedDiscoveryRequest {
     String username;
 
     String password;
-
-    boolean isIncludeRecommendations;
 }

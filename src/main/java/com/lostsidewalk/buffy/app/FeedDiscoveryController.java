@@ -4,15 +4,12 @@ import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.discovery.FeedDiscoveryService;
 import com.lostsidewalk.buffy.app.model.error.UpstreamErrorDetails;
 import com.lostsidewalk.buffy.app.model.request.FeedDiscoveryRequest;
-import com.lostsidewalk.buffy.app.model.request.FeedRecommendationRequest;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
-import com.lostsidewalk.buffy.app.recommendation.FeedRecommendationService;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType;
-import com.lostsidewalk.buffy.discovery.FeedRecommendationInfo;
 import com.lostsidewalk.buffy.discovery.ThumbnailedFeedDiscovery;
 import com.lostsidewalk.buffy.post.StagingPost;
 import jakarta.validation.Valid;
@@ -50,9 +47,6 @@ public class FeedDiscoveryController {
 
     @Autowired
     FeedResolutionService feedResolutionService;
-
-    @Autowired
-    FeedRecommendationService recommendationService;
 
     @Autowired
     ProxyService proxyService;
@@ -93,17 +87,11 @@ public class FeedDiscoveryController {
         String discoveryUrl = feedDiscoveryRequest.getUrl();
         String discoveryUsername = feedDiscoveryRequest.getUsername();
         String discoveryPassword = feedDiscoveryRequest.getPassword();
-        boolean isIncludeRecommendations = feedDiscoveryRequest.isIncludeRecommendations();
         try {
             // perform discovery
             FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(discoveryUrl, discoveryUsername, discoveryPassword);
-            // query for recommendations (can be null if not requested or if recommendation service fails silently)
-            FeedRecommendationInfo feedRecommendationInfo = null;
-            if (isIncludeRecommendations) {
-                feedRecommendationInfo = recommendationService.recommendSimilarFeeds(discoveryUrl);
-            }
             // assemble the response
-            ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo, feedRecommendationInfo);
+            ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo);
             stopWatch.stop();
             appLogService.logFeedDiscovery(username, stopWatch, discoveryUrl);
             return ok(thumbnailedFeedDiscoveryResponse);
@@ -113,11 +101,7 @@ public class FeedDiscoveryController {
                     String resolvedUrl = feedResolutionService.performResolution(discoveryUrl);
                     if (isNotBlank(resolvedUrl) && !StringUtils.equals(resolvedUrl, discoveryUrl)) {
                         FeedDiscoveryInfo feedDiscoveryInfo = feedDiscoveryService.performDiscovery(resolvedUrl, discoveryUsername, discoveryPassword);
-                        FeedRecommendationInfo feedRecommendationInfo = null;
-                        if (isIncludeRecommendations) {
-                            feedRecommendationInfo = recommendationService.recommendSimilarFeeds(resolvedUrl);
-                        }
-                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo, feedRecommendationInfo);
+                        ThumbnailedFeedDiscovery thumbnailedFeedDiscoveryResponse = addThumbnailToResponse(feedDiscoveryInfo);
                         stopWatch.stop();
                         appLogService.logFeedDiscovery(username, stopWatch, resolvedUrl);
                         // (the resolved path is different from the original path, and has been discovered successfully)
@@ -155,31 +139,9 @@ public class FeedDiscoveryController {
         };
     }
 
-    /**
-     * Invokes the recommendation service to suggest feeds similar to the one at the URL provided.
-     *
-     */
-    @PostMapping("/recommend")
-    @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<FeedRecommendationInfo> recommendFeeds(@Valid @RequestBody FeedRecommendationRequest feedRecommendationRequest, Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails == null ? "(none)" : userDetails.getUsername();
-        log.debug("recommendFeeds for user={}, feedRecommendationRequest={}", username, feedRecommendationRequest);
-        String feedUrl = feedRecommendationRequest.getUrl();
-        StopWatch stopWatch = StopWatch.createStarted();
-        FeedRecommendationInfo feedRecommendationInfo = recommendationService.recommendSimilarFeeds(feedUrl);
-        stopWatch.stop();
-        appLogService.logFeedRecommendation(username, stopWatch, feedUrl);
-        return ok(feedRecommendationInfo);
-    }
-
     // utility methods
 
     public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo) {
-        return addThumbnailToResponse(feedDiscoveryInfo, null);
-    }
-
-    public ThumbnailedFeedDiscovery addThumbnailToResponse(FeedDiscoveryInfo feedDiscoveryInfo, FeedRecommendationInfo feedRecommendationInfo) {
         //
         FeedDiscoveryImageInfo imageInfo = feedDiscoveryInfo.getImage();
         proxyService.secureFeedDiscoveryImageInfo(imageInfo);
@@ -194,7 +156,7 @@ public class FeedDiscoveryController {
                 feedDiscoveryInfo,
                 imageInfo,
                 iconInfo,
-                feedRecommendationInfo
+                null // TODO: remove this
         );
     }
 }

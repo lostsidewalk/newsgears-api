@@ -1,16 +1,12 @@
 package com.lostsidewalk.buffy.app.audit;
 
-import com.lostsidewalk.buffy.publisher.Publisher.PubResult;
-import com.lostsidewalk.buffy.auth.User;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;
+import com.lostsidewalk.buffy.auth.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
 
 import static java.lang.System.arraycopy;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -76,26 +72,6 @@ public class AppLogService {
         auditLog("collection-fetch", "collectionName={}", username, stopWatch, collectionName);
     }
 
-    public void logFeedRecommendation(String username, StopWatch stopWatch, String url) {
-        auditLog("feed-recommendation", "url={}", username, stopWatch, url);
-    }
-
-    public void logCheckoutSessionCreate(String username, StopWatch stopWatch) {
-        auditLog("checkout-session-create", null, username, stopWatch);
-    }
-
-    public void logSubscriptionFetch(String username, StopWatch stopWatch, int subscriptionCt) {
-        auditLog("subscription-fetch", "subscriptionCt={}", username, stopWatch, subscriptionCt);
-    }
-
-    public void logSubscriptionCancel(String username, StopWatch stopWatch) {
-        auditLog("subscription-cancel", null, username, stopWatch);
-    }
-
-    public void logSubscriptionResume(String username, StopWatch stopWatch) {
-        auditLog("subscription-resume", null, username, stopWatch);
-    }
-
     public void logOpmlExport(String username, StopWatch stopWatch) {
         auditLog("opml-export", null, username, stopWatch);
     }
@@ -126,10 +102,6 @@ public class AppLogService {
 
     public void logFeedReadStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, int rowsUpdated) {
         auditLog("feed-read-status-update", "id={}, postStatusUpdateRequest={}, rowsUpdated={}", username, stopWatch, id, postStatusUpdateRequest, rowsUpdated);
-    }
-
-    public void logStagingPostPubStatusUpdate(String username, StopWatch stopWatch, Long id, PostStatusUpdateRequest postStatusUpdateRequest, Map<String, PubResult> pubResults) {
-        auditLog("staging-post-pub-status-update", "id={}, postStatusUpdateRequest={}, pubResults={}", username, stopWatch, id, postStatusUpdateRequest, pubResults);
     }
 
     public void logPasswordResetInit(String username, StopWatch stopWatch) {
@@ -179,24 +151,5 @@ public class AppLogService {
         allArgs[4] = stopWatch.getTime();
         arraycopy(args, 0, allArgs, 5, args.length);
         log.info(fullFormatStr, allArgs);
-    }
-
-    public void logCustomerCreated(User user, String emailAddress, String customerId) {
-        log.info("Processed customer-created event: Setting customer for userId={}, emailAddress={}, customerId={}",
-                user.getId(), emailAddress, customerId);
-    }
-
-    public void logCustomerSubscriptionDeleted(User user, String customerId) {
-        log.info("Customer subscription deleted userId={}, customerId={}", user.getId(), customerId);
-    }
-
-    public void logCustomerSubscriptionUpdated(User user, String customerId, String subStatus) {
-        log.info("Processed customer-subscription-updated event: Updating subscription status to subStatus={} for customerId={}, userId={}, emailAddress={}",
-                subStatus, customerId, user.getId(), user.getEmailAddress());
-    }
-
-    public void logInvoicePaid(User user, String emailAddress) {
-        log.info("Processed invoice-paid event: Updating subscription expiration to expDate={} for userId={}, emailAddress={}, status={}",
-                user.getSubscriptionExpDate(), user.getId(), emailAddress, user.getSubscriptionStatus());
     }
 }

@@ -84,8 +84,7 @@ public class FeedDiscoveryControllerTest extends BaseWebControllerTest {
     private static final FeedDiscoveryRequest TEST_FEED_DISCOVERY_REQUEST = new FeedDiscoveryRequest(
             "http://test.com/rss",
             "testUsername",
-            "testPassword",
-            false
+            "testPassword"
     );
 
     @Test

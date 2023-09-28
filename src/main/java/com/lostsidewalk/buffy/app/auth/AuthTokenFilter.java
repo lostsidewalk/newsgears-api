@@ -103,7 +103,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 			"/pw_reset",
 			"/register",
 			"/verify",
-			"/stripe",
 			"/proxy/unsecured"
 	);
 

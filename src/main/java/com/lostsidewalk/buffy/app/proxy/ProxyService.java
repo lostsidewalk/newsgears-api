@@ -85,8 +85,8 @@ public class ProxyService {
     }
 
     private HttpURLConnection openConnection(String url) throws IOException {
-        URL recommenderUrl = new URL(url);
-        HttpURLConnection urlConnection = (HttpURLConnection) recommenderUrl.openConnection();
+        URL u = new URL(url);
+        HttpURLConnection urlConnection = (HttpURLConnection) u.openConnection();
         urlConnection.setRequestProperty("User-Agent", this.feedGearsUserAgent);
         urlConnection.setRequestProperty("Accept-Encoding", "gzip");
         urlConnection.setDoOutput(true);
