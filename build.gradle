@@ -21,24 +21,24 @@ repositories {
 
 dependencies {
     // NewsGears importer
-    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.6'
+    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.7'
     // adds RSS/ATOM to the import path
-    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.7'
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.8'
 
     // spring-boot-starter-actuator
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.2'
     // sprig-boot-starter-web
-    implementation 'org.springframework.boot:spring-boot-starter-web:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.1.2'
     // spring-boot-starter-websocket
-    implementation 'org.springframework.boot:spring-boot-starter-websocket:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket:3.1.2'
     // spring-boot-starter-security
-    implementation 'org.springframework.boot:spring-boot-starter-security:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-security:3.1.2'
     // spring-boot-starter-cache
-    implementation 'org.springframework.boot:spring-boot-starter-cache:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-cache:3.1.2'
     // spring-boot-starter-mail
-    implementation 'org.springframework.boot:spring-boot-starter-mail:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-mail:3.1.2'
     // spring-boot-starter-validation
-    implementation 'org.springframework.boot:spring-boot-starter-validation:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-validation:3.1.2'
     // spring-security-oauth2
     implementation 'org.springframework.security.oauth:spring-security-oauth2:2.5.2.RELEASE'
     // spring-security-oauth2-core
@@ -67,6 +67,8 @@ dependencies {
     implementation 'com.rometools:rome-modules:2.1.0'
     // jsoup
     implementation 'org.jsoup:jsoup:1.15.4'
+    // flyway-core
+    implementation 'org.flywaydb:flyway-core:9.22.2'
 
     // webp-imageio-sejda (WebP image reader)
     runtimeOnly 'org.sejda.webp-imageio:webp-imageio-sejda:0.1.0'
@@ -74,7 +76,7 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql:42.5.4'
 
     // test
-    testImplementation('org.springframework.boot:spring-boot-starter-test:3.1.1') {
+    testImplementation('org.springframework.boot:spring-boot-starter-test:3.1.2') {
         exclude group: 'com.vaadin.external.google', module: 'android-json'
     }
     // junit-jupiter

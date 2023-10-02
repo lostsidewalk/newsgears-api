@@ -12,7 +12,6 @@ import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.Subscription;
 import com.lostsidewalk.buffy.app.model.response.*;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
-import com.lostsidewalk.buffy.app.post.StagingPostService;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import com.lostsidewalk.buffy.app.query.SubscriptionCreationTask;
 import com.lostsidewalk.buffy.app.query.SubscriptionDefinitionService;
@@ -71,9 +70,6 @@ public class QueueDefinitionController {
 
     @Autowired
     AppLogService appLogService;
-
-    @Autowired
-    StagingPostService stagingPostService;
 
     @Autowired
     QueueDefinitionService queueDefinitionService;
