@@ -21,9 +21,9 @@ repositories {
 
 dependencies {
     // NewsGears importer
-    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.7'
+    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.9'
     // adds RSS/ATOM to the import path
-    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.8'
+    implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.10'
 
     // spring-boot-starter-actuator
     implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.2'
