@@ -118,6 +118,7 @@ create table staging_posts (
     last_updated_timestamp timestamp with time zone,
     created timestamp with time zone not null default current_timestamp,
     last_modified timestamp with time zone,
+    is_archived boolean not null default false,
 
     unique(queue_id, post_hash),
 

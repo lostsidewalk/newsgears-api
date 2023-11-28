@@ -10,6 +10,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -32,6 +33,12 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
 	@Autowired
 	OptionsAuthHandler optionsAuthHandler;
+
+	@Autowired
+	SingleUserModeProcessor singleUserModeProcessor;
+
+	@Value("${newsgears.singleUserMode:false}")
+	boolean singleUserMode;
 
 	@Autowired
 	CurrentUserAuthHandler currentUserAuthHandler;
@@ -62,7 +69,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 				if (StringUtils.equals(request.getMethod(), "OPTIONS")) {
 					optionsAuthHandler.processRequest(request);
 				} else if (StringUtils.equals(requestPath, "/currentuser")) {
-					currentUserAuthHandler.processCurrentUser(request, response);
+					if (singleUserMode) {
+						singleUserModeProcessor.setupSession();
+					} else {
+						currentUserAuthHandler.processCurrentUser(request, response);
+					}
 				} else if (StringUtils.startsWith(requestPath, "/pw_update")) {
 					//
 					// pw_reset->POST => password reset init call (no filter)
@@ -71,7 +82,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 					//
 					passwordUpdateAuthHandler.processPasswordUpdate(request);
 				} else {
-					applicationAuthHandler.processAllOthers(request, response);
+					if (singleUserMode) {
+						singleUserModeProcessor.setupSession();
+					} else {
+						applicationAuthHandler.processAllOthers(request, response);
+					}
 				}
 			} catch (MissingOptionsHeaderException e) {
 				log.error("Invalid OPTIONS call for requestUrl={}, request header names: {}", request.getRequestURL(), e.headerNames);

@@ -2,7 +2,7 @@
 -- users
 --
 insert into users (name, password, email_address, auth_claim, pw_reset_claim, pw_reset_auth_claim, verification_claim, is_verified, auth_provider, auth_provider_id, auth_provider_profile_img_url, auth_provider_username, application_id)
-values ('me', 'password', 'michaeledwardharris@gmail.com', 'auth', 'pw_reset', 'pw_reset_auth', 'verification', true, 'GOOGLE', '114746878003745038229', null, null, 'FEEDGEARS_RSS');
+values ('me', 'password', 'me@localhost', 'auth', 'pw_reset', 'pw_reset_auth', 'verification', true, 'GOOGLE', '114746878003745038229', null, null, 'FEEDGEARS_RSS');
 --
 -- queue_definitions
 --
