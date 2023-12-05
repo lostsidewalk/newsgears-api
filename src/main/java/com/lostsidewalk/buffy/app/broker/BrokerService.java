@@ -1,6 +1,7 @@
 package com.lostsidewalk.buffy.app.broker;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import jakarta.annotation.PostConstruct;
@@ -135,11 +136,23 @@ public class BrokerService {
                 }
 
                 private static String getResponseUsername(JsonObject payloadObj) {
-                    return payloadObj.has("responseDestination") ? payloadObj.get("responseDestination").getAsString() : EMPTY;
+                    if (payloadObj.has("responseUsername")) {
+                        JsonElement responseUsernameElem = payloadObj.get("responseUsername");
+                        if (!responseUsernameElem.isJsonNull()) {
+                            return responseUsernameElem.getAsString();
+                        }
+                    }
+                    return EMPTY;
                 }
 
                 private static String getResponseDestination(JsonObject payloadObj) {
-                    return payloadObj.has("responseDestination") ? payloadObj.get("responseDestination").getAsString() : EMPTY;
+                    if (payloadObj.has("responseDestination")) {
+                        JsonElement responseDestinationElem = payloadObj.get("responseDestination");
+                        if (!responseDestinationElem.isJsonNull()) {
+                            return responseDestinationElem.getAsString();
+                        }
+                    }
+                    return EMPTY;
                 }
             });
         }
