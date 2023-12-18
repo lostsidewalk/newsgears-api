@@ -1,7 +1,6 @@
 package com.lostsidewalk.buffy.app;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
@@ -9,11 +8,10 @@ import com.lostsidewalk.buffy.app.audit.AppLogService;
 import com.lostsidewalk.buffy.app.feed.QueueDefinitionService;
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
-import com.lostsidewalk.buffy.app.model.request.Subscription;
+import com.lostsidewalk.buffy.app.model.request.SubscriptionConfigRequest;
 import com.lostsidewalk.buffy.app.model.response.*;
 import com.lostsidewalk.buffy.app.opml.OpmlService;
 import com.lostsidewalk.buffy.app.proxy.ProxyService;
-import com.lostsidewalk.buffy.app.query.SubscriptionCreationTask;
 import com.lostsidewalk.buffy.app.query.SubscriptionDefinitionService;
 import com.lostsidewalk.buffy.app.querymetrics.SubscriptionMetricsService;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
@@ -44,7 +42,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
@@ -138,55 +135,43 @@ public class QueueDefinitionController {
     @PostMapping("/queues/")
     @Secured({UNVERIFIED_ROLE})
 //    @Transactional
-    public ResponseEntity<List<QueueConfigResponse>> createQueue(@RequestBody List<@Valid QueueConfigRequest> queueConfigRequests, Authentication authentication) throws DataAccessException, DataUpdateException, DataConflictException {
+    public ResponseEntity<List<QueueConfigResponse>> createQueue(@RequestBody @Valid QueueConfigRequest queueConfigRequest, Authentication authentication) throws DataAccessException, DataUpdateException, DataConflictException {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
-        log.debug("createFeed adding {} feeds for user={}", size(queueConfigRequests), username);
+        log.debug("createFeed adding queue for user={}", username);
         StopWatch stopWatch = StopWatch.createStarted();
-        List<QueueDefinition> createdQueues = new ArrayList<>();
+        QueueDefinition createdQueue;
         List<QueueConfigResponse> queueConfigResponse = new ArrayList<>();
-        // for ea. feed config request
-        for (QueueConfigRequest queueConfigRequest : queueConfigRequests) {
-            // create the feed
-            Long queueId = queueDefinitionService.createFeed(username, queueConfigRequest);
-            List<Subscription> subscriptions = queueConfigRequest.getSubscriptions();
-            if (isNotEmpty(subscriptions)) {
-                try {
-                    // partition all RSS/ATOM subscriptions
-                    // Note: partition size of 1 just grabs the first first sub in each queue; this is a special case for small hardware
-                    // TODO: make the partition size configurable
-                    List<List<Subscription>> partitions = Lists.partition(subscriptions, 1);
-                    Iterator<List<Subscription>> iter = partitions.iterator();
-                    List<Subscription> firstPartition = iter.next();
-                    // perform synchronous resolution on the first partition
-                    ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
-                    // create the queries (for the first partition)
-                    List<SubscriptionDefinition> createdQueries = subscriptionDefinitionService.createQueries(username, queueId, firstPartition);
-                    if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
-                        // perform import-from-cache (first partition only)
-                        postImporter.doImport(createdQueries, discoveryCache);
-                    }
-                    // queue up the remaining partitions
-                    iter.forEachRemaining(p -> addToCreationQueue(p, username, queueId));
-                } catch (Exception e) {
-                    log.warn("Feed initial import failed due to: {}", e.getMessage());
+        // create the feed
+        Long queueId = queueDefinitionService.createFeed(username, queueConfigRequest);
+        List<SubscriptionConfigRequest> subscriptions = queueConfigRequest.getSubscriptions();
+        if (isNotEmpty(subscriptions)) {
+            try {
+                // perform synchronous resolution on the first partition
+                ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(subscriptions);
+                // create the queries (for the first partition)
+                List<SubscriptionDefinition> createdQueries = subscriptionDefinitionService.createQueries(username, queueId, subscriptions);
+                if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
+                    // perform import-from-cache (first partition only)
+                    postImporter.doImport(createdQueries, discoveryCache);
                 }
+            } catch (DataAccessException | DataUpdateException | DataConflictException e) {
+                log.warn("Feed initial import failed due to: {}", e.getMessage());
             }
-
-            // re-fetch this feed definition
-            QueueDefinition queueDefinition = queueDefinitionService.findByQueueId(username, queueId);
-            createdQueues.add(queueDefinition);
-            // re-fetch query definitions for this feed
-            List<ThumbnailedSubscriptionDefinition> subscriptionDefinitions = addThumbnails(subscriptionDefinitionService.findByQueueId(username, queueId));
-            // build feed config responses to return the front-end
-            queueConfigResponse.add(QueueConfigResponse.from(
-                    queueDefinition,
-                    subscriptionDefinitions,
-                    buildThumbnail(queueDefinition))
-            );
         }
+
+        // re-fetch this feed definition
+        createdQueue = queueDefinitionService.findByQueueId(username, queueId);
+        // re-fetch query definitions for this feed
+        List<ThumbnailedSubscriptionDefinition> subscriptionDefinitions = addThumbnails(subscriptionDefinitionService.findByQueueId(username, queueId));
+        // build feed config responses to return the front-end
+        queueConfigResponse.add(QueueConfigResponse.from(
+                createdQueue,
+                subscriptionDefinitions,
+                buildThumbnail(createdQueue))
+        );
         stopWatch.stop();
-        appLogService.logFeedCreate(username, stopWatch, size(queueConfigRequests), size(createdQueues));
+        appLogService.logFeedCreate(username, stopWatch, queueConfigRequest, createdQueue.getId());
 
         return ok(queueConfigResponse);
     }
@@ -195,13 +180,13 @@ public class QueueDefinitionController {
     //
     @PostMapping("/queues/{queueId}/subscriptions/")
     @Secured({UNVERIFIED_ROLE})
-    public ResponseEntity<SubscriptionConfigResponse> addQueries(@RequestBody List<@Valid Subscription> subscriptions, @PathVariable Long queueId, Authentication authentication) {
+    public ResponseEntity<SubscriptionConfigResponse> addQueries(@RequestBody List<@Valid SubscriptionConfigRequest> subscriptions, @PathVariable Long queueId, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("addQueries adding {} queries for user={}, queueId={}", size(subscriptions), username, queueId);
         StopWatch stopWatch = StopWatch.createStarted();
-        for (Subscription subscription : subscriptions) {
-            Set<ConstraintViolation<Subscription>> constraintViolations = validator.validate(subscription);
+        for (SubscriptionConfigRequest subscription : subscriptions) {
+            Set<ConstraintViolation<SubscriptionConfigRequest>> constraintViolations = validator.validate(subscription);
             if (isNotEmpty(constraintViolations)) {
                 // TODO: need to enforce one subscription per feed per user
                 throw new SubscriptionValidationException(constraintViolations);
@@ -209,22 +194,14 @@ public class QueueDefinitionController {
         }
         SubscriptionConfigResponse subscriptionConfigResponse = null;
         try {
-            // partition all RSS/ATOM subscriptions
-            // Note: partition size of 1 just grabs the first first sub in each queue; this is a special case for small hardware
-            // TODO: make the partition size configurable
-            List<List<Subscription>> partitions = Lists.partition(subscriptions, 1);
-            Iterator<List<Subscription>> iter = partitions.iterator();
-            List<Subscription> firstPartition = iter.next();
             // perform synchronous resolution on the first partition
-            ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
+            ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(subscriptions);
             // create the queries (for the first partition)
-            List<SubscriptionDefinition> createdQueries = subscriptionDefinitionService.createQueries(username, queueId, firstPartition);
+            List<SubscriptionDefinition> createdQueries = subscriptionDefinitionService.createQueries(username, queueId, subscriptions);
             if (isNotEmpty(createdQueries) && isNotEmpty(discoveryCache)) {
                 // perform import-from-cache (first partition only)
                 postImporter.doImport(createdQueries, discoveryCache);
             }
-            // queue up the remaining partitions
-            iter.forEachRemaining(p -> addToCreationQueue(p, username, queueId));
             // produce the response
             subscriptionConfigResponse = SubscriptionConfigResponse.from(addThumbnails(createdQueries));
             stopWatch.stop();
@@ -234,13 +211,6 @@ public class QueueDefinitionController {
         }
 
         return ok(subscriptionConfigResponse);
-    }
-
-    @Autowired
-    private BlockingQueue<SubscriptionCreationTask> creationTaskQueue;
-
-    private void addToCreationQueue(List<Subscription> partition, String username, Long queueId) {
-        creationTaskQueue.add(new SubscriptionCreationTask(partition, username, queueId));
     }
 
     private static String getQueryExceptionTypeMessage(SubscriptionMetrics.QueryExceptionType exceptionType) {
@@ -291,7 +261,7 @@ public class QueueDefinitionController {
     // update query definition
     //
     @PutMapping("/queues/{queueId}/subscriptions/{subscriptionId}")
-    public ResponseEntity<SubscriptionConfigResponse> updateQuery(@PathVariable("queueId") Long queueId, @PathVariable("subscriptionId") Long subscriptionId, @Valid @RequestBody Subscription subscription, Authentication authentication) {
+    public ResponseEntity<SubscriptionConfigResponse> updateQuery(@PathVariable("queueId") Long queueId, @PathVariable("subscriptionId") Long subscriptionId, @Valid @RequestBody SubscriptionConfigRequest subscription, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getDetails();
         String username = userDetails.getUsername();
         log.debug("updateQuery updating queueId={}, subscriptionId={} for user={}", queueId, subscriptionId, username);
@@ -301,7 +271,7 @@ public class QueueDefinitionController {
             // partition all RSS/ATOM subscriptions
             // Note: partition size of 1 just grabs the first first sub in each queue; this is a special case for small hardware
             // TODO: make the partition size configurable
-            List<Subscription> firstPartition = singletonList(subscription);
+            List<SubscriptionConfigRequest> firstPartition = singletonList(subscription);
             // perform synchronous resolution on the first partition
             ImmutableMap<String, FeedDiscoveryInfo> discoveryCache = feedResolutionService.resolveIfNecessary(firstPartition);
             // create the queries (for the first partition)
@@ -510,7 +480,7 @@ public class QueueDefinitionController {
     //
 
     public static class SubscriptionValidationException extends ValidationException {
-        SubscriptionValidationException(Set<ConstraintViolation<Subscription>> constraintViolations) {
+        SubscriptionValidationException(Set<ConstraintViolation<SubscriptionConfigRequest>> constraintViolations) {
             super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
         }
     }

@@ -3,7 +3,7 @@ package com.lostsidewalk.buffy.app.resolution;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
-import com.lostsidewalk.buffy.app.model.request.Subscription;
+import com.lostsidewalk.buffy.app.model.request.SubscriptionConfigRequest;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryImageInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryException;
@@ -77,11 +77,11 @@ public class FeedResolutionService {
         return null;
     }
 
-    public ImmutableMap<String, FeedDiscoveryInfo> resolveIfNecessary(List<Subscription> subscriptions) {
+    public ImmutableMap<String, FeedDiscoveryInfo> resolveIfNecessary(List<SubscriptionConfigRequest> subscriptions) {
         CountDownLatch latch = new CountDownLatch(size(subscriptions));
         Map<String, FeedDiscoveryInfo> discoveryCache = new HashMap<>();
         if (isNotEmpty(subscriptions)) {
-            for (Subscription r : subscriptions) {
+            for (SubscriptionConfigRequest r : subscriptions) {
                 if (isBlank(r.getUrl())) {
                     log.warn("Unable to perform feed URL due to missing URL, skipping...");
                     latch.countDown();
@@ -110,7 +110,7 @@ public class FeedResolutionService {
         return copyOf(discoveryCache);
     }
 
-    private FeedDiscoveryInfo resolveIfNecessary(Subscription subscription) throws IOException {
+    private FeedDiscoveryInfo resolveIfNecessary(SubscriptionConfigRequest subscription) throws IOException {
         log.info("Performing feed resolution on URL={}", subscription.getUrl());
         FeedDiscoveryInfo discoveryInfo = null;
         String feedUrl = subscription.getUrl();

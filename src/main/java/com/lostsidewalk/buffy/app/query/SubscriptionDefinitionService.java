@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.DataConflictException;
 import com.lostsidewalk.buffy.DataUpdateException;
-import com.lostsidewalk.buffy.app.model.request.Subscription;
+import com.lostsidewalk.buffy.app.model.request.SubscriptionConfigRequest;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinitionDao;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class SubscriptionDefinitionService {
     //
     // called by queue definition controller
     //
-    public List<SubscriptionDefinition> updateSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException {
+    public List<SubscriptionDefinition> updateSubscriptions(String username, Long queueId, List<SubscriptionConfigRequest> subscriptions) throws DataAccessException {
         //
         Map<Long, SubscriptionDefinition> currentSubscriptionDefinitionsById = subscriptionDefinitionDao.findByQueueId(username, queueId, RSS)
                 .stream().collect(toMap(SubscriptionDefinition::getId, v -> v));
@@ -50,7 +50,7 @@ public class SubscriptionDefinitionService {
         List<SubscriptionDefinition> updatedSubscriptions = new ArrayList<>();
         //
         if (isNotEmpty(subscriptions)) {
-            for (Subscription r : subscriptions) {
+            for (SubscriptionConfigRequest r : subscriptions) {
                 if (r.getId() != null) {
                     SubscriptionDefinition q = currentSubscriptionDefinitionsById.get(r.getId());
                     if (q != null) {
@@ -88,7 +88,7 @@ public class SubscriptionDefinitionService {
     //
     // called by query creation task processor
     //
-    List<SubscriptionDefinition> addSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
+    public List<SubscriptionDefinition> addSubscriptions(String username, Long queueId, List<SubscriptionConfigRequest> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
         List<SubscriptionDefinition> createdQueries = new ArrayList<>();
         if (isNotEmpty(subscriptions)) {
             createdQueries.addAll(doAddSubscriptions(username, queueId, subscriptions));
@@ -97,9 +97,9 @@ public class SubscriptionDefinitionService {
         return createdQueries;
     }
 
-    private List<SubscriptionDefinition> doAddSubscriptions(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
+    private List<SubscriptionDefinition> doAddSubscriptions(String username, Long queueId, List<SubscriptionConfigRequest> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
         List<SubscriptionDefinition> adds = new ArrayList<>();
-        for (Subscription r : subscriptions) {
+        for (SubscriptionConfigRequest r : subscriptions) {
             String url = r.getUrl();
             if (isBlank(url)) {
                 log.warn("Query is missing a URL, skipping...");
@@ -133,14 +133,14 @@ public class SubscriptionDefinitionService {
     //
     // called by queue definition controller
     //
-    public List<SubscriptionDefinition> createQueries(String username, Long queueId, List<Subscription> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
+    public List<SubscriptionDefinition> createQueries(String username, Long queueId, List<SubscriptionConfigRequest> subscriptions) throws DataAccessException, DataUpdateException, DataConflictException {
         List<SubscriptionDefinition> createdSubscriptions = new ArrayList<>();
         if (isNotEmpty(subscriptions)) {
             List<SubscriptionDefinition> toImport = new ArrayList<>();
             if (isNotEmpty(subscriptions)) {
                 List<String> existingSubscriptionUrls = subscriptionDefinitionDao.getSubscriptionUrlsByUsername(username);
                 List<SubscriptionDefinition> adds = new ArrayList<>();
-                for (Subscription r : subscriptions) {
+                for (SubscriptionConfigRequest r : subscriptions) {
                     if (containsIgnoreCase(existingSubscriptionUrls, r.getUrl())) {
                         log.debug("Feed subscription is already defined for user, feedUrl={}, username={}", r.getUrl(), username);
                         continue;
@@ -180,7 +180,7 @@ public class SubscriptionDefinitionService {
         subscriptionDefinitionDao.deleteById(username, queueId, subscriptionId);
     }
 
-    private boolean needsUpdate(Subscription subscription, SubscriptionDefinition q) {
+    private boolean needsUpdate(SubscriptionConfigRequest subscription, SubscriptionDefinition q) {
         if (!StringUtils.equals(q.getTitle(), subscription.getTitle())) {
             return true;
         }
@@ -193,7 +193,7 @@ public class SubscriptionDefinitionService {
         return !Objects.equals(serializeQueryConfig(subscription), q.getQueryConfig());
     }
 
-    private Serializable serializeQueryConfig(Subscription subscription) {
+    private Serializable serializeQueryConfig(SubscriptionConfigRequest subscription) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("username", subscription.getUsername());
         jsonObject.addProperty("password", subscription.getPassword());

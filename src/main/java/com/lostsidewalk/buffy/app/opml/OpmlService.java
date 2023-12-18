@@ -3,7 +3,7 @@ package com.lostsidewalk.buffy.app.opml;
 import com.lostsidewalk.buffy.DataAccessException;
 import com.lostsidewalk.buffy.app.audit.OpmlException;
 import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
-import com.lostsidewalk.buffy.app.model.request.Subscription;
+import com.lostsidewalk.buffy.app.model.request.SubscriptionConfigRequest;
 import com.lostsidewalk.buffy.queue.QueueDefinition;
 import com.lostsidewalk.buffy.queue.QueueDefinitionDao;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
@@ -94,11 +94,11 @@ public class OpmlService {
         String title = opml.getTitle();
         String description = getDescription(getOwner(opml));
         List<Outline> outlines = opml.getOutlines();
-        List<Subscription> subscriptions = new ArrayList<>();
+        List<SubscriptionConfigRequest> subscriptions = new ArrayList<>();
         for (Outline outline : outlines) {
             if (equalsIgnoreCase(outline.getType(), "rss")) {
-                Subscription subscription = new Subscription(generateRandomId(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
-                Set<ConstraintViolation<Subscription>> constraintViolations = validator.validate(subscription);
+                SubscriptionConfigRequest subscription = new SubscriptionConfigRequest(generateRandomId(), outline.getXmlUrl(), outline.getTitle(), null, null, null);
+                Set<ConstraintViolation<SubscriptionConfigRequest>> constraintViolations = validator.validate(subscription);
                 if (isNotEmpty(constraintViolations)) {
                     throw new SubscriptionValidationException(constraintViolations);
                 } else {
@@ -141,11 +141,11 @@ public class OpmlService {
                 description = outline.getText();
             }
             List<Outline> children = outline.getChildren();
-            List<Subscription> subscriptions = new ArrayList<>();
+            List<SubscriptionConfigRequest> subscriptions = new ArrayList<>();
             for (Outline child : children) {
                 if (equalsIgnoreCase(child.getType(), "rss")) {
-                    Subscription subscription = new Subscription(generateRandomId(), child.getXmlUrl(), child.getTitle(), null, null, null);
-                    Set<ConstraintViolation<Subscription>> constraintViolations = validator.validate(subscription);
+                    SubscriptionConfigRequest subscription = new SubscriptionConfigRequest(generateRandomId(), child.getXmlUrl(), child.getTitle(), null, null, null);
+                    Set<ConstraintViolation<SubscriptionConfigRequest>> constraintViolations = validator.validate(subscription);
                     if (isNotEmpty(constraintViolations)) {
                         throw new SubscriptionValidationException(constraintViolations);
                     }
@@ -264,7 +264,7 @@ public class OpmlService {
     //
 
     public static class SubscriptionValidationException extends ValidationException {
-        SubscriptionValidationException(Set<ConstraintViolation<Subscription>> constraintViolations) {
+        SubscriptionValidationException(Set<ConstraintViolation<SubscriptionConfigRequest>> constraintViolations) {
             super(constraintViolations.stream().map(ConstraintViolation::getMessage).collect(joining("; ")));
         }
     }

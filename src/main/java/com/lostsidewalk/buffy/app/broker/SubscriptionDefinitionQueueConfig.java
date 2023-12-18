@@ -1,4 +1,4 @@
-package com.lostsidewalk.buffy.app.query;
+package com.lostsidewalk.buffy.app.broker;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

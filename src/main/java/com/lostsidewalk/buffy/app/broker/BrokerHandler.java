@@ -3,16 +3,23 @@ package com.lostsidewalk.buffy.app.broker;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.lostsidewalk.buffy.DataAccessException;
+import com.lostsidewalk.buffy.DataConflictException;
+import com.lostsidewalk.buffy.DataUpdateException;
+import com.lostsidewalk.buffy.LockDao;
 import com.lostsidewalk.buffy.app.token.TokenService;
 import jakarta.annotation.PostConstruct;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHttpHeaders;
+import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -26,11 +33,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.lostsidewalk.buffy.app.ResponseMessageUtils.buildResponseMessage;
 import static com.lostsidewalk.buffy.app.auth.HashingUtils.sha256;
 import static com.lostsidewalk.buffy.app.model.TokenType.APP_AUTH;
+import static java.lang.Integer.MAX_VALUE;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
@@ -38,8 +48,8 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
-@Service
-public class BrokerService {
+@Component
+public class BrokerHandler {
 
     private static final Gson GSON = new Gson();
 
@@ -62,20 +72,45 @@ public class BrokerService {
     TokenService tokenService;
 
     @Autowired
-    public BrokerService() {
+    LockDao lockDao;
+
+    @Autowired
+    HelloWorldHandler helloWorldHandler;
+
+    @Autowired
+    OpmlUploadHandler opmlUploadHandler;
+
+    @Autowired
+    public BrokerHandler() {
         this.sessionHandler = new CustomStompSessionHandler();
     }
 
+    enum RequestType {
+        HELLO_WORLD,
+        OPML_UPLOAD,
+    }
+
+    private Map<RequestType, MessageHandler> requestHandlers = new HashMap<>();
+
     @PostConstruct
     void postConstruct() {
-        log.info("Broker connection to broker initializing, brokerUrl={}", brokerUrl);
+        log.info("Broker handler connection initializing, brokerUrl={}", brokerUrl);
+        //
+        requestHandlers.put(RequestType.OPML_UPLOAD, opmlUploadHandler);
+        requestHandlers.put(RequestType.HELLO_WORLD, helloWorldHandler);
+        //
         this.connect();
     }
 
     void connect() {
-        List<Transport> transports = List.of(new WebSocketTransport(new StandardWebSocketClient()));
-        SockJsClient socksJsClient = new SockJsClient(transports);
-        WebSocketStompClient stompClient = new WebSocketStompClient(socksJsClient);
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024);
+        container.setDefaultMaxSessionIdleTimeout(-1);
+        container.setDefaultMaxTextMessageBufferSize(1024 * 1024);
+        List<Transport> transports = List.of(new WebSocketTransport(new StandardWebSocketClient(container)));
+        WebSocketClient webSocketClient = new SockJsClient(transports);
+        WebSocketStompClient stompClient = new WebSocketStompClient(webSocketClient);
+        stompClient.setInboundMessageSizeLimit(MAX_VALUE);
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
         try {
@@ -86,7 +121,7 @@ public class BrokerService {
             stompSession = sessionFuture.get();
             log.info("Established connection to broker, brokerUrl={}, stompSession?={}", brokerUrl, (stompSession != null));
             subscribeToFeedgearsTopic();
-        } catch (Throwable e) {
+        } catch (InterruptedException | ExecutionException e) {
             log.error("Error connecting to broker due to: {}, brokerUrl={}", e.getMessage(), brokerUrl);
         }
     }
@@ -126,18 +161,64 @@ public class BrokerService {
                         // get the response destination from the header message
                         String responseUsername = getResponseUsername(headerMessageObj);
                         String responseDestination = getResponseDestination(headerMessageObj);
+                        // check the request type
+                        RequestType requestType = getRequestType(headerMessageObj);
+                        // get the request handler
+                        MessageHandler<?> messageHandler = requestHandlers.get(requestType);
+                        if (messageHandler == null) {
+                            throw new RuntimeException("Unable to handle requests of this type, requestType=" + requestType
+                                    + ", responseDestination=" + responseDestination
+                                    + ", responseUsername=" + responseUsername
+                                    + ", headerMessageObj=" + headerMessageObj);
+                        }
+                        // extract the payload
+                        JsonElement payload = getPayload(headerMessageObj);
+                        // compute the lock values
+                        String payloadHash = sha256(payload.toString(), UTF_8);
+                        String lockKey = "opmlUpload_" + payloadHash;
+                        // acquire the lock (prevents procesing this payload multiple times, e.g., by the front-end submitting multiple requests to the broker)
+                        if (lockDao.acquireLock(lockKey, payloadHash)) {
+                            log.debug("Acquired lock to proces work request, lockKey={}, payloadHash={}", lockKey, payloadHash);
+                            try {
+                                // process the message
+                                Object responseObject = messageHandler.handleMessage(payload, responseUsername, responseDestination);
+                                stompSession.send(
+                                        responseDestination,
+                                        buildResponseMessage(messageHandler.getResponseType(), responseObject)
+                                );
+                            } catch (DataAccessException | DataUpdateException | DataConflictException e) {
+                                log.error("Work request for username={}, messageId={}, requestType={} failed due to: {}", responseUsername, messageId, requestType, e.getMessage());
+                            } finally {
+                                // release the lock
+                                if (!lockDao.releaseLock(lockKey, payloadHash)) {
+                                    log.warn("Unable to release lock on work request, lockKey={}, payloadHash={}", lockKey, payloadHash);
+                                }
+                            }
+                        }
                         // acknowledge the message w/the broker
                         stompSession.acknowledge(messageId, true);
-                        log.debug("Acknowledged messageId={} for username={}", messageId, responseUsername);
-                        // send a response to the originating user
-                        stompSession.send(responseDestination, "Response from API server for username=" + responseUsername + ", messageId=" + messageId);
-                        log.debug("Sent work complete response for messageId={}, username={}, responseDestination={}", messageId, responseUsername, responseDestination);
+                        log.info("Acknowledged work request for username={}, requestType={}, messageId={}", responseUsername, requestType, messageId);
                     }
                 }
 
-                private static String getResponseUsername(JsonObject payloadObj) {
-                    if (payloadObj.has("responseUsername")) {
-                        JsonElement responseUsernameElem = payloadObj.get("responseUsername");
+                private static RequestType getRequestType(JsonObject headerMessageObj) {
+                    if (headerMessageObj.has("requestType")) {
+                        JsonElement responseRequestType = headerMessageObj.get("requestType");
+                        if (!responseRequestType.isJsonNull()) {
+                            String requestTypeStr = responseRequestType.getAsString();
+                            for (RequestType r : RequestType.values()) {
+                                if (r.name().equals(requestTypeStr)) {
+                                    return r;
+                                }
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                private static String getResponseUsername(JsonObject headerMessageObj) {
+                    if (headerMessageObj.has("responseUsername")) {
+                        JsonElement responseUsernameElem = headerMessageObj.get("responseUsername");
                         if (!responseUsernameElem.isJsonNull()) {
                             return responseUsernameElem.getAsString();
                         }
@@ -145,14 +226,21 @@ public class BrokerService {
                     return EMPTY;
                 }
 
-                private static String getResponseDestination(JsonObject payloadObj) {
-                    if (payloadObj.has("responseDestination")) {
-                        JsonElement responseDestinationElem = payloadObj.get("responseDestination");
+                private static String getResponseDestination(JsonObject headerMessageObj) {
+                    if (headerMessageObj.has("responseDestination")) {
+                        JsonElement responseDestinationElem = headerMessageObj.get("responseDestination");
                         if (!responseDestinationElem.isJsonNull()) {
                             return responseDestinationElem.getAsString();
                         }
                     }
                     return EMPTY;
+                }
+
+                private static JsonElement getPayload(JsonObject headerMessageObj) {
+                    if (headerMessageObj.has("payload")) {
+                        return headerMessageObj.get("payload");
+                    }
+                    return null;
                 }
             });
         }
@@ -169,7 +257,7 @@ public class BrokerService {
     private class CustomStompSessionHandler extends StompSessionHandlerAdapter {
         @Override
         public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-            BrokerService.this.stompSession = session;
+            BrokerHandler.this.stompSession = session;
         }
 
         @Override

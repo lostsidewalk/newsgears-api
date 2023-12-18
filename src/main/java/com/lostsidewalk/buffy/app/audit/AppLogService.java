@@ -2,6 +2,7 @@ package com.lostsidewalk.buffy.app.audit;
 
 import com.lostsidewalk.buffy.app.model.request.FeedStatusUpdateRequest;
 import com.lostsidewalk.buffy.app.model.request.PostStatusUpdateRequest;
+import com.lostsidewalk.buffy.app.model.request.QueueConfigRequest;
 import com.lostsidewalk.buffy.app.model.request.SettingsUpdateRequest;
 import com.lostsidewalk.buffy.auth.User;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +28,8 @@ public class AppLogService {
         auditLog("feed-update", "id={}", username, stopWatch, id);
     }
 
-    public void logFeedCreate(String username, StopWatch stopWatch, int length, int size) {
-        auditLog("feed-create", "length={}, size={}", username, stopWatch, length, size);
+    public void logFeedCreate(String username, StopWatch stopWatch, QueueConfigRequest queueConfigRequest, long queueId) {
+        auditLog("feed-create", "queueConfigRequest={}, queueId={}", username, stopWatch, queueConfigRequest, queueId);
     }
 
     public void logAddQueries(String username, StopWatch stopWatch, int size) {

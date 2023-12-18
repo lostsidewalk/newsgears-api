@@ -29,7 +29,7 @@ public class QueueConfigRequest {
     @Size(max = 512, message = "{feed.config.error.generator-too-long}")
     String generator;
 
-    List<@Valid Subscription> subscriptions; // optional
+    List<@Valid SubscriptionConfigRequest> subscriptions; // optional
 
     @Valid
     ExportConfigRequest exportConfig;
@@ -44,7 +44,7 @@ public class QueueConfigRequest {
     String imgSrc;
 
     public QueueConfigRequest(String ident, String title, String description, String generator,
-                              List<Subscription> subscriptions,
+                              List<SubscriptionConfigRequest> subscriptions,
                               ExportConfigRequest exportConfig,
                               String copyright, String language, String imgSrc)
     {
@@ -60,7 +60,7 @@ public class QueueConfigRequest {
     }
 
     public static QueueConfigRequest from(String ident, String title, String description, String generator,
-                                          List<Subscription> subscriptions,
+                                          List<SubscriptionConfigRequest> subscriptions,
                                           ExportConfigRequest exportConfig,
                                           String copyright, String language, String imgSrc)
     {

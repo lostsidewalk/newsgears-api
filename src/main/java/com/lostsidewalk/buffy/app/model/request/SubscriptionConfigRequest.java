@@ -8,7 +8,7 @@ import org.hibernate.validator.constraints.URL;
 
 @Data
 @AllArgsConstructor
-public class Subscription {
+public class SubscriptionConfigRequest {
 
     Long id;
 
