@@ -22,14 +22,15 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
 import java.util.List;
 
 import static com.lostsidewalk.buffy.app.user.UserRoles.UNVERIFIED_ROLE;
 import static com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo.FeedDiscoveryExceptionType.PARSING_FEED_EXCEPTION;
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
@@ -50,26 +51,6 @@ public class FeedDiscoveryController {
 
     @Autowired
     ProxyService proxyService;
-
-    /**
-     * Get a collection by name.  Collections are groups of featured feeds.
-     *
-     */
-    @GetMapping("/discovery/collection/{collectionName}")
-    public ResponseEntity<?> discoverCollection(@PathVariable String collectionName, Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getDetails();
-        String username = userDetails == null ? "(none)" : userDetails.getUsername();
-        log.debug("discoverCollection for user={}, collectionName={}", username, collectionName);
-        StopWatch stopWatch = StopWatch.createStarted();
-        List<FeedDiscoveryInfo> collectionDiscoveryResponse = feedDiscoveryService.getCollection(collectionName);
-        List<ThumbnailedFeedDiscovery> thumbnailedCollectionDiscoveryResponse = null;
-        if (isNotEmpty(collectionDiscoveryResponse)) {
-            thumbnailedCollectionDiscoveryResponse = collectionDiscoveryResponse.stream().map(this::addThumbnailToResponse).toList();
-        }
-        stopWatch.stop();
-        appLogService.logCollectionFetch(username, stopWatch, collectionName);
-        return ok(thumbnailedCollectionDiscoveryResponse);
-    }
 
     /**
      * Perform feed discovery on behalf of a user.  The feed discovery request consists of a URL, username, and password.
