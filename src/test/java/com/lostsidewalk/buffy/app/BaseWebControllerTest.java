@@ -21,6 +21,7 @@ import com.lostsidewalk.buffy.post.StagingPostDao;
 import com.lostsidewalk.buffy.queue.QueueCredentialDao;
 import com.lostsidewalk.buffy.queue.QueueDefinitionDao;
 import com.lostsidewalk.buffy.rss.RssImporter;
+import com.lostsidewalk.buffy.rule.RuleSetDao;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinitionDao;
 import com.lostsidewalk.buffy.subscription.SubscriptionMetricsDao;
 import com.lostsidewalk.buffy.thumbnail.ThumbnailDao;
@@ -117,6 +118,9 @@ class BaseWebControllerTest {
 
     @MockBean
     ApiKeyDao apiKeyDao;
+
+    @MockBean
+    RuleSetDao ruleSetDao;
 
     @MockBean
     RssImporter rssImporter;

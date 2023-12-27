@@ -305,6 +305,33 @@ create table api_keys
   primary key (id)
 );
 
+create table rule_set_definitions
+(
+  id bigserial,
+  username varchar(100) not null references users(name) on delete cascade,
+  rule_set_name varchar(256) not null,
+  rules json,
+
+  primary key(id)
+);
+
+create table queue_import_rule_sets
+(
+  id bigserial,
+  queue_id integer references queue_definitions(id) on delete cascade,
+  rule_set_id integer references rule_set_definitions(id) on delete cascade,
+
+  primary key(id)
+);
+
+create table subscription_import_rule_sets
+(
+  id bigserial,
+  subscription_id integer references subscription_definitions(id) on delete cascade,
+  rule_set_id integer references rule_set_definitions(id) on delete cascade,
+
+  primary key(id)
+);
 --
 -- indexes
 --
