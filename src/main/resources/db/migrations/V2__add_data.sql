@@ -23,13 +23,13 @@ values(
 --
 -- rule_set_definitions
 --
-insert into rule_set_definitions(username,rule_set_name,rules) values (
+insert into rule_set_definitions(username, rule_set_name, rules) values (
     'me',
     'cnn_inbound_rules',
     '[]'
 );
 
-insert into rule_set_definitions(username,rule_set_name,rules) values (
+insert into rule_set_definitions(username, rule_set_name, rules) values (
     'me',
     'cnn_top_stories_rules',
     '[]'
@@ -37,7 +37,7 @@ insert into rule_set_definitions(username,rule_set_name,rules) values (
 --
 -- queue_import_rule_sets
 --
-insert into queue_import_rule_sets (queue_id,rule_set_id) values (
+insert into queue_import_rule_sets (queue_id, rule_set_id) values (
     (select id from queue_definitions where queue_ident = 'cnn_inbound'),
     (select id from rule_set_definitions where rule_set_name = 'cnn_inbound_rules')
 );

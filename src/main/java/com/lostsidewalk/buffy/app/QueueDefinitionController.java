@@ -15,11 +15,13 @@ import com.lostsidewalk.buffy.app.proxy.ProxyService;
 import com.lostsidewalk.buffy.app.query.SubscriptionDefinitionService;
 import com.lostsidewalk.buffy.app.querymetrics.SubscriptionMetricsService;
 import com.lostsidewalk.buffy.app.resolution.FeedResolutionService;
+import com.lostsidewalk.buffy.app.rule.RuleSetService;
 import com.lostsidewalk.buffy.app.thumbnail.ThumbnailService;
 import com.lostsidewalk.buffy.discovery.FeedDiscoveryInfo;
 import com.lostsidewalk.buffy.model.RenderedThumbnail;
 import com.lostsidewalk.buffy.post.PostImporter;
 import com.lostsidewalk.buffy.queue.QueueDefinition;
+import com.lostsidewalk.buffy.rule.RuleSet;
 import com.lostsidewalk.buffy.subscription.SubscriptionDefinition;
 import com.lostsidewalk.buffy.subscription.SubscriptionMetrics;
 import jakarta.transaction.Transactional;
@@ -90,6 +92,9 @@ public class QueueDefinitionController {
     FeedResolutionService feedResolutionService;
 
     @Autowired
+    RuleSetService ruleSetService;
+
+    @Autowired
     PostImporter postImporter;
 
     @Autowired
@@ -107,13 +112,13 @@ public class QueueDefinitionController {
         String username = userDetails.getUsername();
         log.debug("getFeeds for user={}", username);
         StopWatch stopWatch = StopWatch.createStarted();
-        // query definitions
+        // subscription definitions
         List<SubscriptionDefinition> allSubscriptionDefinitions = subscriptionDefinitionService.findByUsername(username);
         Map<Long, List<ThumbnailedSubscriptionDefinition>> subscriptionDefinitionsByQueueId = new HashMap<>();
         for (SubscriptionDefinition qd : allSubscriptionDefinitions) {
             subscriptionDefinitionsByQueueId.computeIfAbsent(qd.getQueueId(), l -> new ArrayList<>()).add(addThumbnail(qd));
         }
-        // query metrics
+        // subscription metrics
         List<SubscriptionMetricsWithErrorDetails> allSubscriptionMetrics = subscriptionMetricsService.findByUsername(username).stream()
                 .map(q -> SubscriptionMetricsWithErrorDetails.from(q, getQueryExceptionTypeMessage(q.getErrorType())))
                 .toList();
@@ -121,12 +126,24 @@ public class QueueDefinitionController {
         for (SubscriptionMetricsWithErrorDetails qmEd : allSubscriptionMetrics) {
             metricsBySubscriptionDefinitionId.computeIfAbsent(qmEd.getSubscriptionId(), l -> new ArrayList<>()).add(qmEd);
         }
-        // feed definitions
-        List<QueueDefinition> feedDefinitions = queueDefinitionService.findByUser(username);
+        // queue definitions
+        List<QueueDefinition> queueDefinitions = queueDefinitionService.findByUser(username);
         stopWatch.stop();
-        appLogService.logFeedFetch(username, stopWatch, size(feedDefinitions), size(subscriptionDefinitionsByQueueId));
+        // queue import rule sets
+        Map<Long, RuleSet> queueImportRuleSets = ruleSetService.findQueueImportRulesSetsByUsername(username);
+        // subscription import rule sets
+        Map<Long, RuleSet> subscriptionImportRuleSets = ruleSetService.findSubscriptionImportRuleSetsByUsername(username);
+        //
+        appLogService.logFeedFetch(username, stopWatch, size(queueDefinitions), size(subscriptionDefinitionsByQueueId));
+        //
         return ok(
-                QueueFetchResponse.from(feedDefinitions, subscriptionDefinitionsByQueueId, metricsBySubscriptionDefinitionId)
+                QueueFetchResponse.from(
+                        queueDefinitions,
+                        subscriptionDefinitionsByQueueId,
+                        metricsBySubscriptionDefinitionId,
+                        queueImportRuleSets,
+                        subscriptionImportRuleSets
+                )
         );
     }
     //

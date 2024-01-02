@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     //
-    implementation 'com.lostsidewalk.newsgears:newsgears-data:0.5.14'
+    implementation 'com.lostsidewalk.newsgears:newsgears-data:0.5.15'
     // NewsGears importer
     implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.11'
     // adds RSS/ATOM to the import path
