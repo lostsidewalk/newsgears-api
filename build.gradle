@@ -23,7 +23,7 @@ dependencies {
     //
     implementation 'com.lostsidewalk.newsgears:newsgears-data:0.5.14'
     // NewsGears importer
-    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.10'
+    implementation 'com.lostsidewalk.newsgears:newsgears-importer:0.5.11'
     // adds RSS/ATOM to the import path
     implementation 'com.lostsidewalk.newsgears:newsgears-rss-importer:0.5.13'
 
