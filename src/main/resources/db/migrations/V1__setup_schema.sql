@@ -66,7 +66,7 @@ drop table if exists queue_credentials cascade;
 
 create table queue_credentials (
     id serial,
-    queue_id integer references queue_definitions(id) on delete cascade,
+    queue_id integer not null references queue_definitions(id) on delete cascade,
     username varchar(100) not null references users(name) on delete cascade,
     basic_username varchar(100) not null,
     basic_password varchar(256) not null,
@@ -81,61 +81,13 @@ create table queue_credentials (
 alter sequence queue_credentials_id_seq restart with 1048576;
 
 --
--- staging_posts table
---
-drop table if exists staging_posts cascade;
-
--- TODO: rename post_img_url -> post_image_url
-create table staging_posts (
-    id serial,
-    post_title json not null,
-    post_desc json not null,
-    post_contents json,
-    post_media json,
-    post_itunes json,
-    post_url varchar(1024),
-    post_urls json,
-    post_img_url varchar(1024),
-    post_img_transport_ident varchar(256),
-    importer_id varchar(256) not null,
-    importer_desc varchar(512),
-    subscription_id integer,
-    queue_id integer references queue_definitions(id) on delete cascade,
-    import_timestamp timestamp with time zone,
-    is_published boolean not null default false,
-    post_read_status varchar(64),
-    post_pub_status varchar(64),
-    post_hash varchar(64),
-    username varchar(100) not null references users(name) on delete cascade,
-    post_comment varchar(2048),
-    post_rights varchar(1024),
-    contributors json,
-    authors json,
-    post_categories json,
-    publish_timestamp timestamp with time zone,
-    expiration_timestamp timestamp with time zone,
-    enclosures json,
-    last_updated_timestamp timestamp with time zone,
-    created timestamp with time zone not null default current_timestamp,
-    last_modified timestamp with time zone,
-    is_archived boolean not null default false,
-
-    unique(queue_id, post_hash),
-
-    primary key(id)
-);
-
--- set the Id starting value to 1048576
-alter sequence staging_posts_id_seq restart with 1048576;
-
---
 -- subscription_definitions table
 --
 drop table if exists subscription_definitions cascade;
 
 create table subscription_definitions (
     id bigserial,
-    queue_id integer references queue_definitions(id) on delete cascade,
+    queue_id integer not null references queue_definitions(id) on delete cascade,
     username varchar(100) not null references users(name) on delete cascade,
     title varchar(512),
     img_url varchar(1024),
@@ -171,6 +123,54 @@ create table subscription_metrics (
 
     primary key(id)
 );
+--
+-- staging_posts table
+--
+drop table if exists staging_posts cascade;
+
+-- TODO: rename post_img_url -> post_image_url
+create table staging_posts (
+    id serial,
+    post_title json not null,
+    post_desc json not null,
+    post_contents json,
+    post_media json,
+    post_itunes json,
+    post_url varchar(1024),
+    post_urls json,
+    post_img_url varchar(1024),
+    post_img_transport_ident varchar(256),
+    importer_id varchar(256) not null,
+    importer_desc varchar(512),
+    subscription_id integer not null references subscription_definitions(id) on delete cascade,
+    queue_id integer not null references queue_definitions(id) on delete cascade,
+    import_timestamp timestamp with time zone,
+    is_published boolean not null default false,
+    post_read_status varchar(64),
+    post_pub_status varchar(64),
+    post_hash varchar(64),
+    username varchar(100) not null references users(name) on delete cascade,
+    post_comment varchar(2048),
+    post_rights varchar(1024),
+    contributors json,
+    authors json,
+    post_categories json,
+    publish_timestamp timestamp with time zone,
+    expiration_timestamp timestamp with time zone,
+    enclosures json,
+    last_updated_timestamp timestamp with time zone,
+    created timestamp with time zone not null default current_timestamp,
+    last_modified timestamp with time zone,
+    is_archived boolean not null default false,
+
+    unique(queue_id, post_hash),
+
+    primary key(id)
+);
+
+-- set the Id starting value to 1048576
+alter sequence staging_posts_id_seq restart with 1048576;
+
 --
 -- feed_discovery_info table
 --
@@ -318,7 +318,7 @@ create table rule_set_definitions
 create table queue_import_rule_sets
 (
   id bigserial,
-  queue_id integer references queue_definitions(id) on delete cascade,
+  queue_id integer not null references queue_definitions(id) on delete cascade,
   rule_set_id integer references rule_set_definitions(id) on delete cascade,
 
   primary key(id)
@@ -327,7 +327,7 @@ create table queue_import_rule_sets
 create table subscription_import_rule_sets
 (
   id bigserial,
-  subscription_id integer references subscription_definitions(id) on delete cascade,
+  subscription_id integer not null references subscription_definitions(id) on delete cascade,
   rule_set_id integer references rule_set_definitions(id) on delete cascade,
 
   primary key(id)
